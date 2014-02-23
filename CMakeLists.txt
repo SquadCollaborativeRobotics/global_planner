@@ -49,10 +49,13 @@ find_package(Boost REQUIRED COMPONENTS system thread)
 add_message_files(
   FILES
     SoundMsg.msg
+    RobotStatus.msg
     WaypointMsg.msg
     DumpMsg.msg
     GoalMsg.msg
-    RobotStatus.msg
+    WaypointFinished.msg
+    DumpFinished.msg
+    GoalFinished.msg
 )
 
 ## Generate services in the 'srv' folder

@@ -18,6 +18,20 @@ TaskMaster::TaskMaster()
  ***********************************************************************/
 bool TaskMaster::Init(ros::NodeHandle &nh, std::map<int, Robot_Ptr> robots)
 {
+    m_robots = robots;
+    std::stringstream topicName;
+    for (std::map<int, Robot_Ptr>::iterator i = m_robots.begin(); i != m_robots.end(); ++i)
+    {
+        int id = i->first;
+        std::string name = m_robots[id]->GetName();
+        topicName.str("/");
+        topicName << name;
+
+        //create listener for waypoint finished status
+        topicName << "/waypoint_finished";
+        std::string topic = topicName.str();
+        ros::Subscriber wp_sub = nh.subscribe("hello", 10, &TaskMaster::cb_waypointFinished, this);
+    }
 }
 
 
@@ -232,33 +246,42 @@ std::vector<Dump_Ptr> TaskMaster::GetDumpList()
 
 /***********************************************************************
  *  Method: TaskMaster::cb_goalFinished
- *  Params: int goalID, ResultStatus status
+ *  Params: const global_planner::GoalFinished::ConstPtr& msg
  * Returns: void
  * Effects:
  ***********************************************************************/
-void TaskMaster::cb_goalFinished(int goalID, ResultStatus status)
+void TaskMaster::cb_goalFinished(const global_planner::GoalFinished::ConstPtr& msg)
 {
+    int status = msg->status;
+    if (status == SUCCESS)
+    {
+        m_goalMap.erase(msg->id);
+    }
+    else
+    {
+        ROS_ERROR_STREAM("ERROR, Goal finished with status: "<<msg->status);
+    }
 }
 
 
 /***********************************************************************
  *  Method: TaskMaster::cb_waypointFinished
- *  Params: int wpID, ResultStatus status
+ *  Params: const global_planner::WaypointFinished::ConstPtr& msg
  * Returns: void
  * Effects:
  ***********************************************************************/
-void TaskMaster::cb_waypointFinished(int wpID, ResultStatus status)
+void TaskMaster::cb_waypointFinished(const global_planner::WaypointFinished::ConstPtr& msg)
 {
 }
 
 
 /***********************************************************************
  *  Method: TaskMaster::cb_dumpFinished
- *  Params: int dumpID, ResultStatus status
+ *  Params: const global_planner::DumpFinished::ConstPtr& msg
  * Returns: void
  * Effects:
  ***********************************************************************/
-void TaskMaster::cb_dumpFinished(int dumpID, ResultStatus status)
+void TaskMaster::cb_dumpFinished(const global_planner::DumpFinished::ConstPtr& msg)
 {
 }
 

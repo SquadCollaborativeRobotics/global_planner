@@ -1,0 +1,4 @@
+#id of the waypoint that finished
+int32 id
+#status (success/failure) of the waypoint
+int32 status

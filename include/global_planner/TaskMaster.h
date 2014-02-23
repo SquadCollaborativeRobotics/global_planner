@@ -11,16 +11,23 @@
 #include "Dump.h"
 #include "Robot.h"
 
+#include "global_planner/GoalFinished.h"
+#include "global_planner/WaypointFinished.h"
+#include "global_planner/DumpFinished.h"
+
+enum TaskResultStatus
+{
+    SUCCESS = 0,
+    FAILURE = 1,
+    INPROGRESS = 2,
+    FORCE_STOP = 3,
+    MOVE_BASE_FAILURE = 4,
+};
+
 class TaskMaster
 {
+
 public:
-    enum ResultStatus
-    {
-        SUCCESS = 0,
-        FAILURE = 1,
-        INPROGRESS = 2,
-        FORCE_STOP = 3,
-    };
 
     TaskMaster();
     ~TaskMaster(){};
@@ -71,9 +78,9 @@ public:
     // *******************************
     // ROS Callbacks
     // *******************************
-    void cb_goalFinished(int goalID, ResultStatus status);
-    void cb_waypointFinished(int wpID, ResultStatus status);
-    void cb_dumpFinished(int dumpID, ResultStatus status);
+    void cb_goalFinished(const global_planner::GoalFinished::ConstPtr& msg);
+    void cb_waypointFinished(const global_planner::WaypointFinished::ConstPtr& msg);
+    void cb_dumpFinished(const global_planner::DumpFinished::ConstPtr& msg);
 
 private:
     // Initialize lists, setup callbacks, regiser services
@@ -83,6 +90,9 @@ private:
     // ros NodeHandle used for publishing and tf stuff
     ros::NodeHandle m_nh;
 
+    /**
+     * Lists of goals, waypoints, & dumps
+     */
     // List of goals that need to be accomplished
     std::map<int, Goal_Ptr > m_goalMap;
     // List of waypoints that need to be accomplished
@@ -90,13 +100,24 @@ private:
     // List of dumps that need to be accomplished
     std::map<int, Dump_Ptr > m_dumpMap;
 
+    /**
+     * List of publishers & subscribers that will communicate with the robots
+     */
     // List of goal publishers accessed by the robot id
-    std::map<int, ros::Publisher > m_goalPublishers;
+    std::map<int, ros::Publisher > m_goalPubs;
+    // List of goal subcribers accessed by the robot id
+    std::map<int, ros::Subscriber > m_goalSubs;
+
     // List of waypoint publishers accessed by the robot id
-    std::map<int, ros::Publisher > m_waypointPublishers;
+    std::map<int, ros::Publisher > m_waypointPubs;
+    // List of waypoint subscribers accessed by the robot id
+    std::map<int, ros::Publisher > m_waypointSubs;
+
     // List of dump publishers accessed by the robot id
-    std::map<int, ros::Publisher > m_dumpPublishers;
+    std::map<int, ros::Publisher > m_dumpPubs;
+    // List of dump subscribers accessed by the robot id
+    std::map<int, ros::Publisher > m_dumpSubs;
 
     // List of robots in the system
-    std::vector< Robot_Ptr > m_robots;
+    std::map< int, Robot_Ptr > m_robots;
 };
