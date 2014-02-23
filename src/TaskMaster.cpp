@@ -18,6 +18,8 @@ TaskMaster::TaskMaster()
  ***********************************************************************/
 bool TaskMaster::Init(ros::NodeHandle* nh, std::map<int, Robot_Ptr> robots, std::string waypoint_filename)
 {
+    m_nh = nh;
+
     Clear();
 
     m_robots = robots;
@@ -26,8 +28,7 @@ bool TaskMaster::Init(ros::NodeHandle* nh, std::map<int, Robot_Ptr> robots, std:
     RegisterServices();
 
 
-    std::string path_to_waypoints = std::string("aplay -q ");
-    path_to_waypoints += ros::package::getPath("global_planner");
+    std::string path_to_waypoints = ros::package::getPath("global_planner");
     path_to_waypoints += std::string("/resources/waypoint_lists/");
     path_to_waypoints += waypoint_filename;
 
@@ -186,35 +187,38 @@ bool TaskMaster::SendDump(int dumpID)
 
 
 /***********************************************************************
- *  Method: TaskMaster::GetGoalList
+ *  Method: TaskMaster::GetGoals
  *  Params:
  * Returns: std::vector<Goal_Ptr>
  * Effects:
  ***********************************************************************/
-std::vector<Goal_Ptr> TaskMaster::GetGoalList()
+std::map<int, Goal_Ptr> TaskMaster::GetGoals()
 {
+    return m_goalMap;
 }
 
 
 /***********************************************************************
- *  Method: TaskMaster::GetWaypointList
+ *  Method: TaskMaster::GetWaypoints
  *  Params:
  * Returns: std::vector<Waypoint_Ptr>
  * Effects:
  ***********************************************************************/
-std::vector<Waypoint_Ptr> TaskMaster::GetWaypointList()
+std::map<int, Waypoint_Ptr> TaskMaster::GetWaypoints()
 {
+    return m_waypointMap;
 }
 
 
 /***********************************************************************
- *  Method: TaskMaster::GetDumpList
+ *  Method: TaskMaster::GetDumps
  *  Params:
  * Returns: std::vector<Dump_Ptr>
  * Effects:
  ***********************************************************************/
-std::vector<Dump_Ptr> TaskMaster::GetDumpList()
+std::map<int, Dump_Ptr> TaskMaster::GetDumps()
 {
+    return m_dumpMap;
 }
 
 
@@ -326,6 +330,7 @@ void TaskMaster::cb_goalSeen(const global_planner::GoalSeen::ConstPtr &msg)
  ***********************************************************************/
 bool TaskMaster::SetupTopics()
 {
+    ROS_INFO_STREAM("Setting up callback topics for Tasks");
     /*
     std::stringstream topicName;
     for (std::map<int, Robot_Ptr>::iterator i = m_robots.begin(); i != m_robots.end(); ++i)
@@ -353,16 +358,21 @@ bool TaskMaster::SetupTopics()
     }
     */
 
+    ROS_INFO_STREAM("Setting up subscribers for tasks");
     //Let's do something easier for now...
     m_goalSub = m_nh->subscribe("goal_finished", 10, &TaskMaster::cb_goalFinished, this);
     m_waypointSub = m_nh->subscribe("waypoint_finished", 10, &TaskMaster::cb_waypointFinished, this);
     m_dumpSub = m_nh->subscribe("dump_finished", 10, &TaskMaster::cb_dumpFinished, this);
 
+    ROS_INFO_STREAM("Setting up publishers for tasks");
     m_goalPub = m_nh->advertise<global_planner::GoalMsg>("goal_pub", 100);
     m_waypointPub = m_nh->advertise<global_planner::WaypointMsg>("waypoint_pub", 100);
     m_dumpPub = m_nh->advertise<global_planner::DumpMsg>("dump_pub", 10);
 
+    ROS_INFO_STREAM("Setting up subscriber for goals seen");
     m_goalSeenSub = m_nh->subscribe("goal_seen", 10, &TaskMaster::cb_goalSeen, this);
+
+    ROS_INFO_STREAM("Finished Setting up subscribers");
 }
 
 
@@ -384,6 +394,7 @@ bool TaskMaster::RegisterServices()
  ***********************************************************************/
 void TaskMaster::LoadWaypoints(std::string filename)
 {
+    ROS_INFO_STREAM("Loading waypoints from file: "<<filename);
     std::ifstream fin(filename.c_str());
     std::string s;
     //read a line into 's' from 'fin' each time
@@ -400,7 +411,7 @@ void TaskMaster::LoadWaypoints(std::string filename)
         Waypoint_Ptr wp(new WaypointWrapper(id, x,y,z,w));
 
         ROS_INFO_STREAM("Loaded waypoint["<<i<<"]: "<<x<<", "<<y<<", "<<z<<", "<<w);
+        AddWaypoint(wp);
     }
 }
-
 

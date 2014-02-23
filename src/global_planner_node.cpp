@@ -6,14 +6,17 @@ int main(int argc, char** argv){
     ros::init(argc, argv, "global_planner_node");
     ros::NodeHandle nh;
 
-    ROS_INFO("Global Planner Started");
+    ROS_ERROR("Global Planner Started");
     GlobalPlanner gp;
 
     gp.Init(&nh);
 
+    ros::Rate r(10);
+
     while(ros::ok())
     {
         gp.Execute();
+        r.sleep();
     }
 
     gp.Finished();

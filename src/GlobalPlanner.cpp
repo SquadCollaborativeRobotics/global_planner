@@ -13,19 +13,30 @@ GlobalPlanner::~GlobalPlanner()
 // Call setup functions
 bool GlobalPlanner::Init(ros::NodeHandle* nh)
 {
+    ROS_INFO_STREAM("Initializing global planner class");
+
     m_nh = nh;
     SetupCallbacks();
     RegisterServices();
 
     FindRobots();
 
+    ROS_INFO_STREAM("Initializing TaskMaster");
     m_tm.Init(nh, m_robots, "testList1.points");
 }
 
 // Executive function
 void GlobalPlanner::Execute()
 {
+    ROS_INFO_THROTTLE(5,"Executive");
 
+    std::map<int, Waypoint_Ptr> wps = m_tm.GetWaypoints();
+
+    ROS_INFO_STREAM("Showing waypoints...");
+    for (std::map<int, Waypoint_Ptr>::iterator it = wps.begin(); it != wps.end(); ++it)
+    {
+        ROS_INFO_STREAM(it->second->ToString());
+    }
 }
 
 // System finished

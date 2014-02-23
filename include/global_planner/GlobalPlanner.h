@@ -23,9 +23,9 @@ public:
     // System finished
     void Finished();
 
-    std::vector< Goal_Ptr > GetGoalList();
-    std::vector< Waypoint_Ptr > GetWaypointList();
-    std::vector< Dump_Ptr > GetDumpList();
+    std::map<int, Goal_Ptr > GetGoals() { return m_tm.GetGoals(); };
+    std::map<int, Waypoint_Ptr > GetWaypoints() { return m_tm.GetWaypoints(); };
+    std::map<int, Dump_Ptr > GetDumps() { return m_tm.GetDumps(); };
 
 private:
     // setup callbacks, regiser services, load waypoints...
