@@ -9,7 +9,9 @@
 #include "global_planner/WaypointMsg.h"
 #include "global_planner/DumpMsg.h"
 
-#include "global_planner/TaskMaster.h"
+#include "TaskMaster.h"
+#include "TaskResult.h"
+
 
 class Conversion
 {
@@ -17,19 +19,19 @@ public:
     Conversion();
     ~Conversion();
 
-    static const std::string ReturnStatusToString(TaskResultStatus status)
+    static const std::string ReturnStatusToString(TaskResult::Status status)
     {
         switch(status)
         {
-            case SUCCESS:
+            case TaskResult::SUCCESS:
             return "Success";
-            case FAILURE:
+            case TaskResult::FAILURE:
             return "General Failure";
-            case INPROGRESS:
+            case TaskResult::INPROGRESS:
             return "Task still in progress";
-            case FORCE_STOP:
+            case TaskResult::FORCE_STOP:
             return "Task was force stopped by global planner";
-            case MOVE_BASE_FAILURE:
+            case TaskResult::MOVE_BASE_FAILURE:
             return "Move base failed to reach goal";
             default:
             return "Unknown result code";
@@ -37,8 +39,8 @@ public:
     }
 
     //Callback from robot's task converted to a TaskManager "status" enum
-    static const TaskResultStatus ReturnIntToStatus(int num)
+    static const TaskResult::Status ReturnIntToStatus(int num)
     {
-        return static_cast<TaskResultStatus>(num);
+        return static_cast<TaskResult::Status>(num);
     }
 };

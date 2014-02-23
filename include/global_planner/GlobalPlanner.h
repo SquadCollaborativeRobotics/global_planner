@@ -2,7 +2,7 @@
 
 #include <ros/ros.h>
 #include "TaskMaster.h"
-#include "Conversions.h"
+#include "Conversion.h"
 #include "global_planner/RobotStatus.h"
 
 class GlobalPlanner

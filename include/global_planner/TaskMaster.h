@@ -15,18 +15,11 @@
 #include "global_planner/WaypointFinished.h"
 #include "global_planner/DumpFinished.h"
 
-enum TaskResultStatus
-{
-    SUCCESS = 0,
-    FAILURE = 1,
-    INPROGRESS = 2,
-    FORCE_STOP = 3,
-    MOVE_BASE_FAILURE = 4,
-};
+#include "Conversion.h"
+#include "TaskResult.h"
 
 class TaskMaster
 {
-
 public:
 
     TaskMaster();

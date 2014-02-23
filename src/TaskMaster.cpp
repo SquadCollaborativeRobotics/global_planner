@@ -253,7 +253,7 @@ std::vector<Dump_Ptr> TaskMaster::GetDumpList()
 void TaskMaster::cb_goalFinished(const global_planner::GoalFinished::ConstPtr& msg)
 {
     int status = msg->status;
-    if (status == SUCCESS)
+    if (status == TaskResult::SUCCESS)
     {
         m_goalMap.erase(msg->id);
     }
@@ -272,6 +272,15 @@ void TaskMaster::cb_goalFinished(const global_planner::GoalFinished::ConstPtr& m
  ***********************************************************************/
 void TaskMaster::cb_waypointFinished(const global_planner::WaypointFinished::ConstPtr& msg)
 {
+    int status = msg->status;
+    if (status == TaskResult::SUCCESS)
+    {
+        m_waypointMap.erase(msg->id);
+    }
+    else
+    {
+        ROS_ERROR_STREAM("ERROR, Goal finished with status: "<<msg->status<<" : "<<Conversion::ReturnStatusToString(Conversion::ReturnIntToStatus(msg->status)));
+    }
 }
 
 
@@ -283,6 +292,15 @@ void TaskMaster::cb_waypointFinished(const global_planner::WaypointFinished::Con
  ***********************************************************************/
 void TaskMaster::cb_dumpFinished(const global_planner::DumpFinished::ConstPtr& msg)
 {
+    int status = msg->status;
+    if (status == TaskResult::SUCCESS)
+    {
+        m_dumpMap.erase(msg->id);
+    }
+    else
+    {
+        ROS_ERROR_STREAM("ERROR, Dump finished with status: "<<msg->status);
+    }
 }
 
 
