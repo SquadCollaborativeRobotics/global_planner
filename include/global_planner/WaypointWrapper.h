@@ -7,6 +7,9 @@
 
 #include <global_planner/WaypointMsg.h>
 
+#include "Conversion.h"
+
+
 class WaypointWrapper
 {
 
@@ -38,6 +41,12 @@ public:
     ros::Time GetTime(){ return m_msg.time; };
     geometry_msgs::Pose GetPose() {return m_msg.pose; };
     int GetRobot(){ return m_msg.robotID; };
+    bool GetCompleted(){ return m_msg.status == TaskResult::SUCCESS; };
+    bool GetAvailable(){ return m_msg.status == TaskResult::AVAILABLE; };
+    bool GetInProgress(){ return m_msg.status == TaskResult::INPROGRESS; };
+    bool GetFailed(){ return m_msg.status == TaskResult::FAILURE; };
+
+    void SetStatus(TaskResult::Status s){ m_msg.status = Conversion::TaskResultToInt(s); };
 
     void SetData(global_planner::WaypointMsg& data){ m_msg = data; };
     global_planner::WaypointMsg GetMessage(){ return m_msg; };

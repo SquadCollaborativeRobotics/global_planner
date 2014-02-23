@@ -7,6 +7,8 @@
 
 #include <global_planner/DumpMsg.h>
 
+#include "Conversion.h"
+
 class DumpWrapper
 {
 
@@ -43,6 +45,13 @@ public:
     geometry_msgs::Pose GetPose2() {return m_msg.pose2; };
     int GetRobot1(){ return m_msg.robotID1; };
     int GetRobot2(){ return m_msg.robotID2; };
+
+    bool GetCompleted(){ return m_msg.status == TaskResult::SUCCESS; };
+    bool GetAvailable(){ return m_msg.status == TaskResult::AVAILABLE; };
+    bool GetInProgress(){ return m_msg.status == TaskResult::INPROGRESS; };
+    bool GetFailed(){ return m_msg.status == TaskResult::FAILURE; };
+
+    void SetStatus(TaskResult::Status s){ m_msg.status = Conversion::TaskResultToInt(s); };
 
     void SetData(global_planner::DumpMsg& data){ m_msg = data; };
     global_planner::DumpMsg GetMessage(){ return m_msg; };

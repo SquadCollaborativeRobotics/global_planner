@@ -18,9 +18,12 @@ TaskMaster::TaskMaster()
  ***********************************************************************/
 bool TaskMaster::Init(ros::NodeHandle &nh, std::map<int, Robot_Ptr> robots)
 {
+    Clear();
+
     m_robots = robots;
 
     SetupTopics();
+    RegisterServices();
 }
 
 
@@ -54,6 +57,16 @@ bool TaskMaster::AddWaypoint(Waypoint_Ptr waypoint)
  ***********************************************************************/
 bool TaskMaster::AddDump(Dump_Ptr dump)
 {
+    std::map<int,Dump_Ptr>::iterator it = m_dumpMap.find(dump->GetID());
+    //If it is already in the map...
+    if(it != m_dumpMap.end())
+    {
+        ROS_ERROR_STREAM("Trying to add to the dump list when an entry already exists for key: "<<dump->GetID());
+    }
+    else
+    {
+        m_dumpMap[dump->GetID()] = dump;
+    }
 }
 
 
@@ -264,11 +277,11 @@ void TaskMaster::cb_waypointFinished(const global_planner::WaypointFinished::Con
     int status = msg->status;
     if (status == TaskResult::SUCCESS)
     {
-        m_waypointMap.erase(msg->id);
+        m_waypointMap[msg->id]->SetStatus(TaskResult::SUCCESS);
     }
     else
     {
-        ROS_ERROR_STREAM("ERROR, Goal finished with status: "<<msg->status<<" : "<<Conversion::ReturnStatusToString(Conversion::ReturnIntToStatus(msg->status)));
+        ROS_ERROR_STREAM("ERROR, Goal finished with status: "<<msg->status<<" : "<<Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
     }
 }
 
@@ -289,6 +302,41 @@ void TaskMaster::cb_dumpFinished(const global_planner::DumpFinished::ConstPtr& m
     else
     {
         ROS_ERROR_STREAM("ERROR, Dump finished with status: "<<msg->status);
+    }
+}
+
+
+/***********************************************************************
+ *  Method: TaskMaster::cb_goalSeen
+ *  Params: const global_planner::GoalSeen::ConstPtr &msg
+ * Returns: void
+ * Effects:
+ ***********************************************************************/
+void TaskMaster::cb_goalSeen(const global_planner::GoalSeen::ConstPtr &msg)
+{
+    int goalID = msg->id;
+
+    Goal_Ptr currentGoal = m_goalMap[goalID];
+    if (currentGoal->GetCompleted() == true)
+    {
+        return;
+    }
+
+    ros::Time time = msg->time;
+    geometry_msgs::Pose pose = msg->pose;
+
+    if ( time > currentGoal->GetTime() )
+    {
+        //Newer information... Update Pose if they are off by more than a small distance
+        //For now, just assume we update it every time. If it is currently assigned to a bot, tell the bot of the new location
+        if (true)
+        {
+            if ( m_goalMap[goalID]->GetInProgress() == true )
+            {
+                //Re-Send goal
+                SendGoal(goalID);
+            }
+        }
     }
 }
 
@@ -348,15 +396,6 @@ bool TaskMaster::SetupTopics()
  * Effects:
  ***********************************************************************/
 bool TaskMaster::RegisterServices()
-{
-}
-/***********************************************************************
- *  Method: TaskMaster::cb_goalSeen
- *  Params: const global_planner::GoalSeen::ConstPtr &msg
- * Returns: void
- * Effects:
- ***********************************************************************/
-void TaskMaster::cb_goalSeen(const global_planner::GoalSeen::ConstPtr &msg)
 {
 }
 

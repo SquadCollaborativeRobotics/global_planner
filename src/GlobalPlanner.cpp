@@ -68,8 +68,8 @@ int GlobalPlanner::FindRobots()
 {
     std::vector< std::string > names;
     names.push_back(std::string("collector1"));
-    //names.push_back(std::string("collector2"));
-    //names.push_back(std::string("bin1"));
+    names.push_back(std::string("collector2"));
+    names.push_back(std::string("bin1"));
 
     m_robots.clear();
 
@@ -81,5 +81,6 @@ int GlobalPlanner::FindRobots()
         robot->SetID(id);
         m_robots[id] = robot;
     }
+
     return names.size();
 }

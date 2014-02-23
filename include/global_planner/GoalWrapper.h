@@ -6,6 +6,8 @@
 #include <geometry_msgs/Pose.h>
 #include <global_planner/GoalMsg.h>
 
+#include "Conversion.h"
+
 class GoalWrapper
 {
 public:
@@ -40,6 +42,12 @@ public:
     ros::Time GetTime(){ return m_msg.time; };
     geometry_msgs::Pose GetPose() {return m_msg.pose; };
     int GetRobot(){ return m_msg.robotID; };
+    bool GetCompleted(){ return m_msg.status == TaskResult::SUCCESS; };
+    bool GetAvailable(){ return m_msg.status == TaskResult::AVAILABLE; };
+    bool GetInProgress(){ return m_msg.status == TaskResult::INPROGRESS; };
+    bool GetFailed(){ return m_msg.status == TaskResult::FAILURE; };
+
+    void SetStatus(TaskResult::Status s){ m_msg.status = Conversion::TaskResultToInt(s); };
 
     global_planner::GoalMsg GetMessage(){ return m_msg; };
 

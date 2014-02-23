@@ -6,9 +6,10 @@ public:
     enum Status
     {
         SUCCESS = 0,
-        FAILURE = 1,
+        AVAILABLE = 1,
         INPROGRESS = 2,
-        FORCE_STOP = 3,
-        MOVE_BASE_FAILURE = 4,
+        FAILURE = 3,
+        FORCE_STOP = 4,
+        MOVE_BASE_FAILURE = 5,
     };
 };

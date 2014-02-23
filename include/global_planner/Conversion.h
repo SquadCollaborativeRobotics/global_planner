@@ -12,7 +12,7 @@ public:
     Conversion();
     ~Conversion();
 
-    static const std::string ReturnStatusToString(TaskResult::Status status)
+    static const std::string TaskResultToString(TaskResult::Status status)
     {
         switch(status)
         {
@@ -32,8 +32,14 @@ public:
     }
 
     //Callback from robot's task converted to a TaskManager "status" enum
-    static const TaskResult::Status ReturnIntToStatus(int num)
+    static const TaskResult::Status IntToTaskResult(int num)
     {
         return static_cast<TaskResult::Status>(num);
+    }
+
+    // Conver from a TaskResult "status" enum to an integer
+    static const int TaskResultToInt(TaskResult::Status s)
+    {
+        return static_cast<int>(s);
     }
 };
