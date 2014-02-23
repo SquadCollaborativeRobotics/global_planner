@@ -11,9 +11,15 @@ GlobalPlanner::~GlobalPlanner()
 }
 
 // Call setup functions
-bool GlobalPlanner::Init(ros::NodeHandle& nh)
+bool GlobalPlanner::Init(ros::NodeHandle* nh)
 {
+    m_nh = nh;
+    SetupCallbacks();
+    RegisterServices();
 
+    FindRobots();
+
+    m_tm.Init(nh, m_robots, "testList1.points");
 }
 
 // Executive function
@@ -47,11 +53,6 @@ bool GlobalPlanner::RegisterServices()
     {
 
     }
-}
-
-bool GlobalPlanner::LoadWaypoints(std::string filename)
-{
-
 }
 
 // get robot information

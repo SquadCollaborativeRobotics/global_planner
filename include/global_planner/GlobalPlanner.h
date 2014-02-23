@@ -15,7 +15,7 @@ public:
     //GetRobotInfo(int id);
 
     // Call setup functions
-    bool Init(ros::NodeHandle& nh);
+    bool Init(ros::NodeHandle* nh);
 
     // Executive function
     void Execute();

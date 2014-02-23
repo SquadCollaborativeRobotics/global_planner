@@ -16,7 +16,7 @@ TaskMaster::TaskMaster()
  * Returns: bool
  * Effects:
  ***********************************************************************/
-bool TaskMaster::Init(ros::NodeHandle &nh, std::map<int, Robot_Ptr> robots)
+bool TaskMaster::Init(ros::NodeHandle* nh, std::map<int, Robot_Ptr> robots, std::string waypoint_filename)
 {
     Clear();
 
@@ -24,6 +24,14 @@ bool TaskMaster::Init(ros::NodeHandle &nh, std::map<int, Robot_Ptr> robots)
 
     SetupTopics();
     RegisterServices();
+
+
+    std::string path_to_waypoints = std::string("aplay -q ");
+    path_to_waypoints += ros::package::getPath("global_planner");
+    path_to_waypoints += std::string("/resources/waypoint_lists/");
+    path_to_waypoints += waypoint_filename;
+
+    LoadWaypoints(path_to_waypoints);
 }
 
 
@@ -35,6 +43,16 @@ bool TaskMaster::Init(ros::NodeHandle &nh, std::map<int, Robot_Ptr> robots)
  ***********************************************************************/
 bool TaskMaster::AddGoal(Goal_Ptr goal)
 {
+    std::map<int,Goal_Ptr>::iterator it = m_goalMap.find(goal->GetID());
+    //If it is already in the map...
+    if(it != m_goalMap.end())
+    {
+        ROS_ERROR_STREAM("Trying to add to the goal list when an entry already exists for key: "<<goal->GetID());
+    }
+    else
+    {
+        m_goalMap[goal->GetID()] = goal;
+    }
 }
 
 
@@ -46,6 +64,16 @@ bool TaskMaster::AddGoal(Goal_Ptr goal)
  ***********************************************************************/
 bool TaskMaster::AddWaypoint(Waypoint_Ptr waypoint)
 {
+    std::map<int,Waypoint_Ptr>::iterator it = m_waypointMap.find(waypoint->GetID());
+    //If it is already in the map...
+    if(it != m_waypointMap.end())
+    {
+        ROS_ERROR_STREAM("Trying to add to the waypoint list when an entry already exists for key: "<<waypoint->GetID());
+    }
+    else
+    {
+        m_waypointMap[waypoint->GetID()] = waypoint;
+    }
 }
 
 
@@ -67,39 +95,6 @@ bool TaskMaster::AddDump(Dump_Ptr dump)
     {
         m_dumpMap[dump->GetID()] = dump;
     }
-}
-
-
-/***********************************************************************
- *  Method: TaskMaster::GetGoal
- *  Params: int goalID
- * Returns: Goal_Ptr
- * Effects:
- ***********************************************************************/
-Goal_Ptr TaskMaster::GetGoal(int goalID)
-{
-}
-
-
-/***********************************************************************
- *  Method: TaskMaster::GetWaypoint
- *  Params: int wpID
- * Returns: Waypoint_Ptr
- * Effects:
- ***********************************************************************/
-Waypoint_Ptr TaskMaster::GetWaypoint(int wpID)
-{
-}
-
-
-/***********************************************************************
- *  Method: TaskMaster::GetDump
- *  Params: int dumpID
- * Returns: Dump_Ptr
- * Effects:
- ***********************************************************************/
-Dump_Ptr TaskMaster::GetDump(int dumpID)
-{
 }
 
 
@@ -137,39 +132,6 @@ bool TaskMaster::UpdateDump(int dumpID, int robotID1, int robotID2, geometry_msg
 
 
 /***********************************************************************
- *  Method: TaskMaster::RemoveGoal
- *  Params: int goalID
- * Returns: bool
- * Effects:
- ***********************************************************************/
-bool TaskMaster::RemoveGoal(int goalID)
-{
-}
-
-
-/***********************************************************************
- *  Method: TaskMaster::RemoveWaypoint
- *  Params: int wpID
- * Returns: bool
- * Effects:
- ***********************************************************************/
-bool TaskMaster::RemoveWaypoint(int wpID)
-{
-}
-
-
-/***********************************************************************
- *  Method: TaskMaster::RemoveDump
- *  Params: int dumpID
- * Returns: bool
- * Effects:
- ***********************************************************************/
-bool TaskMaster::RemoveDump(int dumpID)
-{
-}
-
-
-/***********************************************************************
  *  Method: TaskMaster::Clear
  *  Params:
  * Returns: bool
@@ -177,6 +139,10 @@ bool TaskMaster::RemoveDump(int dumpID)
  ***********************************************************************/
 bool TaskMaster::Clear()
 {
+    m_dumpMap.clear();
+    m_waypointMap.clear();
+    m_goalMap.clear();
+    m_robots.clear();
 }
 
 
@@ -188,6 +154,8 @@ bool TaskMaster::Clear()
  ***********************************************************************/
 bool TaskMaster::SendWaypoint(int wpID)
 {
+    global_planner::WaypointMsg wpm = m_waypointMap[wpID]->GetMessage();
+    m_waypointPub.publish(wpm);
 }
 
 
@@ -199,6 +167,8 @@ bool TaskMaster::SendWaypoint(int wpID)
  ***********************************************************************/
 bool TaskMaster::SendGoal(int goalID)
 {
+    global_planner::GoalMsg gm = m_goalMap[goalID]->GetMessage();
+    m_goalPub.publish(gm);
 }
 
 
@@ -210,6 +180,8 @@ bool TaskMaster::SendGoal(int goalID)
  ***********************************************************************/
 bool TaskMaster::SendDump(int dumpID)
 {
+    global_planner::DumpMsg dm = m_dumpMap[dumpID]->GetMessage();
+    m_dumpPub.publish(dm);
 }
 
 
@@ -255,13 +227,15 @@ std::vector<Dump_Ptr> TaskMaster::GetDumpList()
 void TaskMaster::cb_goalFinished(const global_planner::GoalFinished::ConstPtr& msg)
 {
     int status = msg->status;
+    m_goalMap[msg->id]->SetStatus(Conversion::IntToTaskResult(status));
     if (status == TaskResult::SUCCESS)
     {
-        m_goalMap.erase(msg->id);
+        //AWESOME
+        ROS_INFO_STREAM("Goal finished successfully... AWESOME!!!");
     }
     else
     {
-        ROS_ERROR_STREAM("ERROR, Goal finished with status: "<<msg->status);
+        ROS_ERROR_STREAM("ERROR, Goal finished with status: "<<msg->status<<" : "<<Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
     }
 }
 
@@ -275,13 +249,14 @@ void TaskMaster::cb_goalFinished(const global_planner::GoalFinished::ConstPtr& m
 void TaskMaster::cb_waypointFinished(const global_planner::WaypointFinished::ConstPtr& msg)
 {
     int status = msg->status;
+    m_waypointMap[msg->id]->SetStatus(Conversion::IntToTaskResult(status));
     if (status == TaskResult::SUCCESS)
     {
-        m_waypointMap[msg->id]->SetStatus(TaskResult::SUCCESS);
+        ROS_INFO_STREAM("Waypoint reached successfully... AWESOME!!!");
     }
     else
     {
-        ROS_ERROR_STREAM("ERROR, Goal finished with status: "<<msg->status<<" : "<<Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
+        ROS_ERROR_STREAM("ERROR, Waypoint finished with status: "<<msg->status<<" : "<<Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
     }
 }
 
@@ -295,13 +270,15 @@ void TaskMaster::cb_waypointFinished(const global_planner::WaypointFinished::Con
 void TaskMaster::cb_dumpFinished(const global_planner::DumpFinished::ConstPtr& msg)
 {
     int status = msg->status;
+    m_dumpMap[msg->id]->SetStatus(Conversion::IntToTaskResult(status));
+
     if (status == TaskResult::SUCCESS)
     {
-        m_dumpMap.erase(msg->id);
+        ROS_INFO_STREAM("Dumping was successful... AWESOME!!!");
     }
     else
     {
-        ROS_ERROR_STREAM("ERROR, Dump finished with status: "<<msg->status);
+        ROS_ERROR_STREAM("ERROR, Dump finished with status: "<<msg->status<<" : "<<Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
     }
 }
 
@@ -398,4 +375,32 @@ bool TaskMaster::SetupTopics()
 bool TaskMaster::RegisterServices()
 {
 }
+
+/***********************************************************************
+ *  Method: TaskMaster::LoadWaypoints
+ *  Params: std::string filename
+ * Returns: void
+ * Effects:
+ ***********************************************************************/
+void TaskMaster::LoadWaypoints(std::string filename)
+{
+    std::ifstream fin(filename.c_str());
+    std::string s;
+    //read a line into 's' from 'fin' each time
+    for(int i=0; getline(fin,s); i++){
+        //use the string 's' as input stream, the usage of 'sin' is just like 'cin'
+        std::istringstream sin(s);
+        double x,y,z,w;
+        int id;
+        sin>>id;
+        sin>>x;
+        sin>>y;
+        sin>>z;
+        sin>>w;
+        Waypoint_Ptr wp(new WaypointWrapper(id, x,y,z,w));
+
+        ROS_INFO_STREAM("Loaded waypoint["<<i<<"]: "<<x<<", "<<y<<", "<<z<<", "<<w);
+    }
+}
+
 

@@ -1,10 +1,18 @@
 #pragma once
 
-#include <ros/ros.h>
-
-#include <geometry_msgs/PoseStamped.h>
+#include <iostream>
+#include <string>
+#include <fstream>
+#include <sstream>
 
 #include <boost/shared_ptr.hpp>
+
+#include <ros/ros.h>
+#include "ros/package.h"
+#include <geometry_msgs/PoseStamped.h>
+
+#include "Conversion.h"
+#include "TaskResult.h"
 
 #include "RobotStatusWrapper.h"
 #include "GoalWrapper.h"
@@ -12,13 +20,10 @@
 #include "DumpWrapper.h"
 
 #include "global_planner/GoalSeen.h"
-
 #include "global_planner/GoalFinished.h"
 #include "global_planner/WaypointFinished.h"
 #include "global_planner/DumpFinished.h"
 
-#include "Conversion.h"
-#include "TaskResult.h"
 
 class TaskMaster
 {
@@ -28,7 +33,7 @@ public:
     ~TaskMaster(){};
 
     // Pass in the NodeHandle, as well as the list of robots on the network (for setting up callbacks/publishers)
-    bool Init(ros::NodeHandle& nh, std::map<int, Robot_Ptr > robots);
+    bool Init(ros::NodeHandle* nh, std::map<int, Robot_Ptr > robots, std::string waypoint_filename);
 
     // Add goal to the goal list
     bool AddGoal(Goal_Ptr goal);
@@ -37,26 +42,12 @@ public:
     // Add goal to the dump list
     bool AddDump(Dump_Ptr dump);
 
-    // Retun a pointer to the goal
-    Goal_Ptr GetGoal(int goalID);
-    // Retun a pointer to the waypoint
-    Waypoint_Ptr GetWaypoint(int wpID);
-    // Retun a pointer to the dump
-    Dump_Ptr GetDump(int dumpID);
-
     //Assign robot (robotID) to goal (pose)
     bool UpdateGoal(int goalID, int robotID, geometry_msgs::PoseStamped pose);
     //Assign robot (robotID) to waypoint (pose)
     bool UpdateWaypoint(int wpID, int robotID, geometry_msgs::PoseStamped pose);
     //Assign robots (robotID1 & robotID2) to goals (pose1 & pose2)
     bool UpdateDump(int dumpID, int robotID1, int robotID2, geometry_msgs::PoseStamped pose1, geometry_msgs::PoseStamped pose2);
-
-    // Remove goal
-    bool RemoveGoal(int goalID);
-    // Remove waypoint
-    bool RemoveWaypoint(int wpID);
-    // Remove Dump
-    bool RemoveDump(int dumpID);
 
     //Clear all lists of goals, waypoints, and dumps
     bool Clear();
@@ -77,6 +68,8 @@ public:
     void cb_waypointFinished(const global_planner::WaypointFinished::ConstPtr& msg);
     void cb_dumpFinished(const global_planner::DumpFinished::ConstPtr& msg);
     void cb_goalSeen(const global_planner::GoalSeen::ConstPtr& msg);
+
+    void LoadWaypoints(std::string filename);
 
 private:
     // Initialize lists, setup callbacks, regiser services

@@ -9,7 +9,7 @@ int main(int argc, char** argv){
     ROS_INFO("Global Planner Started");
     GlobalPlanner gp;
 
-    gp.Init(nh);
+    gp.Init(&nh);
 
     while(ros::ok())
     {
