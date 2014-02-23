@@ -8,12 +8,16 @@
 
 #include <string>
 
-class Robot
+class RobotStatusWrapper
 {
 
 public:
-    Robot(){};
-    ~Robot(){};
+    RobotStatusWrapper(){};
+    ~RobotStatusWrapper(){};
+
+    /************************************************************************
+     ** BEGIN DATA section
+     */
 
     void SetID(int id){ m_status.id = id; };
     void SetName(std::string name){ m_status.name = name; };
@@ -48,10 +52,20 @@ public:
     int GetStorageUsed(){ return m_status.storage_used; };
     bool GetType(){ return m_status.type; };
 
-    void SetData(global_planner::RobotStatus& data){ m_status = data; };
+    void SetData(global_planner::RobotStatus& data)
+    {
+        m_status = data;
+    };
     global_planner::RobotStatus GetMessage(){ return m_status; };
+
+    /**********************************************************************
+    **
+    **END DATA SECTION
+    **
+    */
+
 private:
     global_planner::RobotStatus m_status;
 };
 
-typedef boost::shared_ptr<Robot> Robot_Ptr;
+typedef boost::shared_ptr<RobotStatusWrapper> Robot_Ptr;

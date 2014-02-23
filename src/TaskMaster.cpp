@@ -26,33 +26,33 @@ bool TaskMaster::Init(ros::NodeHandle &nh, std::map<int, Robot_Ptr> robots)
 
 /***********************************************************************
  *  Method: TaskMaster::AddGoal
- *  Params: boost::shared_ptr<Goal> goal
+ *  Params: Goal_Ptr goal
  * Returns: bool
  * Effects:
  ***********************************************************************/
-bool TaskMaster::AddGoal(boost::shared_ptr<Goal> goal)
+bool TaskMaster::AddGoal(Goal_Ptr goal)
 {
 }
 
 
 /***********************************************************************
  *  Method: TaskMaster::AddWaypoint
- *  Params: boost::shared_ptr<Waypoint> waypoint
+ *  Params: Waypoint_Ptr waypoint
  * Returns: bool
  * Effects:
  ***********************************************************************/
-bool TaskMaster::AddWaypoint(boost::shared_ptr<Waypoint> waypoint)
+bool TaskMaster::AddWaypoint(Waypoint_Ptr waypoint)
 {
 }
 
 
 /***********************************************************************
  *  Method: TaskMaster::AddDump
- *  Params: boost::shared_ptr<Dump> dump
+ *  Params: Dump_Ptr dump
  * Returns: bool
  * Effects:
  ***********************************************************************/
-bool TaskMaster::AddDump(boost::shared_ptr<Dump> dump)
+bool TaskMaster::AddDump(Dump_Ptr dump)
 {
 }
 
@@ -335,7 +335,9 @@ bool TaskMaster::SetupTopics()
 
     m_goalPub = m_nh->advertise<global_planner::GoalMsg>("goal_pub", 100);
     m_waypointPub = m_nh->advertise<global_planner::WaypointMsg>("waypoint_pub", 100);
-    m_dumpPub = m_nh->advertise<global_planner::DumpMsg>("dump_pub", 100);
+    m_dumpPub = m_nh->advertise<global_planner::DumpMsg>("dump_pub", 10);
+
+    m_goalSeenSub = m_nh->subscribe("goal_seen", 10, &TaskMaster::cb_goalSeen, this);
 }
 
 
@@ -348,5 +350,13 @@ bool TaskMaster::SetupTopics()
 bool TaskMaster::RegisterServices()
 {
 }
-
+/***********************************************************************
+ *  Method: TaskMaster::cb_goalSeen
+ *  Params: const global_planner::GoalSeen::ConstPtr &msg
+ * Returns: void
+ * Effects:
+ ***********************************************************************/
+void TaskMaster::cb_goalSeen(const global_planner::GoalSeen::ConstPtr &msg)
+{
+}
 

@@ -3,7 +3,7 @@
 #include <ros/ros.h>
 #include "TaskMaster.h"
 #include "Conversion.h"
-#include "global_planner/RobotStatus.h"
+#include "global_planner/RobotStatusWrapper.h"
 
 class GlobalPlanner
 {
@@ -23,7 +23,9 @@ public:
     // System finished
     void Finished();
 
-    std::vector< boost::shared_ptr<Goal> > GetGoalList();
+    std::vector< Goal_Ptr > GetGoalList();
+    std::vector< Waypoint_Ptr > GetWaypointList();
+    std::vector< Dump_Ptr > GetDumpList();
 
 private:
     // setup callbacks, regiser services, load waypoints...

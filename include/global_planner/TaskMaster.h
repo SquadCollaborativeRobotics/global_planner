@@ -6,10 +6,12 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "Robot.h"
-#include "Goal.h"
-#include "Waypoint.h"
-#include "Dump.h"
+#include "RobotStatusWrapper.h"
+#include "GoalWrapper.h"
+#include "WaypointWrapper.h"
+#include "DumpWrapper.h"
+
+#include "global_planner/GoalSeen.h"
 
 #include "global_planner/GoalFinished.h"
 #include "global_planner/WaypointFinished.h"
@@ -29,11 +31,11 @@ public:
     bool Init(ros::NodeHandle& nh, std::map<int, Robot_Ptr > robots);
 
     // Add goal to the goal list
-    bool AddGoal(boost::shared_ptr<Goal> goal);
+    bool AddGoal(Goal_Ptr goal);
     // Add goal to the waypoint list
-    bool AddWaypoint(boost::shared_ptr<Waypoint> waypoint);
+    bool AddWaypoint(Waypoint_Ptr waypoint);
     // Add goal to the dump list
-    bool AddDump(boost::shared_ptr<Dump> dump);
+    bool AddDump(Dump_Ptr dump);
 
     // Retun a pointer to the goal
     Goal_Ptr GetGoal(int goalID);
@@ -74,6 +76,7 @@ public:
     void cb_goalFinished(const global_planner::GoalFinished::ConstPtr& msg);
     void cb_waypointFinished(const global_planner::WaypointFinished::ConstPtr& msg);
     void cb_dumpFinished(const global_planner::DumpFinished::ConstPtr& msg);
+    void cb_goalSeen(const global_planner::GoalSeen::ConstPtr& msg);
 
 private:
     // Initialize lists, setup callbacks, regiser services
@@ -122,6 +125,9 @@ private:
     ros::Publisher m_goalPub;
     ros::Publisher m_waypointPub;
     ros::Publisher m_dumpPub;
+
+    ros::Subscriber m_goalSeenSub;
+    ros::Subscriber m_dumpNeededSub;
 
     // List of robots in the system
     std::map< int, Robot_Ptr > m_robots;

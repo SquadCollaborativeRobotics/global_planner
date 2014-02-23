@@ -75,7 +75,7 @@ int GlobalPlanner::FindRobots()
 
     for (int i=0; i<names.size(); i++)
     {
-        boost::shared_ptr< Robot > robot (new Robot());
+        Robot_Ptr robot (new RobotStatusWrapper());
         int id = i;
         robot->SetName(names[i]);
         robot->SetID(id);

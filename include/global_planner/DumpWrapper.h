@@ -7,13 +7,13 @@
 
 #include <global_planner/DumpMsg.h>
 
-class Dump
+class DumpWrapper
 {
 
 public:
-    Dump(){};
-    Dump(global_planner::DumpMsg& msg){ m_msg = msg; };
-    ~Dump(){};
+    DumpWrapper(){};
+    DumpWrapper(global_planner::DumpMsg& msg){ m_msg = msg; };
+    ~DumpWrapper(){};
 
     void SetID(int id){ m_msg.id = id; };
     void SetTime(ros::Time time){ m_msg.time = time; };
@@ -50,4 +50,4 @@ private:
     global_planner::DumpMsg m_msg;
 };
 
-typedef boost::shared_ptr<Dump> Dump_Ptr;
+typedef boost::shared_ptr<DumpWrapper> Dump_Ptr;

@@ -6,13 +6,15 @@
 #include <geometry_msgs/Pose.h>
 #include <global_planner/GoalMsg.h>
 
-class Goal
+class GoalWrapper
 {
-
 public:
-    Goal(){};
-    Goal(global_planner::GoalMsg& msg){ m_msg = msg; };
-    ~Goal(){};
+    GoalWrapper()
+    {
+        num_goals_generated++;
+        SetID(num_goals_generated);
+    };
+    ~GoalWrapper(){};
 
     void SetID(int id){ m_msg.id = id; };
     void SetTime(ros::Time time){ m_msg.time = time; };
@@ -32,17 +34,18 @@ public:
     *...
     *******************/
 
-    //Getters
+    //Getter
 
     int GetID() { return m_msg.id; };
     ros::Time GetTime(){ return m_msg.time; };
     geometry_msgs::Pose GetPose() {return m_msg.pose; };
     int GetRobot(){ return m_msg.robotID; };
 
-    void SetData(global_planner::GoalMsg& data){ m_msg = data; };
     global_planner::GoalMsg GetMessage(){ return m_msg; };
+
+    static int num_goals_generated;
 private:
     global_planner::GoalMsg m_msg;
 };
 
-typedef boost::shared_ptr<Goal> Goal_Ptr;
+typedef boost::shared_ptr<GoalWrapper> Goal_Ptr;

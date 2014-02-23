@@ -50,12 +50,13 @@ add_message_files(
   FILES
     SoundMsg.msg
     RobotStatus.msg
-    WaypointMsg.msg
-    DumpMsg.msg
     GoalMsg.msg
-    WaypointFinished.msg
-    DumpFinished.msg
     GoalFinished.msg
+    GoalSeen.msg
+    WaypointMsg.msg
+    WaypointFinished.msg
+    DumpMsg.msg
+    DumpFinished.msg
 )
 
 ## Generate services in the 'srv' folder

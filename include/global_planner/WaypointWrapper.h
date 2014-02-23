@@ -7,13 +7,12 @@
 
 #include <global_planner/WaypointMsg.h>
 
-class Waypoint
+class WaypointWrapper
 {
 
 public:
-    Waypoint(){};
-    Waypoint(global_planner::WaypointMsg& msg){ m_msg = msg; };
-    ~Waypoint(){};
+    WaypointWrapper(){};
+    ~WaypointWrapper(){};
 
     void SetID(int id){ m_msg.id = id; };
     void SetTime(ros::Time time){ m_msg.time = time; };
@@ -46,4 +45,4 @@ private:
     global_planner::WaypointMsg m_msg;
 };
 
-typedef boost::shared_ptr<Waypoint> Waypoint_Ptr;
+typedef boost::shared_ptr<WaypointWrapper> Waypoint_Ptr;
