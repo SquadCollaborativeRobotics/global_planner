@@ -6,7 +6,7 @@ project(global_planner)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
-  message_runtime
+  message_generation
   roscpp
   std_msgs
   tf
@@ -49,6 +49,10 @@ find_package(Boost REQUIRED COMPONENTS system thread)
 add_message_files(
   FILES
     SoundMsg.msg
+    WaypointMsg.msg
+    DumpMsg.msg
+    GoalMsg.msg
+    RobotStatus.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -68,8 +72,8 @@ add_message_files(
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
-      geometry_msgs
-      std_msgs
+    geometry_msgs
+    std_msgs
 )
 
 ###################################
@@ -97,18 +101,32 @@ catkin_package(
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  include/
 )
 
-## Declare a cpp library
-# add_library(global_planner
-#   src/${PROJECT_NAME}/global_planner.cpp
-# )
+## global planner library
+add_library(global_planner
+  src/GlobalPlanner.cpp
+  src/TaskMaster.cpp
+)
+
+## library
+add_library(data_types
+  src/Robot.cpp
+  src/Goal.cpp
+  src/Dump.cpp
+)
 
 ## Declare a cpp executable
 # add_executable(global_planner_node src/global_planner_node.cpp)
 
 add_executable(human_interface_node src/human_interface_node.cpp)
 target_link_libraries(human_interface_node ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+
+
+add_executable(global_planner_node src/global_planner_node.cpp)
+target_link_libraries(global_planner_node data_types ${catkin_LIBRARIES} ${Boost_LIBRARIES} global_planner)
+
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes

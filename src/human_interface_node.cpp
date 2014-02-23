@@ -16,8 +16,6 @@ public:
 
     bool is_playing;
 
-    //ros::NodeHandle _nh;
-
     // ROS topic callback
     void sound_thread(std::string str, int numTimes)
     {
