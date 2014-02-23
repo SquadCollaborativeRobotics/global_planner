@@ -13,8 +13,6 @@ class GoalWrapper
 public:
     GoalWrapper()
     {
-        num_goals_generated++;
-        SetID(num_goals_generated);
     };
     ~GoalWrapper(){};
 
@@ -22,6 +20,8 @@ public:
     void SetTime(ros::Time time){ m_msg.time = time; };
     void SetPose(geometry_msgs::Pose pose){ m_msg.pose = pose; };
     void SetRobot(int robotID){ m_msg.robotID = robotID; };
+    void SetStatus(TaskResult::Status s){ m_msg.status = Conversion::TaskResultToInt(s); };
+
 
     void Print()
     {
@@ -46,8 +46,7 @@ public:
     bool GetAvailable(){ return m_msg.status == TaskResult::AVAILABLE; };
     bool GetInProgress(){ return m_msg.status == TaskResult::INPROGRESS; };
     bool GetFailed(){ return m_msg.status == TaskResult::FAILURE; };
-
-    void SetStatus(TaskResult::Status s){ m_msg.status = Conversion::TaskResultToInt(s); };
+    bool GetStatus(){ return m_msg.status; };
 
     global_planner::GoalMsg GetMessage(){ return m_msg; };
 

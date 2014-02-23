@@ -27,12 +27,17 @@ public:
     void SetStorageUsed(int amountUsed){ m_status.storage_used = amountUsed; };
     void SetType(bool type){ m_status.type = type; };
 
-    void Print()
+    std::string ToString()
     {
         std::stringstream ss;
-        ss<<GetID()<<":"<<GetName()<<" -- "<<std::endl;
-        ROS_INFO_STREAM(ss.str());
+        geometry_msgs::Pose p = GetPose();
+        geometry_msgs::Twist t = GetTwist();
+        ss<<"robot id = "<<GetID()<<" | amount filled: "<<GetStorageUsed()<<" | capacity: "<<GetStorageCapacity()
+        <<" -- position: "<< p.position.x << ' ' << p.position.y << ' ' << p.orientation.z << ' ' << p.orientation.w
+        <<" velocity: "<< t.linear.x << ' ' << t.linear.y << ' ' << t.angular.z;
+        return ss.str();
     }
+
 
     /******************
     ** state stuff...

@@ -37,6 +37,14 @@ void GlobalPlanner::Execute()
     {
         ROS_INFO_STREAM(it->second->ToString());
     }
+
+    ROS_INFO_STREAM("Showing robots...");
+    for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
+    {
+        ROS_INFO_STREAM(it->second->ToString());
+    }
+
+
 }
 
 // System finished

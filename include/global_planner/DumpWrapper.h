@@ -23,6 +23,7 @@ public:
     void SetPose2(geometry_msgs::Pose pose2){ m_msg.pose2 = pose2; };
     void SetRobot1(int robotID1){ m_msg.robotID1 = robotID1; };
     void SetRobot2(int robotID2){ m_msg.robotID2 = robotID2; };
+    void SetStatus(TaskResult::Status s){ m_msg.status = Conversion::TaskResultToInt(s); };
 
     void Print()
     {
@@ -50,8 +51,8 @@ public:
     bool GetAvailable(){ return m_msg.status == TaskResult::AVAILABLE; };
     bool GetInProgress(){ return m_msg.status == TaskResult::INPROGRESS; };
     bool GetFailed(){ return m_msg.status == TaskResult::FAILURE; };
+    bool GetStatus(){ return m_msg.status; };
 
-    void SetStatus(TaskResult::Status s){ m_msg.status = Conversion::TaskResultToInt(s); };
 
     void SetData(global_planner::DumpMsg& data){ m_msg = data; };
     global_planner::DumpMsg GetMessage(){ return m_msg; };
