@@ -6,10 +6,10 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include "Robot.h"
 #include "Goal.h"
 #include "Waypoint.h"
 #include "Dump.h"
-#include "Robot.h"
 
 #include "global_planner/GoalFinished.h"
 #include "global_planner/WaypointFinished.h"
@@ -77,11 +77,11 @@ public:
 
 private:
     // Initialize lists, setup callbacks, regiser services
-    bool SetupCallbacks();
+    bool SetupTopics();
     bool RegisterServices();
 
     // ros NodeHandle used for publishing and tf stuff
-    ros::NodeHandle m_nh;
+    ros::NodeHandle* m_nh;
 
     /**
      * Lists of goals, waypoints, & dumps
@@ -96,20 +96,32 @@ private:
     /**
      * List of publishers & subscribers that will communicate with the robots
      */
-    // List of goal publishers accessed by the robot id
-    std::map<int, ros::Publisher > m_goalPubs;
+    /**
     // List of goal subcribers accessed by the robot id
     std::map<int, ros::Subscriber > m_goalSubs;
+    // List of waypoint subscribers accessed by the robot id
+    std::map<int, ros::Subscriber > m_waypointSubs;
+    // List of dump subscribers accessed by the robot id
+    std::map<int, ros::Subscriber > m_dumpSubs;
 
+    // List of goal publishers accessed by the robot id
+    std::map<int, ros::Publisher > m_goalPubs;
     // List of waypoint publishers accessed by the robot id
     std::map<int, ros::Publisher > m_waypointPubs;
-    // List of waypoint subscribers accessed by the robot id
-    std::map<int, ros::Publisher > m_waypointSubs;
-
     // List of dump publishers accessed by the robot id
     std::map<int, ros::Publisher > m_dumpPubs;
-    // List of dump subscribers accessed by the robot id
-    std::map<int, ros::Publisher > m_dumpSubs;
+    **/
+
+    //For now, we'll just listen to one topic for goals, waypoints, and dump results,
+    //  since everything is being published with an ID anyways
+    ros::Subscriber m_goalSub;
+    ros::Subscriber m_waypointSub;
+    ros::Subscriber m_dumpSub;
+
+    // Also, we only need to publish on one topic, since it'll make it easier for robots to listen to.
+    ros::Publisher m_goalPub;
+    ros::Publisher m_waypointPub;
+    ros::Publisher m_dumpPub;
 
     // List of robots in the system
     std::map< int, Robot_Ptr > m_robots;

@@ -19,19 +19,8 @@ TaskMaster::TaskMaster()
 bool TaskMaster::Init(ros::NodeHandle &nh, std::map<int, Robot_Ptr> robots)
 {
     m_robots = robots;
-    std::stringstream topicName;
-    for (std::map<int, Robot_Ptr>::iterator i = m_robots.begin(); i != m_robots.end(); ++i)
-    {
-        int id = i->first;
-        std::string name = m_robots[id]->GetName();
-        topicName.str("/");
-        topicName << name;
 
-        //create listener for waypoint finished status
-        topicName << "/waypoint_finished";
-        std::string topic = topicName.str();
-        ros::Subscriber wp_sub = nh.subscribe("hello", 10, &TaskMaster::cb_waypointFinished, this);
-    }
+    SetupTopics();
 }
 
 
@@ -310,8 +299,43 @@ void TaskMaster::cb_dumpFinished(const global_planner::DumpFinished::ConstPtr& m
  * Returns: bool
  * Effects:
  ***********************************************************************/
-bool TaskMaster::SetupCallbacks()
+bool TaskMaster::SetupTopics()
 {
+    /*
+    std::stringstream topicName;
+    for (std::map<int, Robot_Ptr>::iterator i = m_robots.begin(); i != m_robots.end(); ++i)
+    {
+        int id = i->first;
+        std::string baseName = "/";
+        baseName += m_robots[id]->GetName();
+        baseName += "/";
+
+        //create listener for finished statuses
+        std::string topic = baseName + std::string("goal_finished");
+        m_goalSubs[id] = m_nh->subscribe(topic, 10, &TaskMaster::cb_goalFinished, this);
+        topic = baseName + std::string("waypoint_finished");
+        m_waypointSubs[id] = m_nh->subscribe(topic, 10, &TaskMaster::cb_waypointFinished, this);
+        topic = baseName + std::string("dump_finished");
+        m_dumpSubs[id] = m_nh->subscribe(topic, 10, &TaskMaster::cb_dumpFinished, this);
+
+        //create publisher for finished statuses
+        topic = baseName + std::string("goal_finished");
+        m_goalPubs[id] = m_nh->advertise<global_planner::GoalMsg>(topic, 10);
+        topic = baseName + std::string("waypoint_finished");
+        m_waypointPubs[id] = m_nh->advertise<global_planner::WaypointMsg>(topic, 10);
+        topic = baseName + std::string("dump_finished");
+        m_dumpPubs[id] = m_nh->advertise<global_planner::DumpMsg>(topic, 10);
+    }
+    */
+
+    //Let's do something easier for now...
+    m_goalSub = m_nh->subscribe("goal_finished", 10, &TaskMaster::cb_goalFinished, this);
+    m_waypointSub = m_nh->subscribe("waypoint_finished", 10, &TaskMaster::cb_waypointFinished, this);
+    m_dumpSub = m_nh->subscribe("dump_finished", 10, &TaskMaster::cb_dumpFinished, this);
+
+    m_goalPub = m_nh->advertise<global_planner::GoalMsg>("goal_pub", 100);
+    m_waypointPub = m_nh->advertise<global_planner::WaypointMsg>("waypoint_pub", 100);
+    m_dumpPub = m_nh->advertise<global_planner::DumpMsg>("dump_pub", 100);
 }
 
 

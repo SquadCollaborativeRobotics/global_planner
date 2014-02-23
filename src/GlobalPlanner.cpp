@@ -33,7 +33,10 @@ bool GlobalPlanner::SetupCallbacks()
 {
     for (std::map<int, Robot_Ptr >::iterator it=m_robots.begin(); it!=m_robots.end(); ++it)
     {
-        ros::Subscriber sub = m_nh->subscribe("chatter", 1000, &GlobalPlanner::cb_robotStatus, this);
+        std::string robotStatusTopic = "/";
+        robotStatusTopic += it->second->GetName();
+        robotStatusTopic += "/status";
+        ros::Subscriber sub = m_nh->subscribe(robotStatusTopic, 10, &GlobalPlanner::cb_robotStatus, this);
     }
 }
 
@@ -55,6 +58,8 @@ bool GlobalPlanner::LoadWaypoints(std::string filename)
 void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& msg)
 {
     int id = msg->id;
+    global_planner::RobotStatus status = *msg;
+    m_robots[id]->SetData(status);
 }
 
 // Send request to all listening robots that
