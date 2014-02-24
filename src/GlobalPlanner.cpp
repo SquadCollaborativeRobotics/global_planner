@@ -28,34 +28,38 @@ bool GlobalPlanner::Init(ros::NodeHandle* nh)
 // Executive function
 void GlobalPlanner::Execute()
 {
+    static int count = 0;
     ROS_INFO_THROTTLE(5,"Executive");
 
-    std::map<int, Waypoint_Ptr> wps = m_tm.GetWaypoints();
+    ros::spinOnce();
 
-    ROS_INFO_STREAM("Showing waypoints...");
-    for (std::map<int, Waypoint_Ptr>::iterator it = wps.begin(); it != wps.end(); ++it)
+    if (count % 50 == 0)
     {
-        ROS_INFO_STREAM(it->second->ToString());
+        ROS_INFO_STREAM("Showing robots...");
+        for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
+        {
+            ROS_INFO_STREAM(it->second->ToString());
+        }
+
+        ROS_INFO_STREAM("Showing waypoints...");
+        std::map<int, Waypoint_Ptr> wps = m_tm.GetWaypoints();
+        for (std::map<int, Waypoint_Ptr>::iterator it = wps.begin(); it != wps.end(); ++it)
+        {
+            ROS_INFO_STREAM(it->second->ToString());
+        }
     }
-
-    ROS_INFO_STREAM("Showing robots...");
-    for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
-    {
-        ROS_INFO_STREAM(it->second->ToString());
-    }
-
-
+    count++;
 }
 
 // System finished
 void GlobalPlanner::Finished()
 {
-
 }
 
 // setup callbacks, regiser services, load waypoints...
 bool GlobalPlanner::SetupCallbacks()
 {
+    /*
     for (std::map<int, Robot_Ptr >::iterator it=m_robots.begin(); it!=m_robots.end(); ++it)
     {
         std::string robotStatusTopic = "/";
@@ -63,6 +67,9 @@ bool GlobalPlanner::SetupCallbacks()
         robotStatusTopic += "/status";
         ros::Subscriber sub = m_nh->subscribe(robotStatusTopic, 10, &GlobalPlanner::cb_robotStatus, this);
     }
+    */
+
+    m_robotSub = m_nh->subscribe("/robot_status", 10, &GlobalPlanner::cb_robotStatus, this);
 }
 
 bool GlobalPlanner::RegisterServices()

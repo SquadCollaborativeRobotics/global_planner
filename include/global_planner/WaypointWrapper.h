@@ -38,6 +38,7 @@ public:
         SetRobot(robotID);
         SetStatus(status);
     }
+
     void SetID(int id){ m_msg.id = id; };
     void SetTime(ros::Time time){ m_msg.time = time; };
     void SetPose(geometry_msgs::Pose pose){ m_msg.pose = pose; };

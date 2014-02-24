@@ -46,6 +46,9 @@ private:
     // List of robots during this run of the program
     std::map<int, Robot_Ptr > m_robots;
 
+    //Subscriber to robot status callbacks
+    ros::Subscriber m_robotSub;
+
     // Task Master
     TaskMaster m_tm;
 };

@@ -33,6 +33,8 @@ bool TaskMaster::Init(ros::NodeHandle* nh, std::map<int, Robot_Ptr> robots, std:
     path_to_waypoints += waypoint_filename;
 
     LoadWaypoints(path_to_waypoints);
+
+    ros::spinOnce();
 }
 
 
