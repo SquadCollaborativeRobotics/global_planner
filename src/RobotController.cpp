@@ -64,6 +64,8 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
     SetupCallbacks();
 
     action_client_ptr.reset( new MoveBaseClient("move_base", true) );
+
+    Transition(RobotState::WAITING);
 }
 
 
@@ -75,34 +77,6 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
  ***********************************************************************/
 void RobotController::cb_goalSub(const global_planner::GoalMsg::ConstPtr &msg)
 {
-    GoalWrapper gWrapper;
-    global_planner::GoalMsg gm= *msg;
-    gWrapper.SetData(gm);
-
-    //Check if this message is for you!
-    if (gWrapper.GetRobot() == m_status.GetID())
-    {
-        ROS_INFO_STREAM("Received Goal for me\n"<<gWrapper.ToString());
-
-        switch(m_status.GetState())
-        {
-            case RobotState::WAITING:
-            ROS_INFO_STREAM("Move to goal");
-            break;
-            case RobotState::NAVIGATING:
-            ROS_ERROR_STREAM("Woah there nelly, we are already navigating to a waypoint... cancel that action first");
-            //TODO: Cancel
-            break;
-            case RobotState::DUMPING:
-            ROS_ERROR_STREAM("Get out of here, I'm making a dump... cancel that action first");
-            //TODO: Cancel
-            break;
-            case RobotState::COLLECTING:
-            ROS_ERROR_STREAM("Hold on, I'm collecting the shit out of something");
-            //TODO: Cancel
-            break;
-        }
-    }
 }
 
 
@@ -128,11 +102,12 @@ void RobotController::cb_waypointSub(const global_planner::WaypointMsg::ConstPtr
         switch(m_status.GetState())
         {
             case RobotState::WAITING:
-            ROS_INFO_STREAM("Move to new waypoint");
+            ROS_INFO_STREAM("Move to new waypoint ("<<wpWrapper.GetID()<<")");
+            m_status.SetTaskID( wpWrapper.GetID() );
             Transition(RobotState::NAVIGATING, &goal);
-            ROS_INFO_STREAM("Sent Waypoint");
 
             break;
+            /*
             case RobotState::NAVIGATING:
             ROS_ERROR_STREAM("Woah there nelly, we are already navigating to a waypoint... cancel that action first");
             //TODO: Cancel
@@ -146,6 +121,7 @@ void RobotController::cb_waypointSub(const global_planner::WaypointMsg::ConstPtr
             ROS_ERROR_STREAM("Hold on, I'm collecting the shit out of something");
             //TODO: Cancel
             break;
+            */
         }
     }
 }
@@ -159,35 +135,6 @@ void RobotController::cb_waypointSub(const global_planner::WaypointMsg::ConstPtr
  ***********************************************************************/
 void RobotController::cb_dumpSub(const global_planner::DumpMsg::ConstPtr &msg)
 {
-    DumpWrapper dumpWrapper;
-    global_planner::DumpMsg dm= *msg;
-    dumpWrapper.SetData(dm);
-
-    //Check if this message is for you!
-    if (dumpWrapper.GetRobot1() == m_status.GetID() || dumpWrapper.GetRobot2() == m_status.GetID())
-    {
-        ROS_INFO_STREAM("Received Dump for me\n"<<dumpWrapper.ToString());
-
-        switch(m_status.GetState())
-        {
-            case RobotState::WAITING:
-            ROS_INFO_STREAM("Move to new waypoint");
-            break;
-            case RobotState::NAVIGATING:
-            ROS_ERROR_STREAM("Woah there nelly, we are already navigating to a waypoint... cancel that action first");
-            //TODO: Cancel
-            ROS_INFO_STREAM("Now that I assume we've canceled that, let's reassign the waypoint.");
-            break;
-            case RobotState::DUMPING:
-            ROS_ERROR_STREAM("Get out of here, I'm making a dump... cancel that action first");
-            //TODO: Cancel
-            break;
-            case RobotState::COLLECTING:
-            ROS_ERROR_STREAM("Hold on, I'm collecting the shit out of something");
-            //TODO: Cancel
-            break;
-        }
-    }
 }
 
 
@@ -234,6 +181,12 @@ void RobotController::SendGoalFinished(TaskResult::Status status)
  ***********************************************************************/
 void RobotController::SendWaypointFinished(TaskResult::Status status)
 {
+
+    global_planner::WaypointFinished wpMsg;
+    wpMsg.id = m_status.GetTaskID();
+    wpMsg.status = Conversion::TaskResultToInt(status);
+
+    m_waypointFinishedPub.publish(wpMsg);
 }
 
 
@@ -257,7 +210,7 @@ void RobotController::SendDumpFinished(TaskResult::Status status)
 void RobotController::Execute()
 {
     ros::spinOnce();
-    ROS_INFO_STREAM_THROTTLE(3, m_status.ToString());
+    ROS_INFO_STREAM_THROTTLE(1, m_status.ToString());
 
     // 1) Check to see if robot has reached goal & transition if needed
     // 2) Perform any state related actions
@@ -346,7 +299,12 @@ void RobotController::SetupCallbacks()
     m_waypointSub = m_nh->subscribe("waypoint_pub", 10, &RobotController::cb_waypointSub, this);
     m_dumpSub = m_nh->subscribe("dump_pub", 10, &RobotController::cb_dumpSub, this);
     m_eStopSub = m_nh->subscribe("e_stop_pub", 10, &RobotController::cb_eStopSub, this);
+
     m_statusPub = m_nh->advertise<global_planner::RobotStatus>("robot_status", 100);
+
+    m_goalFinishedPub = m_nh->advertise<global_planner::GoalFinished>("goal_finished", 10);
+    m_waypointFinishedPub = m_nh->advertise<global_planner::WaypointFinished>("waypoint_finished", 10);
+    m_dumpFinishedPub = m_nh->advertise<global_planner::DumpFinished>("dump_finished", 10);
 }
 
 
@@ -373,6 +331,9 @@ void RobotController::OnEntry(void *args)
 {
     switch(m_status.GetState())
     {
+        case RobotState::WAITING:
+        m_status.SetTaskID(-1);
+        break;
         case RobotState::NAVIGATING:
         ROS_INFO_STREAM("Starting OnEntry: Navigation state");
         move_base_msgs::MoveBaseGoal *goal = (move_base_msgs::MoveBaseGoal *) args;
@@ -427,6 +388,19 @@ void RobotController::StateExecute()
         }
         else
         {
+            // Randomly finish the task
+            if (rand() % 250 == 0)
+            {
+                if (rand()%2 == 0)
+                {
+                    SendWaypointFinished(TaskResult::SUCCESS);
+                }
+                else
+                {
+                    SendWaypointFinished(TaskResult::FAILURE);
+                }
+                Transition(RobotState::WAITING, 0);
+            }
             ROS_INFO_STREAM_THROTTLE(1, "Not yet successful: " << action_client_ptr->getState().toString() );
         }
     }

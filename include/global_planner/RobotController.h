@@ -7,6 +7,10 @@
 #include <actionlib/client/simple_action_client.h>
 #include <std_msgs/Empty.h>
 
+#include "global_planner/GoalFinished.h"
+#include "global_planner/WaypointFinished.h"
+#include "global_planner/DumpFinished.h"
+
 #include "RobotStatusWrapper.h"
 #include "GoalWrapper.h"
 #include "WaypointWrapper.h"
@@ -47,8 +51,8 @@ private:
     void SetupCallbacks();
     void UpdatePose();
 
-    void Transition(RobotState::State newState, void* args);
-    void OnEntry(void* args);
+    void Transition(RobotState::State newState, void* args=0);
+    void OnEntry(void* args=0);
     void StateExecute();
 
     // Subscribers to the global planner
@@ -58,6 +62,10 @@ private:
     ros::Subscriber m_eStopSub;
 
     ros::Publisher m_statusPub;
+
+    ros::Publisher m_goalFinishedPub;
+    ros::Publisher m_waypointFinishedPub;
+    ros::Publisher m_dumpFinishedPub;
 
     // ros::ServiceServer m_statusService;
 

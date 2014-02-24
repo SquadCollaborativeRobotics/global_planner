@@ -32,7 +32,7 @@ void GlobalPlanner::Execute()
 
     ros::spinOnce();
 
-    if ((ros::Time::now() - m_lastDisplay) > ros::Duration(5))
+    if ((ros::Time::now() - m_lastDisplay) > ros::Duration(3))
     {
         m_lastDisplay = ros::Time::now();
         ROS_INFO_STREAM("Showing robots...");
@@ -273,9 +273,8 @@ bool GlobalPlanner::RegisterServices()
 void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& msg)
 {
     int id = msg->id;
-    ROS_INFO_STREAM_THROTTLE(1, "Received robot status: "<<id);
+    // ROS_INFO_STREAM_THROTTLE(1, "Received robot status: "<<id);
     global_planner::RobotStatus status = *msg;
-
 
     std::map<int, Robot_Ptr>::iterator it = m_robots.find(id);
     //If it is already in the map...
@@ -288,6 +287,8 @@ void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& 
         Robot_Ptr ptr(new RobotStatusWrapper());
         ptr->SetData(status);
         m_robots[id] = ptr;
+
+        ROS_INFO_STREAM("Added new robot: "<<ptr->ToString());
     }
 }
 

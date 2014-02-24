@@ -9,6 +9,9 @@ string name
 #robot state
 int32 state
 
+#task id -> id of the task (waypoint, goal, dump) that the robot is running
+int32 taskID
+
 #pose of the robot
 geometry_msgs/Pose pose
 

@@ -88,8 +88,7 @@ int main(int argc, char** argv){
 
     ROS_INFO("Starting interaction node");
 
-    while(ros::ok())
-    {
-        ros::spinOnce();
-    }
+    ros::Rate r(10);
+
+    ros::spin();
 }
