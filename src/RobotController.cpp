@@ -35,6 +35,8 @@ RobotController::~RobotController()
 void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotName, int storage_cap, int storage_used, bool type)
 {
     m_nh = nh;
+    listener = new tf::TransformListener(*nh);
+
     if (robotID < 0)
     {
         ROS_ERROR_STREAM("ERROR: Received invalid robot id: "<<robotID);
@@ -208,6 +210,8 @@ void RobotController::cb_eStopSub(const std_msgs::Empty &msg)
  ***********************************************************************/
 void RobotController::SendRobotStatus()
 {
+    UpdatePose();
+    m_statusPub.publish(m_status.GetMessage());
 }
 
 
@@ -258,6 +262,8 @@ void RobotController::Execute()
     // 1) Check to see if robot has reached goal & transition if needed
     // 2) Perform any state related actions
     StateExecute();
+
+    SendRobotStatus();
 }
 
 
@@ -289,8 +295,30 @@ void RobotController::Resume()
  * Returns: void
  * Effects:
  ***********************************************************************/
-void RobotController::UpdateStatus()
+void RobotController::UpdatePose()
 {
+    //get current pose of the robot
+    tf::StampedTransform transform;
+    try{
+
+        listener->lookupTransform("map", "base_link",
+                      ros::Time(0), transform);
+
+        tf::Transform trans = transform;
+
+        geometry_msgs::Transform msg;
+        tf::transformTFToMsg(trans, msg);
+
+        geometry_msgs::Pose pose;
+        pose.position.x = msg.translation.x;
+        pose.position.y = msg.translation.y;
+        pose.orientation.z = msg.rotation.z;
+        pose.orientation.w = msg.rotation.w;
+        m_status.SetPose(pose);
+    }
+    catch (tf::TransformException ex){
+        ROS_ERROR_THROTTLE(5, "%s",ex.what());
+    }
 }
 
 
@@ -318,8 +346,7 @@ void RobotController::SetupCallbacks()
     m_waypointSub = m_nh->subscribe("waypoint_pub", 10, &RobotController::cb_waypointSub, this);
     m_dumpSub = m_nh->subscribe("dump_pub", 10, &RobotController::cb_dumpSub, this);
     m_eStopSub = m_nh->subscribe("e_stop_pub", 10, &RobotController::cb_eStopSub, this);
-
-    ros::Publisher m_statusPub = m_nh->advertise<global_planner::RobotStatus>("robot_status", 100);
+    m_statusPub = m_nh->advertise<global_planner::RobotStatus>("robot_status", 100);
 }
 
 
@@ -368,12 +395,17 @@ void RobotController::StateExecute()
     //      IF received a waypoint: transition(NAVIGATING)
     //      IF received a goal message (trash can): transition(COLLECTING)
     //      IF received a dump message: transition(DUMPING)
-    // WHILE in COLLECTING:
+    // WHILE in COLLECTING (goal collecting):
     //      IF received a waypoint: transition(NAVIGATING)
     //      IF received a dump message: transition(DUMPING)
     //      IF received a stop/cancel/estop: transition(WAITING)
     //      IF reached final pose of the goal, send goal finished message, transition(WAITING)
-    // WHILE in WAYPOINT:
+    // WHILE in NAVIGATING (waypoint navigation):
+    //      IF received a (different) waypoint: change the pose to the new one
+    //      IF received a dump message: transition(DUMPING)
+    //      IF received a stop/cancel/estop: send waypoint result message (forced_stop) -> transition(WAITING)
+    //      IF reached final pose of the waypoint, send waypoint result message (succeed) -> transition(WAITING)
+    // WHILE in DUMPING (going to dump):
     //      IF received a (different) waypoint: change the pose to the new one
     //      IF received a dump message: transition(DUMPING)
     //      IF received a stop/cancel/estop: send waypoint result message (forced_stop) -> transition(WAITING)
@@ -395,9 +427,21 @@ void RobotController::StateExecute()
         }
         else
         {
-            ROS_INFO_STREAM_THROTTLE(1, "Not yet successful");
+            ROS_INFO_STREAM_THROTTLE(1, "Not yet successful: " << action_client_ptr->getState().toString() );
         }
     }
+}
+
+
+/***********************************************************************
+ *  Method: RobotController::cb_odomSub
+ *  Params: const nav_msgs::Odometry::ConstPtr &msg
+ * Returns: void
+ * Effects:
+ ***********************************************************************/
+void RobotController::cb_odomSub(const nav_msgs::Odometry::ConstPtr &msg)
+{
+    m_status.SetTwist(msg->twist.twist);
 }
 
 

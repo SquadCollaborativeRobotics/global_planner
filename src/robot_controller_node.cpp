@@ -9,7 +9,8 @@ int main(int argc, char** argv){
     ROS_ERROR("Robot Controller Started");
     RobotController rc;
 
-    rc.Init(&nh, 1, "collector1", 3, 0, true);
+    // Nodehandle, Robot id, name, capacity, used, type
+    rc.Init(&nh, 0, "collector1", 3, 0, true);
 
     ros::Rate r(40);
 

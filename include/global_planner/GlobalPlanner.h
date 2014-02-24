@@ -66,4 +66,6 @@ private:
 
     // Task Master
     TaskMaster m_tm;
+
+    ros::Time m_lastDisplay;
 };

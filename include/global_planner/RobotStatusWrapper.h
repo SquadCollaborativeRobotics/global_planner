@@ -60,10 +60,7 @@ public:
     int GetStorageAvailable(){ return m_status.storage_capacity - m_status.storage_used; };
     bool GetType(){ return m_status.type; };
 
-    void SetData(global_planner::RobotStatus& data)
-    {
-        m_status = data;
-    };
+    void SetData(global_planner::RobotStatus data){ m_status = data; };
 
     global_planner::RobotStatus GetMessage(){ return m_status; };
 

@@ -28,13 +28,13 @@ bool GlobalPlanner::Init(ros::NodeHandle* nh)
 // Executive function
 void GlobalPlanner::Execute()
 {
-    static int count = 0;
     ROS_INFO_THROTTLE(5,"Executive");
 
     ros::spinOnce();
 
-    if (count % 50 == 0)
+    if ((ros::Time::now() - m_lastDisplay) > ros::Duration(5))
     {
+        m_lastDisplay = ros::Time::now();
         ROS_INFO_STREAM("Showing robots...");
         for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
         {
@@ -62,7 +62,6 @@ void GlobalPlanner::Execute()
             ROS_INFO_STREAM(it->second->ToString());
         }
     }
-    count++;
 
     // Get Robot Status...
 
@@ -274,8 +273,22 @@ bool GlobalPlanner::RegisterServices()
 void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& msg)
 {
     int id = msg->id;
+    ROS_INFO_STREAM_THROTTLE(1, "Received robot status: "<<id);
     global_planner::RobotStatus status = *msg;
-    m_robots[id]->SetData(status);
+
+
+    std::map<int, Robot_Ptr>::iterator it = m_robots.find(id);
+    //If it is already in the map...
+    if(it != m_robots.end())
+    {
+        m_robots[id]->SetData(status);
+    }
+    else
+    {
+        Robot_Ptr ptr(new RobotStatusWrapper());
+        ptr->SetData(status);
+        m_robots[id] = ptr;
+    }
 }
 
 // Send request to all listening robots that
@@ -284,11 +297,10 @@ int GlobalPlanner::FindRobots()
 {
     std::vector< std::string > names;
     names.push_back(std::string("collector1"));
-    names.push_back(std::string("collector2"));
-    names.push_back(std::string("bin1"));
 
     m_robots.clear();
 
+    /*
     for (int i=0; i<names.size(); i++)
     {
         Robot_Ptr robot (new RobotStatusWrapper());
@@ -308,6 +320,7 @@ int GlobalPlanner::FindRobots()
             m_robots[id]->SetType(true);
         }
     }
+    */
 
     return names.size();
 }

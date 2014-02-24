@@ -1,7 +1,9 @@
 #pragma once
 
 #include <ros/ros.h>
+#include <tf/transform_listener.h>
 #include <move_base_msgs/MoveBaseAction.h>
+#include <nav_msgs/Odometry.h>
 #include <actionlib/client/simple_action_client.h>
 #include <std_msgs/Empty.h>
 
@@ -23,6 +25,7 @@ public:
     void cb_waypointSub(const global_planner::WaypointMsg::ConstPtr& msg);
     void cb_dumpSub(const global_planner::DumpMsg::ConstPtr& msg);
     void cb_eStopSub(const std_msgs::Empty& msg);
+    void cb_odomSub(const nav_msgs::Odometry::ConstPtr& msg);
 
     // void cb_statusService(const std_msgs::Int32 id);
 
@@ -42,7 +45,7 @@ public:
 
 private:
     void SetupCallbacks();
-    void UpdateStatus();
+    void UpdatePose();
 
     void Transition(RobotState::State newState, void* args);
     void OnEntry(void* args);
@@ -61,6 +64,7 @@ private:
     RobotStatusWrapper m_status;
 
     ros::NodeHandle* m_nh;
+    tf::TransformListener* listener;
 
     /**
      * Robot base navigation stuff

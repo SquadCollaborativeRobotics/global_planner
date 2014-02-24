@@ -231,6 +231,8 @@ void TaskMaster::cb_waypointFinished(const global_planner::WaypointFinished::Con
     else
     {
         ROS_ERROR_STREAM("ERROR, Waypoint finished with status: "<<msg->status<<" : "<<Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
+        //FOR NOW, let's just say it's available after a failure
+        m_waypointMap[msg->id]->SetStatus(TaskResult::AVAILABLE);
     }
 }
 
