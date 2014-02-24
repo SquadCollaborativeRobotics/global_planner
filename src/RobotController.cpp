@@ -12,7 +12,6 @@
  * Effects:
  ***********************************************************************/
 RobotController::RobotController()
-: action_client_ptr( new MoveBaseClient("move_base", true) )
 {
 }
 
@@ -61,6 +60,8 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
     m_status.SetType(type);
 
     SetupCallbacks();
+
+    action_client_ptr.reset( new MoveBaseClient("move_base", true) );
 }
 
 
@@ -120,10 +121,15 @@ void RobotController::cb_waypointSub(const global_planner::WaypointMsg::ConstPtr
     {
         ROS_INFO_STREAM("Received waypoint for me\n"<<wpWrapper.ToString());
 
+        move_base_msgs::MoveBaseGoal goal = Conversion::PoseToMoveBaseGoal(wpWrapper.GetPose());
+
         switch(m_status.GetState())
         {
             case RobotState::WAITING:
             ROS_INFO_STREAM("Move to new waypoint");
+            action_client_ptr->sendGoal(goal);
+            ROS_INFO_STREAM("Sent Waypoint");
+
             break;
             case RobotState::NAVIGATING:
             ROS_ERROR_STREAM("Woah there nelly, we are already navigating to a waypoint... cancel that action first");
@@ -248,6 +254,10 @@ void RobotController::Execute()
 {
     ros::spinOnce();
     ROS_INFO_STREAM_THROTTLE(3, m_status.ToString());
+
+    // 1) Check to see if robot has reached goal & transition if needed
+    // 2) Perform any state related actions
+    StateExecute();
 }
 
 
@@ -310,6 +320,74 @@ void RobotController::SetupCallbacks()
     m_eStopSub = m_nh->subscribe("e_stop_pub", 10, &RobotController::cb_eStopSub, this);
 
     ros::Publisher m_statusPub = m_nh->advertise<global_planner::RobotStatus>("robot_status", 100);
+}
+
+
+/***********************************************************************
+ *  Method: RobotController::Transition
+ *  Params: RobotState::State newState
+ * Returns: void
+ * Effects:
+ ***********************************************************************/
+void RobotController::Transition(RobotState::State newState)
+{
+
+}
+
+
+/***********************************************************************
+ *  Method: RobotController::OnEntry
+ *  Params: RobotState::State state, void *args
+ * Returns: void
+ * Effects:
+ ***********************************************************************/
+void RobotController::OnEntry(RobotState::State state, void *args)
+{
+}
+
+
+/***********************************************************************
+ *  Method: RobotController::StateExecute
+ *  Params: RobotState::State state, void *args
+ * Returns: void
+ * Effects:
+ ***********************************************************************/
+void RobotController::StateExecute()
+{
+    // WHILE in WAITING:
+    //      IF received a waypoint: transition(NAVIGATING)
+    //      IF received a goal message (trash can): transition(COLLECTING)
+    //      IF received a dump message: transition(DUMPING)
+    // WHILE in COLLECTING:
+    //      IF received a waypoint: transition(NAVIGATING)
+    //      IF received a dump message: transition(DUMPING)
+    //      IF received a stop/cancel/estop: transition(WAITING)
+    //      IF reached final pose of the goal, send goal finished message, transition(WAITING)
+    // WHILE in WAYPOINT:
+    //      IF received a (different) waypoint: change the pose to the new one
+    //      IF received a dump message: transition(DUMPING)
+    //      IF received a stop/cancel/estop: send waypoint result message (forced_stop) -> transition(WAITING)
+    //      IF reached final pose of the waypoint, send waypoint result message (succeed) -> transition(WAITING)
+    // ...
+    //
+    switch(m_status.GetState())
+    {
+        case RobotState::NAVIGATING:
+        if (action_client_ptr->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+        {
+            ROS_INFO_STREAM("Successful movebase moving?");
+            SendWaypointFinished(TaskResult::SUCCESS);
+            Transition(RobotState::WAITING);
+        }
+        else if (action_client_ptr->getState() == actionlib::SimpleClientGoalState::ACTIVE)
+        {
+            ROS_INFO_STREAM_THROTTLE(1,"Actively going to goal... NAVIGATING state");
+        }
+        else
+        {
+            ROS_INFO_STREAM("Not yet successful");
+        }
+    }
 }
 
 

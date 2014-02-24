@@ -61,7 +61,7 @@ public:
         return ss.str();
     }
 
-    static const void PoseToMoveBaseGoal(const geometry_msgs::Pose& pose, move_base_msgs::MoveBaseGoal& goal)
+    static const move_base_msgs::MoveBaseGoal PoseToMoveBaseGoal(const geometry_msgs::Pose& pose)
     {
         //TODO: this
     }

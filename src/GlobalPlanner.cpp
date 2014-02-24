@@ -68,12 +68,15 @@ void GlobalPlanner::Execute()
 
 
     // FOR each pair of robots that're just chillin in a dump stage and are stopped near the handoff location
+    //      Pick best bot to meet with?
     //      Check if robot1 & robot2 are within handoff threshold
+    //      Add new dump to m_dumpMap
     //      Send handoff message to each robot giving them their new capacities
     //
     // IF robot in wait state AND is full AND there are goals
-    //      Find the best dump location available to the robot
-    //      Update Dump List -> Send Dump Message
+    //      Find the best dump location for the robots to meet
+    //      Update Dump List
+    //      Send Dump Message
     //
     // IF there are goals available
     //      pick best robot to do job (return an ID)
