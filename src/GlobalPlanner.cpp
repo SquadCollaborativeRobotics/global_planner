@@ -88,7 +88,7 @@ void GlobalPlanner::Execute()
 
     //TODO: Handoff
 
-    // Check if a robot needs to have a handoff occur
+    // Check if a robot is full & find the best binbot for it
     for (std::vector<Robot_Ptr>::iterator it = availableRobots.begin(); it != availableRobots.end(); ++it)
     {
         Robot_Ptr robot = *it;
@@ -103,7 +103,8 @@ void GlobalPlanner::Execute()
                 dp->SetPose1(Conversion::SetPose(0,1,1,0));
                 dp->SetPose2(Conversion::SetPose(1,0,0,1));
                 dp->SetTime(ros::Time::now());
-                dp->SetStatus(TaskResult::AVAILABLE);
+                dp->SetStatus(TaskResult::INPROGRESS);
+                m_tm.AddDump(dp);
 
                 //set new robots' state
                 m_robots[robot->GetID()]->SetState(RobotState::DUMPING);
@@ -111,15 +112,25 @@ void GlobalPlanner::Execute()
             }
         }
     }
+
     //Refresh the available robots list & goals list in case robots have been assigned to dump and/or been called off from a goal
     availableGoals = m_tm.GetAvailableGoals();
     availableRobots = GetAvailableRobots();
 
     for (std::vector<Goal_Ptr>::iterator it = availableGoals.begin(); it != availableGoals.end(); ++it)
     {
-        for (std::vector<Robot_Ptr>::iterator it = availableRobots.begin(); it != availableRobots.end(); ++it)
+        int bestRobot = GetBestCollectorbot((*it)->GetID());
+        if (bestRobot != -1)
         {
+            Goal_Ptr gp(new GoalWrapper());
+            gp->SetRobot(bestRobot);
+            gp->SetPose(Conversion::SetPose(0,1,1,0));
+            gp->SetTime(ros::Time::now());
+            gp->SetStatus(TaskResult::INPROGRESS);
+            m_tm.AddGoal(gp);
 
+            //set new robot's state
+            m_robots[bestRobot]->SetState(RobotState::COLLECTING);
         }
     }
     ros::spinOnce();
@@ -179,6 +190,7 @@ int GlobalPlanner::GetBestCollectorbot(int goalID)
             }
         }
     }
+    return -1;
 }
 
 // System finished
