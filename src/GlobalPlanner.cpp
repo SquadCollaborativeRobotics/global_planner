@@ -81,9 +81,6 @@ void GlobalPlanner::Execute()
     //      pick best robot to get to waypoints (return an ID)
     //      OPTIONAL: IF need to cancel robot's current goal -> Send Cancel Message First AND update the task it was assigned to
     //      Send Waypoint Message
-    std::vector<Goal_Ptr> availableGoals = m_tm.GetAvailableGoals();
-    std::vector<Waypoint_Ptr> availableWaypoints = m_tm.GetAvailableWaypoints();
-    std::vector<Dump_Ptr> availableDumps = m_tm.GetAvailableDumps();
     std::vector<Robot_Ptr> availableRobots = GetAvailableRobots();
 
     //TODO: Handoff
@@ -114,9 +111,9 @@ void GlobalPlanner::Execute()
     }
 
     //Refresh the available robots list & goals list in case robots have been assigned to dump and/or been called off from a goal
-    availableGoals = m_tm.GetAvailableGoals();
+
+    std::vector<Goal_Ptr> availableGoals = m_tm.GetAvailableGoals();
     availableRobots = GetAvailableRobots();
-    ROS_INFO_STREAM("Number of goals..: "<<availableGoals.size());
     for (std::vector<Goal_Ptr>::iterator it = availableGoals.begin(); it != availableGoals.end(); ++it)
     {
         Goal_Ptr gp = *it;
@@ -132,7 +129,24 @@ void GlobalPlanner::Execute()
             m_robots[bestRobot]->SetState(RobotState::COLLECTING);
         }
     }
-    ROS_INFO_STREAM("DONE:");
+
+    std::vector<Waypoint_Ptr> availableWaypoints = m_tm.GetAvailableWaypoints();
+    availableRobots = GetAvailableRobots();
+
+    for (std::vector<Waypoint_Ptr>::iterator it = availableWaypoints.begin(); it != availableWaypoints.end(); ++it)
+    {
+        Waypoint_Ptr wp = *it;
+        int bestRobot = GetBestSearchBot(wp->GetID());
+        if (bestRobot != -1)
+        {
+            ROS_INFO_STREAM("Found a robot to explore waypoint ("<<wp->GetID()<<") : "<<bestRobot);
+            wp->SetRobot(bestRobot);
+            wp->SetStatus(TaskResult::INPROGRESS);
+
+            //set new robot's state
+            m_robots[bestRobot]->SetState(RobotState::NAVIGATING);
+        }
+    }
 
     ros::spinOnce();
 }
@@ -172,6 +186,7 @@ int GlobalPlanner::GetBestBinBot(int idOfRobotThatNeedsIt)
     return -1;
 }
 
+
 int GlobalPlanner::GetBestCollectorbot(int goalID)
 {
     std::map<int, Goal_Ptr> goals = m_tm.GetGoals();
@@ -193,6 +208,23 @@ int GlobalPlanner::GetBestCollectorbot(int goalID)
     }
     return -1;
 }
+
+
+int GlobalPlanner::GetBestSearchBot(int waypointID)
+{
+    std::map<int, Waypoint_Ptr> waypoints = m_tm.GetWaypoints();
+    geometry_msgs::Pose pose = waypoints[waypointID]->GetPose();
+
+    for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
+    {
+        if (it->second->GetState() == RobotState::WAITING)
+        {
+            return it->first;
+        }
+    }
+    return -1;
+}
+
 
 // System finished
 void GlobalPlanner::Finished()

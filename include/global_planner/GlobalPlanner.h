@@ -32,6 +32,7 @@ public:
 
     int GetBestBinBot(int idOfRobotThatNeedsIt);
     int GetBestCollectorbot(int goalID);
+    int GetBestSearchBot(int wpID);
 
 
 
