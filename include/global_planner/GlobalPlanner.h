@@ -3,6 +3,7 @@
 #include <ros/ros.h>
 #include "TaskMaster.h"
 #include "Conversion.h"
+#include "std_msgs/Empty.h"
 #include "global_planner/RobotStatusWrapper.h"
 #include <global_planner/RobotState.h>
 
@@ -11,9 +12,6 @@ class GlobalPlanner
 public:
     GlobalPlanner();
     ~GlobalPlanner();
-
-    // Get information from a robot through the robots "get info" service
-    //GetRobotInfo(int id);
 
     // Call setup functions
     bool Init(ros::NodeHandle* nh);
@@ -56,6 +54,9 @@ private:
 
     //Subscriber to robot status callbacks
     ros::Subscriber m_robotSub;
+
+    // E-Stop Publisher
+    ros::Publisher m_eStopPub;
 
     // Task Master
     TaskMaster m_tm;

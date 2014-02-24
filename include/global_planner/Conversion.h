@@ -4,6 +4,7 @@
 
 // #include "TaskMaster.h"
 #include "TaskResult.h"
+#include "move_base_msgs/MoveBaseGoal.h"
 
 
 class Conversion
@@ -51,5 +52,17 @@ public:
         p.orientation.z = rz;
         p.orientation.w = rw;
         return p;
+    }
+
+    static const std::string PoseToString(geometry_msgs::Pose pose)
+    {
+        std::stringstream ss;
+        ss << "x = "<<pose.position.x << ", y = "<<pose.position.y<<", rz = "<<pose.orientation.z<<", rw = "<<pose.orientation.w;
+        return ss.str();
+    }
+
+    static const void PoseToMoveBaseGoal(const geometry_msgs::Pose& pose, move_base_msgs::MoveBaseGoal& goal)
+    {
+        //TODO: this
     }
 };
