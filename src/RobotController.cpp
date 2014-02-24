@@ -127,7 +127,7 @@ void RobotController::cb_waypointSub(const global_planner::WaypointMsg::ConstPtr
         {
             case RobotState::WAITING:
             ROS_INFO_STREAM("Move to new waypoint");
-            action_client_ptr->sendGoal(goal);
+            Transition(RobotState::NAVIGATING, &goal);
             ROS_INFO_STREAM("Sent Waypoint");
 
             break;
@@ -329,9 +329,10 @@ void RobotController::SetupCallbacks()
  * Returns: void
  * Effects:
  ***********************************************************************/
-void RobotController::Transition(RobotState::State newState)
+void RobotController::Transition(RobotState::State newState, void* args)
 {
-
+    m_status.SetState(newState);
+    OnEntry(args);
 }
 
 
@@ -341,8 +342,17 @@ void RobotController::Transition(RobotState::State newState)
  * Returns: void
  * Effects:
  ***********************************************************************/
-void RobotController::OnEntry(RobotState::State state, void *args)
+void RobotController::OnEntry(void *args)
 {
+    switch(m_status.GetState())
+    {
+        case RobotState::NAVIGATING:
+        ROS_INFO_STREAM("Starting OnEntry: Navigation state");
+        move_base_msgs::MoveBaseGoal *goal = (move_base_msgs::MoveBaseGoal *) args;
+        action_client_ptr->sendGoal(*goal);
+        ROS_INFO_STREAM("Finished OnEntry: Navigation state");
+        break;
+    }
 }
 
 
@@ -377,15 +387,15 @@ void RobotController::StateExecute()
         {
             ROS_INFO_STREAM("Successful movebase moving?");
             SendWaypointFinished(TaskResult::SUCCESS);
-            Transition(RobotState::WAITING);
+            Transition(RobotState::WAITING, 0);
         }
         else if (action_client_ptr->getState() == actionlib::SimpleClientGoalState::ACTIVE)
         {
-            ROS_INFO_STREAM_THROTTLE(1,"Actively going to goal... NAVIGATING state");
+            ROS_INFO_STREAM_THROTTLE(1, "Actively going to goal... NAVIGATING state");
         }
         else
         {
-            ROS_INFO_STREAM("Not yet successful");
+            ROS_INFO_STREAM_THROTTLE(1, "Not yet successful");
         }
     }
 }

@@ -63,6 +63,16 @@ public:
 
     static const move_base_msgs::MoveBaseGoal PoseToMoveBaseGoal(const geometry_msgs::Pose& pose)
     {
-        //TODO: this
+        move_base_msgs::MoveBaseGoal goal;
+
+        goal.target_pose.header.frame_id = "map";
+        goal.target_pose.header.stamp = ros::Time::now();
+
+        goal.target_pose.pose.position.x = pose.position.x;
+        goal.target_pose.pose.position.y = pose.position.y;
+        goal.target_pose.pose.orientation.z = pose.orientation.z;
+        goal.target_pose.pose.orientation.w = pose.orientation.w;
+
+        return goal;
     }
 };

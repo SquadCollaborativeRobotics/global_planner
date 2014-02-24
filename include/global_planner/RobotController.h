@@ -44,8 +44,8 @@ private:
     void SetupCallbacks();
     void UpdateStatus();
 
-    void Transition(RobotState::State newState);
-    void OnEntry(RobotState::State state, void* args);
+    void Transition(RobotState::State newState, void* args);
+    void OnEntry(void* args);
     void StateExecute();
 
     // Subscribers to the global planner
