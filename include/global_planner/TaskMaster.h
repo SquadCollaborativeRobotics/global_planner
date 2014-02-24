@@ -42,12 +42,9 @@ public:
     // Add goal to the dump list
     bool AddDump(Dump_Ptr dump);
 
-    //Assign robot (robotID) to goal (pose)
-    bool UpdateGoal(int goalID, int robotID, geometry_msgs::PoseStamped pose);
-    //Assign robot (robotID) to waypoint (pose)
-    bool UpdateWaypoint(int wpID, int robotID, geometry_msgs::PoseStamped pose);
-    //Assign robots (robotID1 & robotID2) to goals (pose1 & pose2)
-    bool UpdateDump(int dumpID, int robotID1, int robotID2, geometry_msgs::PoseStamped pose1, geometry_msgs::PoseStamped pose2);
+    std::vector<Goal_Ptr> GetAvailableGoals();
+    std::vector<Waypoint_Ptr> GetAvailableWaypoints();
+    std::vector<Dump_Ptr> GetAvailableDumps();
 
     //Clear all lists of goals, waypoints, and dumps
     bool Clear();

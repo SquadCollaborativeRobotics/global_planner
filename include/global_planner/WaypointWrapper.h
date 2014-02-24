@@ -49,7 +49,7 @@ public:
     {
         std::stringstream ss;
         geometry_msgs::Pose p = GetPose();
-        ss<<"wp id = "<<GetID()<<" | status = "<<GetStatus()<<" | updated at time: "<<GetTime()<<" -- "<< p.position.x << ' ' << p.position.y << ' ' << p.orientation.z << ' ' << p.orientation.w;
+        ss<<"Waypoint id = "<<GetID()<<" | status = "<<GetStatus()<<" | updated at time: "<<GetTime()<<" -- "<< p.position.x << ' ' << p.position.y << ' ' << p.orientation.z << ' ' << p.orientation.w;
         return ss.str();
     }
 

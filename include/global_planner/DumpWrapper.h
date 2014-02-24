@@ -25,11 +25,16 @@ public:
     void SetRobot2(int robotID2){ m_msg.robotID2 = robotID2; };
     void SetStatus(TaskResult::Status s){ m_msg.status = Conversion::TaskResultToInt(s); };
 
-    void Print()
+    std::string ToString()
     {
         std::stringstream ss;
-        ss<<GetID()<<":"<<GetTime()<<" -- "<<std::endl;
-        ROS_INFO_STREAM(ss.str());
+        geometry_msgs::Pose p1 = GetPose1();
+        geometry_msgs::Pose p2 = GetPose2();
+        ss<<"Dump id = "<<GetID()<<" | status = "<<GetStatus()<<" | updated at time: "<<GetTime()<<" -- Robot1 = "
+        <<GetRobot1()<<" | Robot2 = "<<GetRobot2()<<" | Pose 1: "
+        << p1.position.x << ' ' << p1.position.y << ' ' << p1.orientation.z << ' ' << p1.orientation.w<<
+        "Pose 2: "<< p2.position.x << ' ' << p2.position.y << ' ' << p2.orientation.z << ' ' << p2.orientation.w;
+        return ss.str();
     }
 
     /******************

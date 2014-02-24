@@ -22,12 +22,13 @@ public:
     void SetRobot(int robotID){ m_msg.robotID = robotID; };
     void SetStatus(TaskResult::Status s){ m_msg.status = Conversion::TaskResultToInt(s); };
 
-
-    void Print()
+    std::string ToString()
     {
         std::stringstream ss;
-        ss<<GetID()<<":"<<GetTime()<<" -- "<<std::endl;
-        ROS_INFO_STREAM(ss.str());
+        geometry_msgs::Pose p = GetPose();
+        ss<<"Goal id = "<<GetID()<<" | status = "<<GetStatus()<<" | RobotID: "<<GetRobot()<<" | updated at time: "<<GetTime()
+        <<" -- " << p.position.x << ' ' << p.position.y << ' ' << p.orientation.z << ' ' << p.orientation.w;
+        return ss.str();
     }
 
     /******************

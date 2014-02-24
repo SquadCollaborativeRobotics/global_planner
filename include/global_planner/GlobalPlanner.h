@@ -4,6 +4,7 @@
 #include "TaskMaster.h"
 #include "Conversion.h"
 #include "global_planner/RobotStatusWrapper.h"
+#include <global_planner/RobotState.h>
 
 class GlobalPlanner
 {
@@ -27,11 +28,15 @@ public:
     std::map<int, Waypoint_Ptr > GetWaypoints() { return m_tm.GetWaypoints(); };
     std::map<int, Dump_Ptr > GetDumps() { return m_tm.GetDumps(); };
 
+    std::vector<Robot_Ptr> GetAvailableRobots();
+    int GetBestBinBot(int idOfRobotThatNeedsIt);
+
+
+
 private:
     // setup callbacks, regiser services, load waypoints...
     bool SetupCallbacks();
     bool RegisterServices();
-    bool LoadWaypoints(std::string filename);
 
     // get robot information
     void cb_robotStatus(const global_planner::RobotStatus::ConstPtr& msg);

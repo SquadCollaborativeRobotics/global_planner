@@ -2,12 +2,10 @@
 
 GlobalPlanner::GlobalPlanner()
 {
-
 }
 
 GlobalPlanner::~GlobalPlanner()
 {
-
 }
 
 // Call setup functions
@@ -47,8 +45,84 @@ void GlobalPlanner::Execute()
         {
             ROS_INFO_STREAM(it->second->ToString());
         }
+
+        ROS_INFO_STREAM("Showing goals...");
+        std::map<int, Goal_Ptr> goals = m_tm.GetGoals();
+        for (std::map<int, Goal_Ptr>::iterator it = goals.begin(); it != goals.end(); ++it)
+        {
+            ROS_INFO_STREAM(it->second->ToString());
+        }
+
+        ROS_INFO_STREAM("Showing Dumps...");
+        std::map<int, Dump_Ptr> dumps = m_tm.GetDumps();
+        for (std::map<int, Dump_Ptr>::iterator it = dumps.begin(); it != dumps.end(); ++it)
+        {
+            ROS_INFO_STREAM(it->second->ToString());
+        }
     }
     count++;
+
+    // Get Robot Status...
+
+    // IF robot in wait state AND is full AND there are goals
+    //      Find the best dump location available to the robot
+    //      Update Dump List -> Send Dump Message
+    //
+    // IF there are goals available
+    //      pick best robot to do job (return an ID)
+    //      OPTIONAL: IF need to cancel robot's current goal -> Send Cancel Message First AND update the task it was assigned to
+    //      Send goal message
+    // ELSE IF robots available AND waypoints available
+    //      pick best robot to get to waypoints (return an ID)
+    //      OPTIONAL: IF need to cancel robot's current goal -> Send Cancel Message First AND update the task it was assigned to
+    //      Send Waypoint Message
+    //
+    // FOR each pair of robots that're just chillin in a dump stage and are stopped near the handoff location
+    //      Check if robot1 & robot2 are within handoff threshold
+    //      Send handoff message to each robot giving them their new capacities
+    std::vector<Goal_Ptr> availableGoals = m_tm.GetAvailableGoals();
+    std::vector<Waypoint_Ptr> availableWaypoints = m_tm.GetAvailableWaypoints();
+    std::vector<Dump_Ptr> availableDumps = m_tm.GetAvailableDumps();
+    std::vector<Robot_Ptr> availableRobots = GetAvailableRobots();
+
+    for (std::vector<Robot_Ptr>::iterator it = availableRobots.begin(); it != availableRobots.end(); ++it)
+    {
+    }
+    for (std::vector<Goal_Ptr>::iterator it = availableGoals.begin(); it != availableGoals.end(); ++it)
+    {
+
+    }
+}
+
+
+std::vector<Robot_Ptr> GlobalPlanner::GetAvailableRobots()
+{
+    std::vector<Robot_Ptr> v;
+    for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
+    {
+        // If it's in the "waiting" state, it's avilable for task setting
+        if (it->second->GetState() != RobotState::WAITING)
+        {
+            v.push_back(it->second);
+        }
+    }
+    return v;
+}
+
+
+int GlobalPlanner::GetBestBinBot(int idOfRobotThatNeedsIt)
+{
+    for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
+    {
+        //if it is a binbot
+        if (it->second->GetType() == false)
+        {
+            if (it->second->GetStorageAvailable() > 0)
+            {
+                return it->first;
+            }
+        }
+    }
 }
 
 // System finished

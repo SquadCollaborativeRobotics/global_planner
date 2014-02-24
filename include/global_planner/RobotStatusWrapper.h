@@ -5,6 +5,7 @@
 #include <geometry_msgs/Twist.h>
 
 #include <global_planner/RobotStatus.h>
+#include <global_planner/RobotState.h>
 
 #include <string>
 
@@ -44,23 +45,26 @@ public:
     *...
     *...
     *******************/
+    RobotState::State GetState() { return RobotState::IntToRobotState(m_status.state); };
 
     //Getters
 
     int GetID() { return m_status.id; };
     std::string GetName() { return m_status.name; };
     //TODO: Fix?
-    int GetState() { return m_status.state; };
+
     geometry_msgs::Pose GetPose() {return m_status.pose; };
     geometry_msgs::Twist GetTwist() { return m_status.twist; };
     int GetStorageCapacity(){ return m_status.storage_capacity; };
     int GetStorageUsed(){ return m_status.storage_used; };
+    int GetStorageAvailable(){ return m_status.storage_capacity - m_status.storage_used; };
     bool GetType(){ return m_status.type; };
 
     void SetData(global_planner::RobotStatus& data)
     {
         m_status = data;
     };
+
     global_planner::RobotStatus GetMessage(){ return m_status; };
 
     /**********************************************************************
