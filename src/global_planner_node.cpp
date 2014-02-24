@@ -18,6 +18,8 @@ int main(int argc, char** argv){
     GlobalPlanner gp;
 
     gp.Init(&nh);
+    sleep(1);
+    gp.SendSound("beep.wav");
 
     ros::Subscriber toggleSub = nh.subscribe("toggle_planner", 10, toggle_planner);
 
@@ -28,6 +30,8 @@ int main(int argc, char** argv){
         ros::spinOnce();
         r.sleep();
     }
+    gp.SendSound("mario_1_up.wav");
+    ros::spinOnce();
 
     while(ros::ok() && running == true)
     {

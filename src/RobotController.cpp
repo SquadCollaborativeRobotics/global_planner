@@ -35,6 +35,7 @@ RobotController::~RobotController()
  ***********************************************************************/
 void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotName, int storage_cap, int storage_used, bool type)
 {
+    m_nh = nh;
     if (robotID < 0)
     {
         ROS_ERROR_STREAM("ERROR: Received invalid robot id: "<<robotID);
@@ -58,6 +59,8 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
     m_status.SetStorageCapacity(storage_cap);
     m_status.SetStorageUsed(storage_used);
     m_status.SetType(type);
+
+    SetupCallbacks();
 }
 
 
@@ -290,6 +293,23 @@ void RobotController::UpdateStatus()
 void RobotController::Finished()
 {
     ROS_INFO_STREAM("FINISHED");
+}
+
+
+/***********************************************************************
+ *  Method: RobotController::SetupCallbacks
+ *  Params:
+ * Returns: void
+ * Effects:
+ ***********************************************************************/
+void RobotController::SetupCallbacks()
+{
+    m_goalSub = m_nh->subscribe("goal_pub", 10, &RobotController::cb_goalSub, this);
+    m_waypointSub = m_nh->subscribe("waypoint_pub", 10, &RobotController::cb_waypointSub, this);
+    m_dumpSub = m_nh->subscribe("dump_pub", 10, &RobotController::cb_dumpSub, this);
+    m_eStopSub = m_nh->subscribe("e_stop_pub", 10, &RobotController::cb_eStopSub, this);
+
+    ros::Publisher m_statusPub = m_nh->advertise<global_planner::RobotStatus>("robot_status", 100);
 }
 
 

@@ -6,6 +6,7 @@
 #include "std_msgs/Empty.h"
 #include "global_planner/RobotStatusWrapper.h"
 #include <global_planner/RobotState.h>
+#include <global_planner/SoundMsg.h>
 
 class GlobalPlanner
 {
@@ -33,6 +34,8 @@ public:
     int GetBestSearchBot(int wpID);
 
 
+    void SendSound(std::string filename, int num_times);
+    void SendSound(std::string filename);
 
 private:
     // setup callbacks, regiser services, load waypoints...
@@ -57,6 +60,9 @@ private:
 
     // E-Stop Publisher
     ros::Publisher m_eStopPub;
+
+    // E-Stop Publisher
+    ros::Publisher m_soundPub;
 
     // Task Master
     TaskMaster m_tm;

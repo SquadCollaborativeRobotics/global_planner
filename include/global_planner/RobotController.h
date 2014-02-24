@@ -41,6 +41,7 @@ public:
     void Resume();
 
 private:
+    void SetupCallbacks();
     void UpdateStatus();
 
     // Subscribers to the global planner
@@ -51,9 +52,11 @@ private:
 
     ros::Publisher m_statusPub;
 
-    ros::ServiceServer m_statusService;
+    // ros::ServiceServer m_statusService;
 
     RobotStatusWrapper m_status;
+
+    ros::NodeHandle* m_nh;
 
     /**
      * Robot base navigation stuff

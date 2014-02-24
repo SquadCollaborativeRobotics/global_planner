@@ -21,6 +21,8 @@ bool GlobalPlanner::Init(ros::NodeHandle* nh)
 
     ROS_INFO_STREAM("Initializing TaskMaster");
     m_tm.Init(nh, m_robots, "testList1.points");
+
+    ros::spinOnce();
 }
 
 // Executive function
@@ -106,6 +108,8 @@ void GlobalPlanner::Execute()
                 //set new robots' state
                 m_robots[robot->GetID()]->SetState(RobotState::DUMPING);
                 m_robots[bestBinBot]->SetState(RobotState::DUMPING);
+
+                m_tm.SendDump(dp->GetID());
             }
         }
     }
@@ -127,6 +131,8 @@ void GlobalPlanner::Execute()
 
             //set new robot's state
             m_robots[bestRobot]->SetState(RobotState::COLLECTING);
+
+            m_tm.SendGoal(gp->GetID());
         }
     }
 
@@ -145,6 +151,7 @@ void GlobalPlanner::Execute()
 
             //set new robot's state
             m_robots[bestRobot]->SetState(RobotState::NAVIGATING);
+            m_tm.SendWaypoint(wp->GetID());
         }
     }
 
@@ -248,16 +255,16 @@ bool GlobalPlanner::SetupCallbacks()
     */
 
     m_robotSub = m_nh->subscribe("robot_status", 10, &GlobalPlanner::cb_robotStatus, this);
-    m_eStopPub = m_nh->advertise<std_msgs::Empty>("robot_estop", 100);
+    m_eStopPub = m_nh->advertise<std_msgs::Empty>("e_stop_pub", 100);
+
+    // Publisher to send current state to the rest of the world when transition happens
+    m_soundPub = m_nh->advertise<global_planner::SoundMsg>("play_sound", 100);
+
+    ros::spinOnce();
 }
 
 bool GlobalPlanner::RegisterServices()
 {
-    //register services
-    for (int i=0; i<m_robots.size(); i++)
-    {
-
-    }
 }
 
 // get robot information
@@ -301,3 +308,30 @@ int GlobalPlanner::FindRobots()
 
     return names.size();
 }
+/***********************************************************************
+ *  Method: GlobalPlanner::SendSound
+ *  Params: std::string filename, int num_times
+ * Returns: void
+ * Effects:
+ ***********************************************************************/
+void GlobalPlanner::SendSound(std::string filename, int num_times)
+{
+  global_planner::SoundMsg s;
+  s.filename = filename;
+  s.num_times = num_times;
+  s.text_output = std::string();
+  m_soundPub.publish(s);
+}
+
+
+/***********************************************************************
+ *  Method: GlobalPlanner::SendSound
+ *  Params: std::string filename
+ * Returns: void
+ * Effects:
+ ***********************************************************************/
+void GlobalPlanner::SendSound(std::string filename)
+{
+    SendSound(filename, 1);
+}
+
