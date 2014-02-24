@@ -1,3 +1,13 @@
+/**
+ *  RobotController.h
+ *
+ *  This class manages the lower level "black box" actions of a robot, including keeping
+ *      track of its current state, and transitioning between these states to navigate
+ *      and collect garbage from the environment.
+ *
+ *  (c) 2014
+ */
+
 #pragma once
 
 #include <ros/ros.h>

@@ -1,3 +1,13 @@
+/**
+ *  DumpWrapper.h
+ *
+ *  DumpWrapper is a wrapper class for the DumpMsg, providing useful functions
+ *      for getting and setting data
+ *
+ *  (c) 2014
+ */
+
+
 #pragma once
 
 #include <ros/ros.h>

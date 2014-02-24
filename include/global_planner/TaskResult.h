@@ -1,3 +1,13 @@
+/**
+ *  TaskResult.h
+ *
+ *  This class is an enumeration that is used to simplify how we represent the
+ *      return status from a task, using names instead of integers because
+ *      this is easier for both readability and portability
+ *
+ *  (c) 2014
+ */
+
 #pragma once
 
 class TaskResult

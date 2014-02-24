@@ -1,3 +1,12 @@
+/**
+ *  Conversion.h
+ *
+ *  This helper class contains useful functions for converting between
+ *      different data types
+ *
+ *  (c) 2014
+ */
+
 #pragma once
 
 #include <ros/ros.h>

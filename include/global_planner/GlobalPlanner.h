@@ -1,3 +1,16 @@
+/**
+ *  GlobalPlanner.h
+ *
+ *  This class wraps up all global planning functionality
+ *      It's main functionality is maintaining the list of robots, along with their
+ *      status.  The class contains a TaskMaster member that keeps track of all
+ *      tasks being created/updated
+ *
+ *  The job of Global Planner is to select which tasks to give to which robots
+ *
+ *  (c) 2014
+ */
+
 #pragma once
 
 #include <ros/ros.h>

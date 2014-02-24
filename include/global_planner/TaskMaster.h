@@ -1,3 +1,13 @@
+/**
+ *  TaskMaster.h
+ *
+ *  This class keeps track of all waypoints, goals, and dump tasks
+ *      It handles sending, receiving, and updating the tasks based on the messages
+ *      exchanged
+ *
+ *  (c) 2014
+ */
+
 #pragma once
 
 #include <iostream>

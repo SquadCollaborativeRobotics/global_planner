@@ -1,3 +1,12 @@
+/**
+ *  RobotStatusWrapper.h
+ *
+ *  RobotStatusWrapper is a wrapper class for the RobotStatus message, providing useful functions
+ *      for getting and setting data
+ *
+ *  (c) 2014
+ */
+
 #pragma once
 
 #include <ros/ros.h>

@@ -1,3 +1,12 @@
+/**
+ *  WaypointWrapper.h
+ *
+ *  WaypointWrapper is a wrapper class for the WaypointMsg, providing useful functions
+ *      for getting and setting data
+ *
+ *  (c) 2014
+ */
+
 #pragma once
 
 #include <ros/ros.h>
