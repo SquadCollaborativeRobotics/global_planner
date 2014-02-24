@@ -51,8 +51,6 @@ public:
 
     int GetID() { return m_status.id; };
     std::string GetName() { return m_status.name; };
-    //TODO: Fix?
-
     geometry_msgs::Pose GetPose() {return m_status.pose; };
     geometry_msgs::Twist GetTwist() { return m_status.twist; };
     int GetStorageCapacity(){ return m_status.storage_capacity; };

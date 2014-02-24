@@ -42,4 +42,14 @@ public:
     {
         return static_cast<int>(s);
     }
+
+    static const geometry_msgs::Pose SetPose(double x, double y, double rz, double rw)
+    {
+        geometry_msgs::Pose p;
+        p.position.x = x;
+        p.position.y = y;
+        p.orientation.z = rz;
+        p.orientation.w = rw;
+        return p;
+    }
 };

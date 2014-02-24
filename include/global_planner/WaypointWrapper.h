@@ -29,11 +29,7 @@ public:
     {
         SetID(id);
         SetTime(ros::Time::now());
-        geometry_msgs::Pose p;
-        p.position.x = x;
-        p.position.y = y;
-        p.orientation.z = z;
-        p.orientation.w = w;
+        geometry_msgs::Pose p = Conversion::SetPose(x,y,z,w);
         SetPose(p);
         SetRobot(robotID);
         SetStatus(status);

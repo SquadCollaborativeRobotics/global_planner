@@ -87,6 +87,21 @@ void GlobalPlanner::Execute()
 
     for (std::vector<Robot_Ptr>::iterator it = availableRobots.begin(); it != availableRobots.end(); ++it)
     {
+        Robot_Ptr robot = *it;
+        if (robot->GetStorageAvailable() <= 0)
+        {
+            int bestBinBot = GetBestBinBot(robot->GetID());
+            if (bestBinBot != -1)
+            {
+                Dump_Ptr dp(new DumpWrapper());
+                dp->SetRobot1(robot->GetID());
+                dp->SetRobot2(bestBinBot);
+                dp->SetPose1(Conversion::SetPose(0,1,1,0));
+                dp->SetPose2(Conversion::SetPose(1,0,0,1));
+                dp->SetTime(ros::Time::now());
+                dp->SetStatus(TaskResult::AVAILABLE);
+            }
+        }
     }
     for (std::vector<Goal_Ptr>::iterator it = availableGoals.begin(); it != availableGoals.end(); ++it)
     {
@@ -117,12 +132,16 @@ int GlobalPlanner::GetBestBinBot(int idOfRobotThatNeedsIt)
         //if it is a binbot
         if (it->second->GetType() == false)
         {
-            if (it->second->GetStorageAvailable() > 0)
+            if (it->second->GetState() == RobotState::WAITING)
             {
-                return it->first;
+                if (it->second->GetStorageAvailable() > 0)
+                {
+                    return it->first;
+                }
             }
         }
     }
+    return -1;
 }
 
 // System finished

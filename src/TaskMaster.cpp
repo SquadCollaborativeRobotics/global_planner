@@ -138,7 +138,8 @@ bool TaskMaster::SendWaypoint(int wpID)
 bool TaskMaster::SendGoal(int goalID)
 {
     global_planner::GoalMsg gm = m_goalMap[goalID]->GetMessage();
-    m_goalPub.publish(gm);
+    if (gm.id != -1)
+        m_goalPub.publish(gm);
 }
 
 
