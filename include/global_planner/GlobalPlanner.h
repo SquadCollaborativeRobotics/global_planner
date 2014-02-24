@@ -16,8 +16,8 @@
 #include <ros/ros.h>
 #include "TaskMaster.h"
 #include "Conversion.h"
-#include "std_msgs/Empty.h"
-#include "global_planner/RobotStatusWrapper.h"
+#include <std_msgs/Empty.h>
+#include <global_planner/RobotStatusWrapper.h>
 #include <global_planner/RobotState.h>
 #include <global_planner/SoundMsg.h>
 

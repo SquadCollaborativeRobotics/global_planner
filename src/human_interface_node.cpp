@@ -1,8 +1,8 @@
 #include <ros/ros.h>
 #include <ros/package.h>
 #include <boost/thread.hpp>
-#include "global_planner/SoundMsg.h"
-#include "string.h"
+#include <global_planner/SoundMsg.h>
+#include <string.h>
 
 class SoundManager
 {

@@ -5,8 +5,8 @@
 #include <boost/thread/mutex.hpp>
 #include <global_planner/GarbageCan.h>
 #include <global_planner/SoundMsg.h>
-#include "std_msgs/Int32.h"
-#include "std_msgs/String.h"
+#include <std_msgs/Int32.h>
+#include <std_msgs/String.h>
 
 // The global planner uses the actionlib to do the following:
 // Start in safe mode

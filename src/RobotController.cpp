@@ -13,6 +13,8 @@
  ***********************************************************************/
 RobotController::RobotController()
 {
+    m_nh = 0;
+    m_listener = 0;
 }
 
 
@@ -35,7 +37,7 @@ RobotController::~RobotController()
 void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotName, int storage_cap, int storage_used, bool type)
 {
     m_nh = nh;
-    listener = new tf::TransformListener(*nh);
+    m_listener = new tf::TransformListener(*nh);
 
     if (robotID < 0)
     {
@@ -254,7 +256,7 @@ void RobotController::UpdatePose()
     tf::StampedTransform transform;
     try{
 
-        listener->lookupTransform("map", "base_link",
+        m_listener->lookupTransform("map", "base_link",
                       ros::Time(0), transform);
 
         tf::Transform trans = transform;
@@ -269,7 +271,7 @@ void RobotController::UpdatePose()
         pose.orientation.w = msg.rotation.w;
         m_status.SetPose(pose);
     }
-    catch (tf::TransformException ex){
+    catch (tf::TransformException& ex){
         ROS_ERROR_THROTTLE(5, "%s",ex.what());
     }
 }

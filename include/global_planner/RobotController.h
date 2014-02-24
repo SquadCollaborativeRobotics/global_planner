@@ -17,9 +17,9 @@
 #include <actionlib/client/simple_action_client.h>
 #include <std_msgs/Empty.h>
 
-#include "global_planner/GoalFinished.h"
-#include "global_planner/WaypointFinished.h"
-#include "global_planner/DumpFinished.h"
+#include <global_planner/GoalFinished.h>
+#include <global_planner/WaypointFinished.h>
+#include <global_planner/DumpFinished.h>
 
 #include "RobotStatusWrapper.h"
 #include "GoalWrapper.h"
@@ -82,7 +82,7 @@ private:
     RobotStatusWrapper m_status;
 
     ros::NodeHandle* m_nh;
-    tf::TransformListener* listener;
+    tf::TransformListener* m_listener;
 
     /**
      * Robot base navigation stuff

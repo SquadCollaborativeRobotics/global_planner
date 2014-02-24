@@ -18,7 +18,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include <ros/ros.h>
-#include "ros/package.h"
+#include <ros/package.h>
 #include <geometry_msgs/PoseStamped.h>
 
 #include "Conversion.h"
@@ -29,10 +29,10 @@
 #include "WaypointWrapper.h"
 #include "DumpWrapper.h"
 
-#include "global_planner/GoalSeen.h"
-#include "global_planner/GoalFinished.h"
-#include "global_planner/WaypointFinished.h"
-#include "global_planner/DumpFinished.h"
+#include <global_planner/GoalSeen.h>
+#include <global_planner/GoalFinished.h>
+#include <global_planner/WaypointFinished.h>
+#include <global_planner/DumpFinished.h>
 
 
 class TaskMaster

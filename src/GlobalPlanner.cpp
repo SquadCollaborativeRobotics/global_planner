@@ -2,6 +2,7 @@
 
 GlobalPlanner::GlobalPlanner()
 {
+    m_nh = 0;
 }
 
 GlobalPlanner::~GlobalPlanner()
