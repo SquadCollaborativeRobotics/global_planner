@@ -116,23 +116,24 @@ void GlobalPlanner::Execute()
     //Refresh the available robots list & goals list in case robots have been assigned to dump and/or been called off from a goal
     availableGoals = m_tm.GetAvailableGoals();
     availableRobots = GetAvailableRobots();
-
+    ROS_INFO_STREAM("Number of goals..: "<<availableGoals.size());
     for (std::vector<Goal_Ptr>::iterator it = availableGoals.begin(); it != availableGoals.end(); ++it)
     {
-        int bestRobot = GetBestCollectorbot((*it)->GetID());
+        Goal_Ptr gp = *it;
+        // ROS_INFO_STREAM("Checking goal : "<<gp->GetID());
+        int bestRobot = GetBestCollectorbot(gp->GetID());
         if (bestRobot != -1)
         {
-            Goal_Ptr gp(new GoalWrapper());
+            ROS_INFO_STREAM("Found a collector that can go to goal ("<<gp->GetID()<<") : "<<bestRobot);
             gp->SetRobot(bestRobot);
-            gp->SetPose(Conversion::SetPose(0,1,1,0));
-            gp->SetTime(ros::Time::now());
             gp->SetStatus(TaskResult::INPROGRESS);
-            m_tm.AddGoal(gp);
 
             //set new robot's state
             m_robots[bestRobot]->SetState(RobotState::COLLECTING);
         }
     }
+    ROS_INFO_STREAM("DONE:");
+
     ros::spinOnce();
 }
 
@@ -250,11 +251,17 @@ int GlobalPlanner::FindRobots()
         int id = i;
         robot->SetName(names[i]);
         robot->SetID(id);
+        robot->SetStorageUsed(0);
+        robot->SetStorageCapacity(3);
         m_robots[id] = robot;
 
         if (names[i].compare("bin1") == 0)
         {
             m_robots[id]->SetType(false);
+        }
+        else
+        {
+            m_robots[id]->SetType(true);
         }
     }
 

@@ -33,7 +33,8 @@ public:
         std::stringstream ss;
         geometry_msgs::Pose p = GetPose();
         geometry_msgs::Twist t = GetTwist();
-        ss<<"robot id = "<<GetID()<<" | amount filled: "<<GetStorageUsed()<<" | capacity: "<<GetStorageCapacity()
+        ss<<"robot id = "<<GetID()<<" State: "<<RobotState::RobotStateToInt(GetState())
+        <<" | amount filled: "<<GetStorageUsed()<<" | capacity: "<<GetStorageCapacity()
         <<" -- position: "<< p.position.x << ' ' << p.position.y << ' ' << p.orientation.z << ' ' << p.orientation.w
         <<" velocity: "<< t.linear.x << ' ' << t.linear.y << ' ' << t.angular.z;
         return ss.str();

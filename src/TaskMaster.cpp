@@ -420,7 +420,7 @@ std::vector<Goal_Ptr> TaskMaster::GetAvailableGoals()
     for (std::map<int, Goal_Ptr>::iterator it = m_goalMap.begin(); it != m_goalMap.end(); ++it)
     {
         // If it's avilable for task setting
-        if (it->second->GetStatus() != TaskResult::SUCCESS && it->second->GetStatus() != TaskResult::UNINITIALIZED)
+        if (it->second->GetStatus() == TaskResult::AVAILABLE)
         {
             v.push_back(it->second);
         }
@@ -441,7 +441,7 @@ std::vector<Waypoint_Ptr> TaskMaster::GetAvailableWaypoints()
     for (std::map<int, Waypoint_Ptr>::iterator it = m_waypointMap.begin(); it != m_waypointMap.end(); ++it)
     {
         // If it's avilable for task setting
-        if (it->second->GetStatus() != TaskResult::SUCCESS && it->second->GetStatus() != TaskResult::UNINITIALIZED)
+        if (it->second->GetStatus() == TaskResult::AVAILABLE)
         {
             v.push_back(it->second);
         }
@@ -462,7 +462,7 @@ std::vector<Dump_Ptr> TaskMaster::GetAvailableDumps()
     for (std::map<int, Dump_Ptr>::iterator it = m_dumpMap.begin(); it != m_dumpMap.end(); ++it)
     {
         // If it's avilable for task setting
-        if (it->second->GetStatus() != TaskResult::SUCCESS && it->second->GetStatus() != TaskResult::UNINITIALIZED)
+        if (it->second->GetStatus() == TaskResult::AVAILABLE)
         {
             v.push_back(it->second);
         }
