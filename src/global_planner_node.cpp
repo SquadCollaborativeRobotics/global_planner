@@ -11,7 +11,7 @@ int main(int argc, char** argv){
 
     gp.Init(&nh);
 
-    ros::Rate r(10);
+    ros::Rate r(100);
 
     while(ros::ok())
     {

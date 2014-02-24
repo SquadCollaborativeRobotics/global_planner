@@ -12,6 +12,7 @@
  * Effects:
  ***********************************************************************/
 RobotController::RobotController()
+: action_client_ptr( new MoveBaseClient("move_base", true) )
 {
 }
 
@@ -34,7 +35,7 @@ RobotController::~RobotController()
  ***********************************************************************/
 void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotName, int storage_cap, int storage_used, bool type)
 {
-    if (id < 0)
+    if (robotID < 0)
     {
         ROS_ERROR_STREAM("ERROR: Received invalid robot id: "<<robotID);
         return;
@@ -50,7 +51,7 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
         return;
     }
 
-    m_status.SetID(robotID());
+    m_status.SetID(robotID);
     m_status.SetName(robotName);
     // m_status.SetPose(geometry_msgs::Pose pose){ m_status.pose = pose; };
     // m_status.SetTwist(geometry_msgs::Twist twist){ m_status.twist = twist; };
@@ -69,7 +70,8 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
 void RobotController::cb_goalSub(const global_planner::GoalMsg::ConstPtr &msg)
 {
     GoalWrapper gWrapper;
-    gWrapper.SetData(*msg);
+    global_planner::GoalMsg gm= *msg;
+    gWrapper.SetData(gm);
 
     //Check if this message is for you!
     if (gWrapper.GetRobot() == m_status.GetID())
@@ -107,7 +109,8 @@ void RobotController::cb_goalSub(const global_planner::GoalMsg::ConstPtr &msg)
 void RobotController::cb_waypointSub(const global_planner::WaypointMsg::ConstPtr &msg)
 {
     WaypointWrapper wpWrapper;
-    wpWrapper.SetData(*msg);
+    global_planner::WaypointMsg wm= *msg;
+    wpWrapper.SetData(wm);
 
     //Check if this message is for you!
     if (wpWrapper.GetRobot() == m_status.GetID())
@@ -146,10 +149,11 @@ void RobotController::cb_waypointSub(const global_planner::WaypointMsg::ConstPtr
 void RobotController::cb_dumpSub(const global_planner::DumpMsg::ConstPtr &msg)
 {
     DumpWrapper dumpWrapper;
-    dumpWrapper.SetData(*msg);
+    global_planner::DumpMsg dm= *msg;
+    dumpWrapper.SetData(dm);
 
     //Check if this message is for you!
-    if (dumpWrapper.GetRobot() == m_status.GetID())
+    if (dumpWrapper.GetRobot1() == m_status.GetID() || dumpWrapper.GetRobot2() == m_status.GetID())
     {
         ROS_INFO_STREAM("Received Dump for me\n"<<dumpWrapper.ToString());
 
@@ -239,6 +243,8 @@ void RobotController::SendDumpFinished(TaskResult::Status status)
  ***********************************************************************/
 void RobotController::Execute()
 {
+    ros::spinOnce();
+    ROS_INFO_STREAM_THROTTLE(3, m_status.ToString());
 }
 
 
@@ -273,4 +279,17 @@ void RobotController::Resume()
 void RobotController::UpdateStatus()
 {
 }
+
+
+/***********************************************************************
+ *  Method: RobotController::Finished
+ *  Params:
+ * Returns: void
+ * Effects:
+ ***********************************************************************/
+void RobotController::Finished()
+{
+    ROS_INFO_STREAM("FINISHED");
+}
+
 

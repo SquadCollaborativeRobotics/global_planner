@@ -11,6 +11,8 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   tf
   roslib
+  actionlib
+  actionlib_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -77,6 +79,7 @@ add_message_files(
 generate_messages(
   DEPENDENCIES
     geometry_msgs
+    actionlib_msgs
     std_msgs
 )
 
@@ -92,7 +95,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES global_planner_lib
-  CATKIN_DEPENDS geometry_msgs message_runtime roscpp std_msgs tf
+  CATKIN_DEPENDS geometry_msgs message_runtime roscpp std_msgs tf actionlib actionlib_msgs
   # DEPENDS system_lib
 )
 
@@ -115,16 +118,27 @@ add_library(global_planner_lib
 )
 add_dependencies(global_planner_lib ${PROJECT_NAME}_generate_messages_cpp)
 
+add_library(robot_controller_lib
+  src/RobotController.cpp
+)
+target_link_libraries(robot_controller_lib ${catkin_LIBRARIES})
+add_dependencies(robot_controller_lib ${PROJECT_NAME}_generate_messages_cpp)
 
 ## Declare a cpp executable
 # add_executable(global_planner_node src/global_planner_node.cpp)
 
 add_executable(human_interface_node src/human_interface_node.cpp)
-target_link_libraries(human_interface_node global_planner_lib ${catkin_LIBRARIES} ${Boost_LIBRARIES} )
+target_link_libraries(human_interface_node ${catkin_LIBRARIES} ${Boost_LIBRARIES} )
+add_dependencies(human_interface_node ${PROJECT_NAME}_generate_messages_cpp)
 
 
 add_executable(global_planner_node src/global_planner_node.cpp)
 target_link_libraries(global_planner_node global_planner_lib ${catkin_LIBRARIES} ${Boost_LIBRARIES} )
+add_dependencies(global_planner_node ${PROJECT_NAME}_generate_messages_cpp)
+
+add_executable(robot_controller_node src/robot_controller_node.cpp)
+target_link_libraries(robot_controller_node robot_controller_lib ${catkin_LIBRARIES} ${Boost_LIBRARIES} )
+add_dependencies(robot_controller_node ${PROJECT_NAME}_generate_messages_cpp)
 
 
 ## Add cmake target dependencies of the executable/library

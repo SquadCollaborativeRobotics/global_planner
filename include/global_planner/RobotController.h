@@ -1,20 +1,23 @@
 #pragma once
 
-#include "ros/ros.h"
-#include "std_msgs/Empty.h"
+#include <ros/ros.h>
+#include <move_base_msgs/MoveBaseAction.h>
+#include <actionlib/client/simple_action_client.h>
+#include <std_msgs/Empty.h>
+
 #include "RobotStatusWrapper.h"
 #include "GoalWrapper.h"
 #include "WaypointWrapper.h"
 #include "DumpWrapper.h"
 #include "RobotController.h"
 
+typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
+
 class RobotController
 {
 public:
     RobotController();
     ~RobotController();
-
-    static const void PoseToMoveBaseGoal(const geometry_msgs::Pose& pose, move_base_msgs::MoveBaseGoal& goal);
 
     void cb_goalSub(const global_planner::GoalMsg::ConstPtr& msg);
     void cb_waypointSub(const global_planner::WaypointMsg::ConstPtr& msg);
@@ -32,6 +35,7 @@ public:
 
     void Init(ros::NodeHandle* nh, int robotID = -1, std::string robotName = "", int storage_cap = 3, int storage_used = 0, bool type = true);
     void Execute();
+    void Finished();
 
     void Stop();
     void Resume();
@@ -59,7 +63,5 @@ private:
     // Move Base members (publishers & subscribers)
     //
     // TODO: Remap the needed topics for nav stack
-    MoveBaseClient moveBaseClient;
+    boost::shared_ptr<MoveBaseClient> action_client_ptr;
 };
-
-typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
