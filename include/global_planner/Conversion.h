@@ -24,8 +24,8 @@ public:
             return "Task still in progress";
             case TaskResult::FORCE_STOP:
             return "Task was force stopped by global planner";
-            case TaskResult::MOVE_BASE_FAILURE:
-            return "Move base failed to reach goal";
+            case TaskResult::NAVSTACK_FAILURE:
+            return "Nav Stack failed to reach goal";
             default:
             return "Unknown result code";
         }

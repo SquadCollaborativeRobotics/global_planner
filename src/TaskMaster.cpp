@@ -281,17 +281,17 @@ void TaskMaster::cb_goalSeen(const global_planner::GoalSeen::ConstPtr &msg)
         ros::Time time = msg->time;
         geometry_msgs::Pose pose = msg->pose;
 
-        if ( time > currentGoal->GetTime() )
+        if ( time >= currentGoal->GetTime() )
         {
             //Newer information... Update Pose if they are off by more than a small distance
             //For now, just assume we update it every time. If it is currently assigned to a bot, tell the bot of the new location
             if (true)
             {
-                if ( m_goalMap[goalID]->GetInProgress() == true )
-                {
-                    //Re-Send goal
-                    SendGoal(goalID);
-                }
+                //update the goal's values
+                currentGoal->SetTime(time);
+                currentGoal->SetPose(pose);
+
+                SendGoal(goalID);
             }
         }
     }

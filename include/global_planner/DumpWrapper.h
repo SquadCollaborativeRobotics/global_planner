@@ -56,7 +56,7 @@ public:
     bool GetAvailable(){ return m_msg.status == TaskResult::AVAILABLE; };
     bool GetInProgress(){ return m_msg.status == TaskResult::INPROGRESS; };
     bool GetFailed(){ return m_msg.status == TaskResult::FAILURE; };
-    bool GetStatus(){ return m_msg.status; };
+    int GetStatus(){ return m_msg.status; };
 
 
     void SetData(global_planner::DumpMsg& data){ m_msg = data; };

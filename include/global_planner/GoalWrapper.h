@@ -16,6 +16,7 @@ public:
     };
     ~GoalWrapper(){};
 
+    void SetData(global_planner::GoalMsg& msg){ m_msg = msg; };
     void SetID(int id){ m_msg.id = id; };
     void SetTime(ros::Time time){ m_msg.time = time; };
     void SetPose(geometry_msgs::Pose pose){ m_msg.pose = pose; };
@@ -47,7 +48,7 @@ public:
     bool GetAvailable(){ return m_msg.status == TaskResult::AVAILABLE; };
     bool GetInProgress(){ return m_msg.status == TaskResult::INPROGRESS; };
     bool GetFailed(){ return m_msg.status == TaskResult::FAILURE; };
-    bool GetStatus(){ return m_msg.status; };
+    int GetStatus(){ return m_msg.status; };
 
     global_planner::GoalMsg GetMessage(){ return m_msg; };
 

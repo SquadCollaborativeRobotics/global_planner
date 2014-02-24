@@ -6,9 +6,9 @@ public:
     enum State
     {
         WAITING = 0,
-        NAVIGATING = 1,
-        DUMPING = 2,
-        COLLECTING = 3,
+        NAVIGATING = 10,
+        DUMPING = 20,
+        COLLECTING = 30,
     };
 
     static const int RobotStateToInt(RobotState::State s)
