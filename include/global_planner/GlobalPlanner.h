@@ -29,7 +29,9 @@ public:
     std::map<int, Dump_Ptr > GetDumps() { return m_tm.GetDumps(); };
 
     std::vector<Robot_Ptr> GetAvailableRobots();
+
     int GetBestBinBot(int idOfRobotThatNeedsIt);
+    int GetBestCollectorbot(int goalID);
 
 
 
