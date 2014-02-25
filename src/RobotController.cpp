@@ -255,8 +255,7 @@ void RobotController::UpdatePose()
     //get current pose of the robot
     tf::StampedTransform transform;
     try{
-
-        m_listener->lookupTransform("map", "base_link",
+        m_listener->lookupTransform("/map", "robot_center",
                       ros::Time(0), transform);
 
         tf::Transform trans = transform;
