@@ -175,7 +175,7 @@ std::vector<Robot_Ptr> GlobalPlanner::GetAvailableRobots()
     for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
     {
         // If it's in the "waiting" state, it's avilable for task setting
-        if (it->second->GetState() != RobotState::WAITING)
+        if (it->second->GetState() == RobotState::WAITING)
         {
             v.push_back(it->second);
         }
