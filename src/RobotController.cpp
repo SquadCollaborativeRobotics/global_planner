@@ -374,7 +374,6 @@ void RobotController::StateExecute()
     //      IF received a stop/cancel/estop: send waypoint result message (forced_stop) -> transition(WAITING)
     //      IF reached final pose of the waypoint, send waypoint result message (succeed) -> transition(WAITING)
     // ...
-    //
     switch(m_status.GetState())
     {
         case RobotState::NAVIGATING:
@@ -391,7 +390,7 @@ void RobotController::StateExecute()
         else
         {
             // Randomly finish the task
-            if (rand() % 250 == 0)
+            if (false && rand() % 250 == 0)
             {
                 if (rand()%2 == 0)
                 {
