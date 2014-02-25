@@ -24,6 +24,39 @@ bool GlobalPlanner::Init(ros::NodeHandle* nh)
     m_tm.Init(nh, m_robots, "testList1.points");
 
     ros::spinOnce();
+
+    return true;
+}
+
+void GlobalPlanner::Display()
+{
+    m_lastDisplay = ros::Time::now();
+    ROS_INFO_STREAM("Showing robots...");
+    for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
+    {
+        ROS_INFO_STREAM(it->second->ToString());
+    }
+
+    ROS_INFO_STREAM("Showing waypoints...");
+    std::map<int, Waypoint_Ptr> wps = m_tm.GetWaypoints();
+    for (std::map<int, Waypoint_Ptr>::iterator it = wps.begin(); it != wps.end(); ++it)
+    {
+        ROS_INFO_STREAM(it->second->ToString());
+    }
+
+    ROS_INFO_STREAM("Showing goals...");
+    std::map<int, Goal_Ptr> goals = m_tm.GetGoals();
+    for (std::map<int, Goal_Ptr>::iterator it = goals.begin(); it != goals.end(); ++it)
+    {
+        ROS_INFO_STREAM(it->second->ToString());
+    }
+
+    ROS_INFO_STREAM("Showing Dumps...");
+    std::map<int, Dump_Ptr> dumps = m_tm.GetDumps();
+    for (std::map<int, Dump_Ptr>::iterator it = dumps.begin(); it != dumps.end(); ++it)
+    {
+        ROS_INFO_STREAM(it->second->ToString());
+    }
 }
 
 // Executive function
@@ -35,33 +68,7 @@ void GlobalPlanner::Execute()
 
     if ((ros::Time::now() - m_lastDisplay) > ros::Duration(3))
     {
-        m_lastDisplay = ros::Time::now();
-        ROS_INFO_STREAM("Showing robots...");
-        for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
-        {
-            ROS_INFO_STREAM(it->second->ToString());
-        }
-
-        ROS_INFO_STREAM("Showing waypoints...");
-        std::map<int, Waypoint_Ptr> wps = m_tm.GetWaypoints();
-        for (std::map<int, Waypoint_Ptr>::iterator it = wps.begin(); it != wps.end(); ++it)
-        {
-            ROS_INFO_STREAM(it->second->ToString());
-        }
-
-        ROS_INFO_STREAM("Showing goals...");
-        std::map<int, Goal_Ptr> goals = m_tm.GetGoals();
-        for (std::map<int, Goal_Ptr>::iterator it = goals.begin(); it != goals.end(); ++it)
-        {
-            ROS_INFO_STREAM(it->second->ToString());
-        }
-
-        ROS_INFO_STREAM("Showing Dumps...");
-        std::map<int, Dump_Ptr> dumps = m_tm.GetDumps();
-        for (std::map<int, Dump_Ptr>::iterator it = dumps.begin(); it != dumps.end(); ++it)
-        {
-            ROS_INFO_STREAM(it->second->ToString());
-        }
+        Display();
     }
 
     // Get Robot Status...

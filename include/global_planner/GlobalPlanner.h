@@ -30,6 +30,8 @@ public:
     // Call setup functions
     bool Init(ros::NodeHandle* nh);
 
+    void Display();
+
     // Executive function
     void Execute();
 

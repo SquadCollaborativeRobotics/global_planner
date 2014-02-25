@@ -14,9 +14,7 @@
 #include <string>
 
 #include <geometry_msgs/Pose.h>
-
 #include <global_planner/DumpMsg.h>
-
 #include "Conversion.h"
 
 class DumpWrapper
