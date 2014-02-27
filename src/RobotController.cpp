@@ -88,7 +88,18 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
     // std::string actionServerName;
     // m_nh->getParam("robot_prefix", actionServerName);
 
-    m_nh->getParam("controller/base_frame", base_frame);
+    std::string tf_prefix;
+    if (m_nh->getParam("controller/tf_prefix", tf_prefix))
+        ROS_INFO_STREAM("Read tf prefix: "<<tf_prefix);
+    else
+        ROS_ERROR_STREAM("Did not read tf_prefix: default = "<<tf_prefix);
+
+    if (m_nh->getParam("controller/base_frame", base_frame))
+        ROS_INFO_STREAM("Read base frame: "<<base_frame);
+    else
+        ROS_ERROR_STREAM("Did not read base_frame: default = "<<base_frame);
+
+    base_frame = tf_prefix + "/"+base_frame;
 
     if (robotID < 0)
     {
@@ -106,10 +117,16 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
         return;
     }
 
-    SetupCallbacks();
-
 
     action_client_ptr.reset( new MoveBaseClient("move_base", true) );
+    // Wait for the action server to come up
+    while(ros::ok() && !action_client_ptr->waitForServer(ros::Duration(1.0))){
+        ROS_INFO("Waiting for the move_base action server to come up");
+    }
+
+
+    SetupCallbacks();
+
 
     ROS_INFO_STREAM("Robot has setup the movebase client");
 
@@ -262,7 +279,7 @@ void RobotController::SendDumpFinished(TaskResult::Status status)
 void RobotController::Execute()
 {
     ros::spinOnce();
-    ROS_INFO_STREAM_THROTTLE(1, m_status.ToString());
+    ROS_INFO_STREAM_THROTTLE(3, m_status.ToString());
 
     // 1) Check to see if robot has reached goal & transition if needed
     // 2) Perform any state related actions
