@@ -19,7 +19,8 @@ bool GlobalPlanner::Init(ros::NodeHandle* nh)
 
     ROS_INFO_STREAM("Initializing TaskMaster");
     std::string waypointFile("testList1.points");
-    m_nh->getParam("waypoint_file", waypointFile);
+    if (m_nh->getParam("/global_planner/waypoints_file", waypointFile))
+        ROS_INFO_STREAM("Read from file: "<<waypointFile);
 
     m_tm.Init(nh, m_robots, waypointFile);
 
