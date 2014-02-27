@@ -31,7 +31,7 @@ public:
             {
                 if (m_stopThread)
                 {
-                    system("killall -9 aplay");
+                    system("killall -q -9 aplay");
                     break;
                 }
                 else
@@ -48,7 +48,7 @@ public:
         }
         catch(boost::thread_interrupted&)
         {
-            system("killall -9 aplay");
+            system("killall -q -9 aplay");
             return;
         }
     };
@@ -58,7 +58,7 @@ public:
     {
         //thread has not yet finished. try killing.
         m_stopThread = true;
-        system("killall -9 aplay");
+        system("killall -q -9 aplay");
         m_soundThread.join();
         m_stopThread = false;
         m_soundThread = boost::thread(&SoundManager::sound_thread, this, str, numTimes);

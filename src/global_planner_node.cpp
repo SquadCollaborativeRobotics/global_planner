@@ -21,15 +21,17 @@ int main(int argc, char** argv){
     sleep(1);
     gp.SendSound("beep.wav");
 
-    ros::Subscriber toggleSub = nh.subscribe("toggle_planner", 10, toggle_planner);
+    ros::Subscriber toggleSub = nh.subscribe("/toggle_planner", 10, toggle_planner);
 
-    ros::Rate r(100);
+    ros::Rate r(50);
 
     while(ros::ok() && running == false)
     {
+        ROS_INFO_THROTTLE(3, "Waiting on program start");
         ros::spinOnce();
         r.sleep();
     }
+
     gp.SendSound("mario_1_up.wav");
     ros::spinOnce();
 

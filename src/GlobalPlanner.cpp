@@ -16,9 +16,6 @@ bool GlobalPlanner::Init(ros::NodeHandle* nh)
 
     m_nh = nh;
     SetupCallbacks();
-    RegisterServices();
-
-    FindRobots();
 
     ROS_INFO_STREAM("Initializing TaskMaster");
     m_tm.Init(nh, m_robots, "testList1.points");
@@ -73,7 +70,6 @@ void GlobalPlanner::Execute()
 
     // Get Robot Status...
 
-
     // FOR each pair of robots that're just chillin in a dump stage and are stopped near the handoff location
     //      Pick best bot to meet with?
     //      Check if robot1 & robot2 are within handoff threshold
@@ -93,10 +89,14 @@ void GlobalPlanner::Execute()
     //      pick best robot to get to waypoints (return an ID)
     //      OPTIONAL: IF need to cancel robot's current goal -> Send Cancel Message First AND update the task it was assigned to
     //      Send Waypoint Message
+
+    boost::mutex::scoped_lock lock(m_robotMutex);
+
     std::vector<Robot_Ptr> availableRobots = GetAvailableRobots();
 
     //TODO: Handoff
 
+/*
     // Check if a robot is full & find the best binbot for it
     for (std::vector<Robot_Ptr>::iterator it = availableRobots.begin(); it != availableRobots.end(); ++it)
     {
@@ -145,7 +145,7 @@ void GlobalPlanner::Execute()
             m_tm.SendGoal(gp->GetID());
         }
     }
-
+*/
     std::vector<Waypoint_Ptr> availableWaypoints = m_tm.GetAvailableWaypoints();
     availableRobots = GetAvailableRobots();
 
@@ -163,9 +163,11 @@ void GlobalPlanner::Execute()
             m_robots[bestRobot]->SetState(RobotState::NAVIGATING);
             m_tm.SendWaypoint(wp->GetID());
         }
+        else
+        {
+            // ROS_INFO_THROTTLE(1, "FAILED TO FIND A ROBOT");
+        }
     }
-
-    ros::spinOnce();
 }
 
 
@@ -273,66 +275,35 @@ bool GlobalPlanner::SetupCallbacks()
     ros::spinOnce();
 }
 
-bool GlobalPlanner::RegisterServices()
-{
-}
 
 // get robot information
 void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& msg)
 {
-    int id = msg->id;
-    // ROS_INFO_STREAM_THROTTLE(1, "Received robot status: "<<id);
-    global_planner::RobotStatus status = *msg;
-
-    std::map<int, Robot_Ptr>::iterator it = m_robots.find(id);
-    //If it is already in the map...
-    if(it != m_robots.end())
+    if (m_robotMutex.try_lock())
     {
-        m_robots[id]->SetData(status);
-    }
-    else
-    {
-        Robot_Ptr ptr(new RobotStatusWrapper());
-        ptr->SetData(status);
-        m_robots[id] = ptr;
+        int id = msg->id;
+        // ROS_INFO_STREAM_THROTTLE(1, "Received robot status: "<<id);
+        global_planner::RobotStatus status = *msg;
 
-        ROS_INFO_STREAM("Added new robot: "<<ptr->ToString());
-    }
-}
-
-// Send request to all listening robots that
-// they should send out their information to be added to the list of bots
-int GlobalPlanner::FindRobots()
-{
-    std::vector< std::string > names;
-    names.push_back(std::string("collector1"));
-
-    m_robots.clear();
-
-    /*
-    for (int i=0; i<names.size(); i++)
-    {
-        Robot_Ptr robot (new RobotStatusWrapper());
-        int id = i;
-        robot->SetName(names[i]);
-        robot->SetID(id);
-        robot->SetStorageUsed(0);
-        robot->SetStorageCapacity(3);
-        m_robots[id] = robot;
-
-        if (names[i].compare("bin1") == 0)
+        std::map<int, Robot_Ptr>::iterator it = m_robots.find(id);
+        //If it is already in the map...
+        if(it != m_robots.end())
         {
-            m_robots[id]->SetType(false);
+            m_robots[id]->SetData(status);
         }
         else
         {
-            m_robots[id]->SetType(true);
+            Robot_Ptr ptr(new RobotStatusWrapper());
+            ptr->SetData(status);
+            m_robots[id] = ptr;
+
+            ROS_INFO_STREAM("Added new robot: "<<ptr->ToString());
         }
     }
-    */
-
-    return names.size();
+    m_robotMutex.unlock();
 }
+
+
 /***********************************************************************
  *  Method: GlobalPlanner::SendSound
  *  Params: std::string filename, int num_times

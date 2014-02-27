@@ -39,6 +39,57 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
     m_nh = nh;
     m_listener = new tf::TransformListener(*nh);
 
+    if (m_nh->getParam("controller/robot_id", robotID))
+        ROS_INFO_STREAM("Set robot ID: "<<robotID);
+    else
+        ROS_ERROR_STREAM("Did not read robot ID: default = "<<robotID);
+    m_status.SetID(robotID);
+
+    if (m_nh->getParam("controller/robot_name", robotName))
+        ROS_INFO_STREAM("Read robot name: "<<robotName);
+    else
+        ROS_ERROR_STREAM("Did not read robot name: default = "<<robotName);
+    m_status.SetName(robotName);
+
+    if(m_nh->getParam("controller/storage_capacity", storage_cap))
+        ROS_INFO_STREAM("Read storage capacity: "<<storage_cap);
+    else
+        ROS_ERROR_STREAM("Did not read storage capacity: default = "<<storage_cap);
+    m_status.SetStorageCapacity(storage_cap);
+
+    if(m_nh->getParam("controller/storage_used", storage_used))
+        ROS_INFO_STREAM("Read storage used: "<<storage_used);
+    else
+        ROS_ERROR_STREAM("Did not read storage used: default = "<<storage_used);
+    m_status.SetStorageUsed(storage_used);
+
+    std::string robotType;
+    if (m_nh->getParam("controller/type", robotType))
+        ROS_INFO_STREAM("Read robot type: "<<robotType);
+    else
+        ROS_ERROR_STREAM("Did not read type: default = "<<robotType);
+
+    if (robotType.compare("collector") == 0)
+    {
+        ROS_INFO_STREAM("Type: Collector");
+        type = true;
+    }
+    else
+    {
+        ROS_INFO_STREAM("Type: Binbot");
+        type = false;
+    }
+
+    m_status.SetType(type);
+
+    // m_status.SetPose(geometry_msgs::Pose pose){ m_status.pose = pose; };
+    // m_status.SetTwist(geometry_msgs::Twist twist){ m_status.twist = twist; };
+
+    // std::string actionServerName;
+    // m_nh->getParam("robot_prefix", actionServerName);
+
+    m_nh->getParam("controller/base_frame", base_frame);
+
     if (robotID < 0)
     {
         ROS_ERROR_STREAM("ERROR: Received invalid robot id: "<<robotID);
@@ -55,19 +106,16 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
         return;
     }
 
-    m_status.SetID(robotID);
-    m_status.SetName(robotName);
-    // m_status.SetPose(geometry_msgs::Pose pose){ m_status.pose = pose; };
-    // m_status.SetTwist(geometry_msgs::Twist twist){ m_status.twist = twist; };
-    m_status.SetStorageCapacity(storage_cap);
-    m_status.SetStorageUsed(storage_used);
-    m_status.SetType(type);
-
     SetupCallbacks();
+
 
     action_client_ptr.reset( new MoveBaseClient("move_base", true) );
 
+    ROS_INFO_STREAM("Robot has setup the movebase client");
+
     Transition(RobotState::WAITING);
+
+    ROS_INFO_STREAM("Finished initializing");
 }
 
 
@@ -100,6 +148,7 @@ void RobotController::cb_waypointSub(const global_planner::WaypointMsg::ConstPtr
         ROS_INFO_STREAM("Received waypoint for me\n"<<wpWrapper.ToString());
 
         move_base_msgs::MoveBaseGoal goal = Conversion::PoseToMoveBaseGoal(wpWrapper.GetPose());
+        // boost::mutex::scoped_lock lock(m_statusMutex);
 
         switch(m_status.GetState())
         {
@@ -159,6 +208,8 @@ void RobotController::cb_eStopSub(const std_msgs::Empty &msg)
  ***********************************************************************/
 void RobotController::SendRobotStatus()
 {
+    // boost::mutex::scoped_lock lock(m_statusMutex);
+
     UpdatePose();
     m_statusPub.publish(m_status.GetMessage());
 }
@@ -183,7 +234,6 @@ void RobotController::SendGoalFinished(TaskResult::Status status)
  ***********************************************************************/
 void RobotController::SendWaypointFinished(TaskResult::Status status)
 {
-
     global_planner::WaypointFinished wpMsg;
     wpMsg.id = m_status.GetTaskID();
     wpMsg.status = Conversion::TaskResultToInt(status);
@@ -255,7 +305,7 @@ void RobotController::UpdatePose()
     //get current pose of the robot
     tf::StampedTransform transform;
     try{
-        m_listener->lookupTransform("/map", "robot_center",
+        m_listener->lookupTransform("/map", base_frame.c_str(),
                       ros::Time(0), transform);
 
         tf::Transform trans = transform;
@@ -296,16 +346,20 @@ void RobotController::Finished()
  ***********************************************************************/
 void RobotController::SetupCallbacks()
 {
-    m_goalSub = m_nh->subscribe("goal_pub", 10, &RobotController::cb_goalSub, this);
-    m_waypointSub = m_nh->subscribe("waypoint_pub", 10, &RobotController::cb_waypointSub, this);
-    m_dumpSub = m_nh->subscribe("dump_pub", 10, &RobotController::cb_dumpSub, this);
-    m_eStopSub = m_nh->subscribe("e_stop_pub", 10, &RobotController::cb_eStopSub, this);
+    m_goalSub = m_nh->subscribe("/goal_pub", 10, &RobotController::cb_goalSub, this);
+    m_waypointSub = m_nh->subscribe("/waypoint_pub", 10, &RobotController::cb_waypointSub, this);
+    m_dumpSub = m_nh->subscribe("/dump_pub", 10, &RobotController::cb_dumpSub, this);
+    m_eStopSub = m_nh->subscribe("/e_stop_pub", 10, &RobotController::cb_eStopSub, this);
 
-    m_statusPub = m_nh->advertise<global_planner::RobotStatus>("robot_status", 100);
+    m_odomSub = m_nh->subscribe("odom", 10, &RobotController::cb_odomSub, this);
 
-    m_goalFinishedPub = m_nh->advertise<global_planner::GoalFinished>("goal_finished", 10);
-    m_waypointFinishedPub = m_nh->advertise<global_planner::WaypointFinished>("waypoint_finished", 10);
-    m_dumpFinishedPub = m_nh->advertise<global_planner::DumpFinished>("dump_finished", 10);
+    m_statusPub = m_nh->advertise<global_planner::RobotStatus>("/robot_status", 100);
+
+    m_goalFinishedPub = m_nh->advertise<global_planner::GoalFinished>("/goal_finished", 10);
+    m_waypointFinishedPub = m_nh->advertise<global_planner::WaypointFinished>("/waypoint_finished", 10);
+    m_dumpFinishedPub = m_nh->advertise<global_planner::DumpFinished>("/dump_finished", 10);
+
+    ROS_INFO_STREAM("Finished setting up topics");
 }
 
 
@@ -317,8 +371,11 @@ void RobotController::SetupCallbacks()
  ***********************************************************************/
 void RobotController::Transition(RobotState::State newState, void* args)
 {
+    // boost::mutex::scoped_lock lock(m_statusMutex);
+
     m_status.SetState(newState);
     OnEntry(args);
+    ROS_INFO_STREAM("Transitioned to "<<RobotState::ToString(newState));
 }
 
 

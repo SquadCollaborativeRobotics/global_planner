@@ -10,7 +10,7 @@ int main(int argc, char** argv){
     RobotController rc;
 
     // Nodehandle, Robot id, name, capacity, used, type
-    rc.Init(&nh, 0, "collector1", 3, 0, true);
+    rc.Init(&nh);
 
     ros::Rate r(40);
 

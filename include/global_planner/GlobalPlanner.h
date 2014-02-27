@@ -20,6 +20,7 @@
 #include <global_planner/RobotStatusWrapper.h>
 #include <global_planner/RobotState.h>
 #include <global_planner/SoundMsg.h>
+#include <boost/thread/mutex.hpp>
 
 class GlobalPlanner
 {
@@ -55,14 +56,9 @@ public:
 private:
     // setup callbacks, regiser services, load waypoints...
     bool SetupCallbacks();
-    bool RegisterServices();
 
     // get robot information
     void cb_robotStatus(const global_planner::RobotStatus::ConstPtr& msg);
-
-    // Send request to all listening robots that
-    // they should send out their information to be added to the list of bots
-    int FindRobots();
 
     // Pointer to a registered ros NodeHandle
     ros::NodeHandle *m_nh;
@@ -83,4 +79,6 @@ private:
     TaskMaster m_tm;
 
     ros::Time m_lastDisplay;
+
+    boost::mutex m_robotMutex;
 };

@@ -70,6 +70,7 @@ private:
     ros::Subscriber m_waypointSub;
     ros::Subscriber m_dumpSub;
     ros::Subscriber m_eStopSub;
+    ros::Subscriber m_odomSub;
 
     ros::Publisher m_statusPub;
 
@@ -84,6 +85,7 @@ private:
     ros::NodeHandle* m_nh;
     tf::TransformListener* m_listener;
 
+    std::string base_frame;
     /**
      * Robot base navigation stuff
      */
@@ -93,4 +95,8 @@ private:
     //
     // TODO: Remap the needed topics for nav stack
     boost::shared_ptr<MoveBaseClient> action_client_ptr;
+
+    // Mutex to make sure we are only getting commands when we should (mainly: not during transitions)
+    boost::mutex m_statusMutex;
+
 };

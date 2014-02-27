@@ -33,4 +33,21 @@ public:
     {
         return static_cast<RobotState::State>(s);
     }
+
+    static const std::string ToString(RobotState::State s)
+    {
+        switch(s)
+        {
+            case RobotState::WAITING:
+            return "WAITING";
+            case RobotState::NAVIGATING:
+            return "NAVIGATING";
+            case RobotState::DUMPING:
+            return "DUMPING";
+            case RobotState::COLLECTING:
+            return "COLLECTING";
+            default:
+            return "UNKNOWN robot state";
+        }
+    }
 };

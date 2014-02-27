@@ -43,7 +43,7 @@ public:
         std::stringstream ss;
         geometry_msgs::Pose p = GetPose();
         geometry_msgs::Twist t = GetTwist();
-        ss<<"robot id = "<<GetID()<<" State: "<<RobotState::RobotStateToInt(GetState())
+        ss<<"robot id = "<<GetID()<<" State: "<<RobotState::ToString(GetState())
         <<" | amount filled: "<<GetStorageUsed()<<" | capacity: "<<GetStorageCapacity()
         <<" current task = "<<GetTaskID()
         <<" -- position: "<< p.position.x << ' ' << p.position.y << ' ' << p.orientation.z << ' ' << p.orientation.w
