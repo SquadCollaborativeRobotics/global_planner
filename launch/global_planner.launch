@@ -1,7 +1,7 @@
 <launch>
   <!-- launch global planner -->
   <node pkg="global_planner" type="global_planner_node" name="global_planner" output="screen">
-    <param name="waypoints_file" value="testList1.points" />
+    <param name="waypoints_file" value="cubicle.points" />
   </node>
 
   <!-- human interface -->
