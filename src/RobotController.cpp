@@ -30,7 +30,7 @@ RobotController::~RobotController()
 
 /***********************************************************************
  *  Method: RobotController::Init
- *  Params: ros::NodeHandle *nh, int robotID, std::string robotName
+ *  Params: ros::NodeHandle *nh, int robotID, std::string robotName, int storage_cap, int storage_used, bool type
  * Returns: void
  * Effects:
  ***********************************************************************/
@@ -450,33 +450,25 @@ void RobotController::StateExecute()
     switch(m_status.GetState())
     {
         case RobotState::NAVIGATING:
-        if (action_client_ptr->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
-        {
-            ROS_INFO_STREAM("Successful movebase moving?");
-            SendWaypointFinished(TaskResult::SUCCESS);
-            Transition(RobotState::WAITING, 0);
-        }
-        else if (action_client_ptr->getState() == actionlib::SimpleClientGoalState::ACTIVE)
-        {
-            ROS_INFO_STREAM_THROTTLE(1, "Actively going to goal... NAVIGATING state");
-        }
-        else
-        {
-            // Randomly finish the task
-            if (false && rand() % 250 == 0)
+            switch (action_client_ptr->getState())
             {
-                if (rand()%2 == 0)
-                {
-                    SendWaypointFinished(TaskResult::SUCCESS);
-                }
-                else
-                {
-                    SendWaypointFinished(TaskResult::FAILURE);
-                }
+                case actionlib::SimpleClientGoalState::SUCCEEDED:
+                ROS_INFO_STREAM("Successful movebase moving?");
+                SendWaypointFinished(TaskResult::SUCCESS);
                 Transition(RobotState::WAITING, 0);
-            }
-            ROS_INFO_STREAM_THROTTLE(1, "Not yet successful: " << action_client_ptr->getState().toString() );
-        }
+                break;
+                case actionlib::SimpleClientGoalState::ABORTED:
+
+                break;
+                case actionlib::SimpleClientGoalState::ACTIVE:
+                ROS_INFO_STREAM_THROTTLE(1, "Actively going to goal... Active state");
+                break;
+                default:
+                    ROS_INFO_STREAM_THROTTLE(1, "Not yet successful: " << action_client_ptr->getState().toString() );
+                break;
+        break;
+        case RobotState::WAITING:
+            ROS_INFO_STREAM("Waiting for next command...");
     }
 }
 
