@@ -174,7 +174,7 @@ void GlobalPlanner::Execute()
     }
 }
 
-
+// Returns all robots that are in the available state
 std::vector<Robot_Ptr> GlobalPlanner::GetAvailableRobots()
 {
     std::vector<Robot_Ptr> v;
@@ -189,7 +189,7 @@ std::vector<Robot_Ptr> GlobalPlanner::GetAvailableRobots()
     return v;
 }
 
-
+// Returns the best binbot for dumping with the robot specified in the param
 int GlobalPlanner::GetBestBinBot(int idOfRobotThatNeedsIt)
 {
     for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
@@ -209,7 +209,7 @@ int GlobalPlanner::GetBestBinBot(int idOfRobotThatNeedsIt)
     return -1;
 }
 
-
+// Returns the id of the best collectorbt to obtain the goal specified
 int GlobalPlanner::GetBestCollectorbot(int goalID)
 {
     std::map<int, Goal_Ptr> goals = m_tm.GetGoals();
@@ -232,7 +232,7 @@ int GlobalPlanner::GetBestCollectorbot(int goalID)
     return -1;
 }
 
-
+//Return the best robot that has searching capabilities (can ID garbage cans)
 int GlobalPlanner::GetBestSearchBot(int waypointID)
 {
     std::map<int, Waypoint_Ptr> waypoints = m_tm.GetWaypoints();
@@ -280,7 +280,7 @@ bool GlobalPlanner::SetupCallbacks()
 }
 
 
-// get robot information
+// cb for robot information
 void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& msg)
 {
     if (m_robotMutex.try_lock())
@@ -312,7 +312,9 @@ void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& 
  *  Method: GlobalPlanner::SendSound
  *  Params: std::string filename, int num_times
  * Returns: void
- * Effects:
+ * Effects:	play the sound specified in the filename
+ *  (relaative to the 'resources/sounds' folder)
+ *  for the number of timess specified
  ***********************************************************************/
 void GlobalPlanner::SendSound(std::string filename, int num_times)
 {
@@ -328,7 +330,8 @@ void GlobalPlanner::SendSound(std::string filename, int num_times)
  *  Method: GlobalPlanner::SendSound
  *  Params: std::string filename
  * Returns: void
- * Effects:
+ * Effects:	play the sound specified in the filename
+ *  (relaative to the 'resources/sounds' folder)
  ***********************************************************************/
 void GlobalPlanner::SendSound(std::string filename)
 {

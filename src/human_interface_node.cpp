@@ -53,7 +53,7 @@ public:
         }
     };
 
-    // Thread function
+    // Thread caller function
     void play_sound(std::string str, int numTimes)
     {
         //thread has not yet finished. try killing.
