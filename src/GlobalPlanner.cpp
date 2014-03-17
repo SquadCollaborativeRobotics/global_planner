@@ -212,40 +212,60 @@ int GlobalPlanner::GetBestBinBot(int idOfRobotThatNeedsIt)
 
 int GlobalPlanner::GetBestCollectorbot(int goalID)
 {
-    std::map<int, Goal_Ptr> goals = m_tm.GetGoals();
-    geometry_msgs::Pose goalPose = goals[goalID]->GetPose();
-
-    for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
-    {
-        //if it is a collectorbot
-        if (it->second->GetType() == true)
-        {
-            if (it->second->GetState() == RobotState::WAITING)
-            {
-                if (it->second->GetStorageAvailable() > 0)
-                {
-                    return it->first;
-                }
-            }
-        }
-    }
-    return -1;
+    return GetFirstAvailableBot(goalID, COLLECTOR_BOT);
 }
-
 
 int GlobalPlanner::GetBestSearchBot(int waypointID)
 {
-    std::map<int, Waypoint_Ptr> waypoints = m_tm.GetWaypoints();
-    geometry_msgs::Pose pose = waypoints[waypointID]->GetPose();
+    return GetFirstAvailableBot(waypointID);
+}
 
+/***********************************************************************
+ *  Method: GlobalPlanner::GetFirstAvailableBot
+ *  Params: int waypointID
+ * Returns: int id of robot
+ * Effects: Returns the first available robot of any type that is available (waiting and has storage space)
+ ***********************************************************************/
+int GlobalPlanner::GetFirstAvailableBot(int waypointID) 
+{
+    return GetFirstAvailableBot(waypointID, ANY);
+}
+
+/***********************************************************************
+ *  Method: GlobalPlanner::GetFirstAvailableBot
+ *  Params: int waypointID, GlobalPlanner::ROBOT_TYPE type
+ * Returns: int id of robot
+ * Effects: Returns the first available robot of the right type that is available (waiting and has storage space)
+ ***********************************************************************/
+int GlobalPlanner::GetFirstAvailableBot(int waypointID, GlobalPlanner::ROBOT_TYPE type)
+{
+    // std::map<int, Waypoint_Ptr> waypoints = m_tm.GetWaypoints();
+    // geometry_msgs::Pose pose = waypoints[waypointID]->GetPose();
+
+    // For all robots
     for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
     {
-        if (it->second->GetState() == RobotState::WAITING)
+        // If robot is waiting and has storage space
+        if (it->second->GetState() == RobotState::WAITING && it->second->GetStorageAvailable() > 0)
         {
-            return it->first;
+            // Choose the first of the right type of robot
+            switch (type) {
+                case COLLECTOR_BOT:
+                    if (it->second->GetType() == true) { return it->first;}
+                    break;
+                
+                case BIN_BOT: // Binbot only
+                    if (it->second->GetType() == false) { return it->first; }
+                    break;
+                
+                case ANY:
+                default:
+                    return it->first;
+            }
+            
         }
     }
-    return -1;
+    return NO_ROBOT_FOUND;
 }
 
 

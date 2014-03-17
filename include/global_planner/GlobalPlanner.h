@@ -22,9 +22,17 @@
 #include <global_planner/SoundMsg.h>
 #include <boost/thread/mutex.hpp>
 
+#define NO_ROBOT_FOUND -1
+
 class GlobalPlanner
 {
 public:
+    enum ROBOT_TYPE
+    {
+        ANY = 0,
+        COLLECTOR_BOT = 1,
+        BIN_BOT = 2
+    };
     GlobalPlanner();
     ~GlobalPlanner();
 
@@ -48,6 +56,9 @@ public:
     int GetBestBinBot(int idOfRobotThatNeedsIt);
     int GetBestCollectorbot(int goalID);
     int GetBestSearchBot(int wpID);
+
+    int GetFirstAvailableBot(int wpID);
+    int GetFirstAvailableBot(int wpID, ROBOT_TYPE type);
 
 
     void SendSound(std::string filename, int num_times);
