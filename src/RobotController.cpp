@@ -2,14 +2,15 @@
  * AUTHOR: shawn <shawn>
  *   FILE: RobotController.cpp
  *   DATE: Mon Feb 24 10:36:07 2014
- *  DESCR:
+ *  DESCR: The Robot Controller class implements the functionality of the
+ *		   robot
  ***********************************************************************/
 #include "global_planner/RobotController.h"
 
 /***********************************************************************
  *  Method: RobotController::RobotController
  *  Params:
- * Effects:
+ * Effects: Initializer, sets pointers to null
  ***********************************************************************/
 RobotController::RobotController()
 {
@@ -21,7 +22,7 @@ RobotController::RobotController()
 /***********************************************************************
  *  Method: RobotController::~RobotController
  *  Params:
- * Effects:
+ * Effects: Destructor, no need to delete smart pointers
  ***********************************************************************/
 RobotController::~RobotController()
 {
@@ -32,9 +33,9 @@ RobotController::~RobotController()
  *  Method: RobotController::Init
  *  Params: ros::NodeHandle *nh, int robotID, std::string robotName, int storage_cap, int storage_used, bool type
  * Returns: void
- * Effects:
+ * Effects: Initialize the controller with parameters
  ***********************************************************************/
-void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotName, int storage_cap, int storage_used, bool type)
+void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotName, int storage_cap, int storage_used, RobotState::Type type)
 {
     m_nh = nh;
     m_listener = new tf::TransformListener(*nh);
@@ -72,21 +73,15 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
     if (robotType.compare("collector") == 0)
     {
         ROS_INFO_STREAM("Type: Collector");
-        type = true;
+        type = RobotState::COLLECTOR_BOT;
     }
     else
     {
         ROS_INFO_STREAM("Type: Binbot");
-        type = false;
+        type = RobotState::BIN_BOT;
     }
 
     m_status.SetType(type);
-
-    // m_status.SetPose(geometry_msgs::Pose pose){ m_status.pose = pose; };
-    // m_status.SetTwist(geometry_msgs::Twist twist){ m_status.twist = twist; };
-
-    // std::string actionServerName;
-    // m_nh->getParam("robot_prefix", actionServerName);
 
     std::string tf_prefix;
     if (m_nh->getParam("controller/tf_prefix", tf_prefix))
@@ -140,7 +135,7 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
  *  Method: RobotController::cb_goalSub
  *  Params: const global_planner::GoalMsg::ConstPtr &msg
  * Returns: void
- * Effects:
+ * Effects: callback for goal messages
  ***********************************************************************/
 void RobotController::cb_goalSub(const global_planner::GoalMsg::ConstPtr &msg)
 {
@@ -151,7 +146,7 @@ void RobotController::cb_goalSub(const global_planner::GoalMsg::ConstPtr &msg)
  *  Method: RobotController::cb_waypointSub
  *  Params: const global_planner::WaypointMsg::ConstPtr &msg
  * Returns: void
- * Effects:
+ * Effects: callback for waypoint messages
  ***********************************************************************/
 void RobotController::cb_waypointSub(const global_planner::WaypointMsg::ConstPtr &msg)
 {
@@ -199,7 +194,7 @@ void RobotController::cb_waypointSub(const global_planner::WaypointMsg::ConstPtr
  *  Method: RobotController::cb_dumpSub
  *  Params: const global_planner::DumpMsg::ConstPtr &msg
  * Returns: void
- * Effects:
+ * Effects: callback for dump messages
  ***********************************************************************/
 void RobotController::cb_dumpSub(const global_planner::DumpMsg::ConstPtr &msg)
 {
@@ -210,7 +205,8 @@ void RobotController::cb_dumpSub(const global_planner::DumpMsg::ConstPtr &msg)
  *  Method: RobotController::cb_eStopSub
  *  Params: const std_msgs::Empty &msg
  * Returns: void
- * Effects:
+ * Effects: emergency stop callback.  it should cancel current goals and
+ * 	go to waiting state
  ***********************************************************************/
 void RobotController::cb_eStopSub(const std_msgs::Empty &msg)
 {
@@ -221,7 +217,8 @@ void RobotController::cb_eStopSub(const std_msgs::Empty &msg)
  *  Method: RobotController::SendRobotStatus
  *  Params:
  * Returns: void
- * Effects:
+ * Effects: Sends the current status over ROS to any listening
+ * 	nodes
  ***********************************************************************/
 void RobotController::SendRobotStatus()
 {
@@ -234,7 +231,7 @@ void RobotController::SendRobotStatus()
  *  Method: RobotController::SendGoalFinished
  *  Params: TaskResult::Status status
  * Returns: void
- * Effects:
+ * Effects: Called when a goal task is finished.  Publish the result
  ***********************************************************************/
 void RobotController::SendGoalFinished(TaskResult::Status status)
 {
@@ -245,7 +242,7 @@ void RobotController::SendGoalFinished(TaskResult::Status status)
  *  Method: RobotController::SendWaypointFinished
  *  Params: TaskResult::Status status
  * Returns: void
- * Effects:
+ * Effects: Called when a waypoint task is finished.  Publish the result
  ***********************************************************************/
 void RobotController::SendWaypointFinished(TaskResult::Status status)
 {
@@ -261,7 +258,7 @@ void RobotController::SendWaypointFinished(TaskResult::Status status)
  *  Method: RobotController::SendDumpFinished
  *  Params: TaskResult::Status status
  * Returns: void
- * Effects:
+ * Effects: Called when the bot has reached its goal position for dumping
  ***********************************************************************/
 void RobotController::SendDumpFinished(TaskResult::Status status)
 {
@@ -272,7 +269,8 @@ void RobotController::SendDumpFinished(TaskResult::Status status)
  *  Method: RobotController::Execute
  *  Params:
  * Returns: void
- * Effects:
+ * Effects: Run the controller, specifically running anything that should
+ * 	happen when in a state
  ***********************************************************************/
 void RobotController::Execute()
 {
@@ -291,7 +289,7 @@ void RobotController::Execute()
  *  Method: RobotController::Stop
  *  Params:
  * Returns: void
- * Effects:
+ * Effects: TODO: 'pause' function. does whatever it needs for it
  ***********************************************************************/
 void RobotController::Stop()
 {
@@ -302,7 +300,7 @@ void RobotController::Stop()
  *  Method: RobotController::Resume
  *  Params:
  * Returns: void
- * Effects:
+ * Effects: TODO: 'resume' function, resume robot to previous task
  ***********************************************************************/
 void RobotController::Resume()
 {
@@ -313,7 +311,8 @@ void RobotController::Resume()
  *  Method: RobotController::UpdateStatus
  *  Params:
  * Returns: void
- * Effects:
+ * Effects: Gathers any needed information to update the underlying
+ * 	status message
  ***********************************************************************/
 void RobotController::UpdatePose()
 {
@@ -345,7 +344,7 @@ void RobotController::UpdatePose()
  *  Method: RobotController::Finished
  *  Params:
  * Returns: void
- * Effects:
+ * Effects:	TODO: code to run when entire system is finished
  ***********************************************************************/
 void RobotController::Finished()
 {
@@ -357,7 +356,7 @@ void RobotController::Finished()
  *  Method: RobotController::SetupCallbacks
  *  Params:
  * Returns: void
- * Effects:
+ * Effects:	Sets up the subscribers and publishers for the bott
  ***********************************************************************/
 void RobotController::SetupCallbacks()
 {
@@ -382,7 +381,7 @@ void RobotController::SetupCallbacks()
  *  Method: RobotController::Transition
  *  Params: RobotState::State newState
  * Returns: void
- * Effects:
+ * Effects:	Transition strarts the transition from one state to another
  ***********************************************************************/
 void RobotController::Transition(RobotState::State newState, void* args)
 {
@@ -396,9 +395,9 @@ void RobotController::Transition(RobotState::State newState, void* args)
 
 /***********************************************************************
  *  Method: RobotController::OnEntry
- *  Params: RobotState::State state, void *args
+ *  Params: void *args
  * Returns: void
- * Effects:
+ * Effects: This is what runs when entering a state
  ***********************************************************************/
 void RobotController::OnEntry(void *args)
 {
@@ -419,9 +418,10 @@ void RobotController::OnEntry(void *args)
 
 /***********************************************************************
  *  Method: RobotController::StateExecute
- *  Params: RobotState::State state, void *args
+ *  Params: void *args
  * Returns: void
- * Effects:
+ * Effects: specifies what to run while in a state, and transition if
+ *  appropriate
  ***********************************************************************/
 void RobotController::StateExecute()
 {
@@ -450,6 +450,22 @@ void RobotController::StateExecute()
     {
         case RobotState::NAVIGATING:
             switch (result)
+            /*
+        if (action_client_ptr->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+        {
+            ROS_INFO_STREAM("Successful movebase moving?");
+            SendWaypointFinished(TaskResult::SUCCESS);
+            Transition(RobotState::WAITING, 0);
+        }
+        else if (action_client_ptr->getState() == actionlib::SimpleClientGoalState::ACTIVE)
+        {
+            ROS_INFO_STREAM_THROTTLE(1, "Actively going to goal... NAVIGATING state");
+        }
+        else
+        {
+            // Randomly finish the task
+            if (false && rand() % 250 == 0) // TODO : Move this override to a config option
+            */
             {
                 case actionlib::SimpleClientGoalState::SUCCEEDED:
                     ROS_INFO_STREAM("Successful movebase moving?");
@@ -482,7 +498,7 @@ void RobotController::StateExecute()
  *  Method: RobotController::cb_odomSub
  *  Params: const nav_msgs::Odometry::ConstPtr &msg
  * Returns: void
- * Effects:
+ * Effects: callback for the odometry message for the bot
  ***********************************************************************/
 void RobotController::cb_odomSub(const nav_msgs::Odometry::ConstPtr &msg)
 {

@@ -3,7 +3,7 @@
 /***********************************************************************
  *  Method: TaskMaster::TaskMaster
  *  Params:
- * Effects:
+ * Effects: Initialize pointers
  ***********************************************************************/
 TaskMaster::TaskMaster()
 {
@@ -15,7 +15,7 @@ TaskMaster::TaskMaster()
  *  Method: TaskMaster::Init
  *  Params: ros::NodeHandle &nh, std::map<int, Robot_Ptr> robots
  * Returns: bool
- * Effects:
+ * Effects: Initialize taskmaster with robots, nodehandles, and waypoints.
  ***********************************************************************/
 bool TaskMaster::Init(ros::NodeHandle* nh, std::map<int, Robot_Ptr> robots, std::string waypoint_filename)
 {
@@ -43,7 +43,7 @@ bool TaskMaster::Init(ros::NodeHandle* nh, std::map<int, Robot_Ptr> robots, std:
  *  Method: TaskMaster::AddGoal
  *  Params: Goal_Ptr goal
  * Returns: bool
- * Effects:
+ * Effects: add the goal to the list of goals
  ***********************************************************************/
 bool TaskMaster::AddGoal(Goal_Ptr goal)
 {
@@ -55,6 +55,7 @@ bool TaskMaster::AddGoal(Goal_Ptr goal)
     }
     else
     {
+    	//TODO: verify that this works...
         m_goalMap[goal->GetID()] = goal;
     }
 }
@@ -64,7 +65,7 @@ bool TaskMaster::AddGoal(Goal_Ptr goal)
  *  Method: TaskMaster::AddWaypoint
  *  Params: Waypoint_Ptr waypoint
  * Returns: bool
- * Effects:
+ * Effects: add the waypoint to the list of waypoints
  ***********************************************************************/
 bool TaskMaster::AddWaypoint(Waypoint_Ptr waypoint)
 {
@@ -85,7 +86,7 @@ bool TaskMaster::AddWaypoint(Waypoint_Ptr waypoint)
  *  Method: TaskMaster::AddDump
  *  Params: Dump_Ptr dump
  * Returns: bool
- * Effects:
+ * Effects: add the dump to the list of dumps
  ***********************************************************************/
 bool TaskMaster::AddDump(Dump_Ptr dump)
 {
@@ -106,7 +107,7 @@ bool TaskMaster::AddDump(Dump_Ptr dump)
  *  Method: TaskMaster::Clear
  *  Params:
  * Returns: bool
- * Effects:
+ * Effects: clear all lists
  ***********************************************************************/
 bool TaskMaster::Clear()
 {
@@ -121,7 +122,7 @@ bool TaskMaster::Clear()
  *  Method: TaskMaster::SendWaypoint
  *  Params: int wpID
  * Returns: bool
- * Effects:
+ * Effects: Send the waypoint message specified by the parameter
  ***********************************************************************/
 bool TaskMaster::SendWaypoint(int wpID)
 {
@@ -134,7 +135,7 @@ bool TaskMaster::SendWaypoint(int wpID)
  *  Method: TaskMaster::SendGoal
  *  Params: int goalID
  * Returns: bool
- * Effects:
+ * Effects: Send the goal message specified by the parameter
  ***********************************************************************/
 bool TaskMaster::SendGoal(int goalID)
 {
@@ -148,7 +149,7 @@ bool TaskMaster::SendGoal(int goalID)
  *  Method: TaskMaster::SendDump
  *  Params: int dumpID
  * Returns: bool
- * Effects:
+ * Effects: Send the dump message specified by the parameter
  ***********************************************************************/
 bool TaskMaster::SendDump(int dumpID)
 {
@@ -161,7 +162,7 @@ bool TaskMaster::SendDump(int dumpID)
  *  Method: TaskMaster::GetGoals
  *  Params:
  * Returns: std::vector<Goal_Ptr>
- * Effects:
+ * Effects: Get all goals
  ***********************************************************************/
 std::map<int, Goal_Ptr> TaskMaster::GetGoals()
 {
@@ -173,7 +174,7 @@ std::map<int, Goal_Ptr> TaskMaster::GetGoals()
  *  Method: TaskMaster::GetWaypoints
  *  Params:
  * Returns: std::vector<Waypoint_Ptr>
- * Effects:
+ * Effects: Get all waypoints
  ***********************************************************************/
 std::map<int, Waypoint_Ptr> TaskMaster::GetWaypoints()
 {
@@ -185,7 +186,7 @@ std::map<int, Waypoint_Ptr> TaskMaster::GetWaypoints()
  *  Method: TaskMaster::GetDumps
  *  Params:
  * Returns: std::vector<Dump_Ptr>
- * Effects:
+ * Effects: Get all dumps
  ***********************************************************************/
 std::map<int, Dump_Ptr> TaskMaster::GetDumps()
 {
@@ -197,7 +198,7 @@ std::map<int, Dump_Ptr> TaskMaster::GetDumps()
  *  Method: TaskMaster::cb_goalFinished
  *  Params: const global_planner::GoalFinished::ConstPtr& msg
  * Returns: void
- * Effects:
+ * Effects: Callback for when a goal is finished
  ***********************************************************************/
 void TaskMaster::cb_goalFinished(const global_planner::GoalFinished::ConstPtr& msg)
 {
@@ -219,7 +220,7 @@ void TaskMaster::cb_goalFinished(const global_planner::GoalFinished::ConstPtr& m
  *  Method: TaskMaster::cb_waypointFinished
  *  Params: const global_planner::WaypointFinished::ConstPtr& msg
  * Returns: void
- * Effects:
+ * Effects: callback for when a waypoint is finished
  ***********************************************************************/
 void TaskMaster::cb_waypointFinished(const global_planner::WaypointFinished::ConstPtr& msg)
 {
@@ -242,7 +243,7 @@ void TaskMaster::cb_waypointFinished(const global_planner::WaypointFinished::Con
  *  Method: TaskMaster::cb_dumpFinished
  *  Params: const global_planner::DumpFinished::ConstPtr& msg
  * Returns: void
- * Effects:
+ * Effects: callback for when a dump is finished
  ***********************************************************************/
 void TaskMaster::cb_dumpFinished(const global_planner::DumpFinished::ConstPtr& msg)
 {
@@ -264,7 +265,7 @@ void TaskMaster::cb_dumpFinished(const global_planner::DumpFinished::ConstPtr& m
  *  Method: TaskMaster::cb_goalSeen
  *  Params: const global_planner::GoalSeen::ConstPtr &msg
  * Returns: void
- * Effects:
+ * Effects: callback for when a goal is seen by an april tag manager
  ***********************************************************************/
 void TaskMaster::cb_goalSeen(const global_planner::GoalSeen::ConstPtr &msg)
 {
@@ -321,7 +322,7 @@ void TaskMaster::cb_goalSeen(const global_planner::GoalSeen::ConstPtr &msg)
  *  Method: TaskMaster::SetupCallbacks
  *  Params:
  * Returns: bool
- * Effects:
+ * Effects: Setup topic subscribers and publishers
  ***********************************************************************/
 bool TaskMaster::SetupTopics()
 {
@@ -375,7 +376,7 @@ bool TaskMaster::SetupTopics()
  *  Method: TaskMaster::RegisterServices
  *  Params:
  * Returns: bool
- * Effects:
+ * Effects: register any services (both setting up and for listening)
  ***********************************************************************/
 bool TaskMaster::RegisterServices()
 {
@@ -385,7 +386,7 @@ bool TaskMaster::RegisterServices()
  *  Method: TaskMaster::LoadWaypoints
  *  Params: std::string filename
  * Returns: void
- * Effects:
+ * Effects: load waypoints from a file
  ***********************************************************************/
 void TaskMaster::LoadWaypoints(std::string filename)
 {
@@ -415,7 +416,7 @@ void TaskMaster::LoadWaypoints(std::string filename)
  *  Method: TaskMaster::GetAvailableGoals
  *  Params:
  * Returns: std::vector<Goal_Ptr>
- * Effects:
+ * Effects: Get all available goals
  ***********************************************************************/
 std::vector<Goal_Ptr> TaskMaster::GetAvailableGoals()
 {
@@ -436,7 +437,7 @@ std::vector<Goal_Ptr> TaskMaster::GetAvailableGoals()
  *  Method: TaskMaster::GetAvailableWaypoints
  *  Params:
  * Returns: std::vector<Waypoint_Ptr>
- * Effects:
+ * Effects: Get all available waypoints
  ***********************************************************************/
 std::vector<Waypoint_Ptr> TaskMaster::GetAvailableWaypoints()
 {
@@ -457,7 +458,7 @@ std::vector<Waypoint_Ptr> TaskMaster::GetAvailableWaypoints()
  *  Method: TaskMaster::GetAvailableDumps
  *  Params:
  * Returns: std::vector<Dump_Ptr>
- * Effects:
+ * Effects: get all available dumps
  ***********************************************************************/
 std::vector<Dump_Ptr> TaskMaster::GetAvailableDumps()
 {

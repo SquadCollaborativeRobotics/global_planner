@@ -25,4 +25,4 @@ int32 storage_used
 int32 storage_capacity
 
 #robot type
-bool type
+uint8 type

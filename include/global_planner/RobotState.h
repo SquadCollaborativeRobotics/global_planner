@@ -1,7 +1,7 @@
 /**
  *  RobotState.h
  *
- *  This class is an enumeration that is used to represent different states
+ *  This class is an enumeration that is used to represent different states and the type
  *      of the robot during operation
  *
  *  (c) 2014
@@ -12,6 +12,23 @@
 class RobotState
 {
 public:
+    enum Type
+    {
+        ANY = 0,
+        COLLECTOR_BOT = 1,
+        BIN_BOT = 2
+    };
+
+    static const int RobotTypeToInt(RobotState::Type t)
+    {
+        return static_cast<int>(t);
+    }
+    
+    static const RobotState::Type IntToRobotType(int t)
+    {
+        return static_cast<RobotState::Type>(t);
+    }
+
     enum State
     {
         WAITING = 0,

@@ -174,7 +174,7 @@ void GlobalPlanner::Execute()
     }
 }
 
-
+// Returns all robots that are in the available state
 std::vector<Robot_Ptr> GlobalPlanner::GetAvailableRobots()
 {
     std::vector<Robot_Ptr> v;
@@ -189,65 +189,56 @@ std::vector<Robot_Ptr> GlobalPlanner::GetAvailableRobots()
     return v;
 }
 
-
+// Returns the best binbot for dumping with the robot specified in the param
 int GlobalPlanner::GetBestBinBot(int idOfRobotThatNeedsIt)
 {
-    for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
-    {
-        //if it is a binbot
-        if (it->second->GetType() == false)
-        {
-            if (it->second->GetState() == RobotState::WAITING)
-            {
-                if (it->second->GetStorageAvailable() > 0)
-                {
-                    return it->first;
-                }
-            }
-        }
-    }
-    return -1;
+    return GetFirstAvailableBot(RobotState::BIN_BOT);
 }
 
-
+// Returns the id of the best collector bot for given goal id
 int GlobalPlanner::GetBestCollectorbot(int goalID)
 {
-    std::map<int, Goal_Ptr> goals = m_tm.GetGoals();
-    geometry_msgs::Pose goalPose = goals[goalID]->GetPose();
-
-    for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
-    {
-        //if it is a collectorbot
-        if (it->second->GetType() == true)
-        {
-            if (it->second->GetState() == RobotState::WAITING)
-            {
-                if (it->second->GetStorageAvailable() > 0)
-                {
-                    return it->first;
-                }
-            }
-        }
-    }
-    return -1;
+    return GetFirstAvailableBot(RobotState::COLLECTOR_BOT);
 }
-
 
 int GlobalPlanner::GetBestSearchBot(int waypointID)
 {
-    std::map<int, Waypoint_Ptr> waypoints = m_tm.GetWaypoints();
-    geometry_msgs::Pose pose = waypoints[waypointID]->GetPose();
+    return GetFirstAvailableBot();
+}
 
+/***********************************************************************
+ *  Method: GlobalPlanner::GetFirstAvailableBot
+ *  Params: int waypointID
+ * Returns: int id of robot
+ * Effects: Returns the first available robot of any type that is available (waiting and has storage space)
+ ***********************************************************************/
+int GlobalPlanner::GetFirstAvailableBot() 
+{
+    return GetFirstAvailableBot(RobotState::ANY);
+}
+
+/***********************************************************************
+ *  Method: GlobalPlanner::GetFirstAvailableBot
+ *  Params: GlobalPlanner::ROBOT_TYPE type
+ * Returns: int id of robot
+ * Effects: Returns the first available robot of the right type that is available (waiting and has storage space)
+ ***********************************************************************/
+int GlobalPlanner::GetFirstAvailableBot(RobotState::Type type)
+{
+    // For all robots
     for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
     {
-        if (it->second->GetState() == RobotState::WAITING)
+        // If robot is waiting, is right kind, and has storage space
+        if (it->second->GetState() == RobotState::WAITING &&  // Robot is available
+            (type == RobotState::ANY || it->second->GetType() == type) && // And robot is right kind (any or collector or bin)
+            it->second->GetStorageAvailable() > 0) // And robot has storage space
         {
+            // Choose the first match
             return it->first;
         }
     }
-    return -1;
+    return NO_ROBOT_FOUND;
 }
-
 
 // System finished
 void GlobalPlanner::Finished()
@@ -280,7 +271,7 @@ bool GlobalPlanner::SetupCallbacks()
 }
 
 
-// get robot information
+// Get robot information TODO: better definition
 void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& msg)
 {
     if (m_robotMutex.try_lock())
@@ -312,7 +303,9 @@ void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& 
  *  Method: GlobalPlanner::SendSound
  *  Params: std::string filename, int num_times
  * Returns: void
- * Effects:
+ * Effects:	play the sound specified in the filename
+ *  (relaative to the 'resources/sounds' folder)
+ *  for the number of timess specified
  ***********************************************************************/
 void GlobalPlanner::SendSound(std::string filename, int num_times)
 {
@@ -328,7 +321,8 @@ void GlobalPlanner::SendSound(std::string filename, int num_times)
  *  Method: GlobalPlanner::SendSound
  *  Params: std::string filename
  * Returns: void
- * Effects:
+ * Effects:	play the sound specified in the filename
+ *  (relaative to the 'resources/sounds' folder)
  ***********************************************************************/
 void GlobalPlanner::SendSound(std::string filename)
 {

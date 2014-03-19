@@ -6,10 +6,9 @@ int main(int argc, char** argv){
     ros::init(argc, argv, "robot_controller_node");
     ros::NodeHandle nh;
 
-    ROS_ERROR("Robot Controller Started");
+    ROS_INFO("Robot Controller Started");
     RobotController rc;
 
-    // Nodehandle, Robot id, name, capacity, used, type
     rc.Init(&nh);
 
     ros::Rate r(40);

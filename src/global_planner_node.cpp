@@ -14,7 +14,7 @@ int main(int argc, char** argv){
     ros::init(argc, argv, "global_planner_node");
     ros::NodeHandle nh;
 
-    ROS_ERROR("Global Planner Started");
+    ROS_INFO("Global Planner Started");
     GlobalPlanner gp;
 
     gp.Init(&nh);

@@ -35,7 +35,7 @@ public:
     void SetTwist(geometry_msgs::Twist twist){ m_status.twist = twist; };
     void SetStorageCapacity(int cap){ m_status.storage_capacity = cap; };
     void SetStorageUsed(int amountUsed){ m_status.storage_used = amountUsed; };
-    void SetType(bool type){ m_status.type = type; };
+    void SetType(RobotState::Type type){ m_status.type = type; };
     void SetTaskID(int taskID){ m_status.taskID = taskID; };
 
     std::string ToString()
@@ -69,7 +69,7 @@ public:
     int GetStorageCapacity(){ return m_status.storage_capacity; };
     int GetStorageUsed(){ return m_status.storage_used; };
     int GetStorageAvailable(){ return m_status.storage_capacity - m_status.storage_used; };
-    bool GetType(){ return m_status.type; };
+    RobotState::Type GetType(){ return static_cast<RobotState::Type>(m_status.type); };
     int GetTaskID(){ return m_status.taskID; };
 
     void SetData(global_planner::RobotStatus data){ m_status = data; };
