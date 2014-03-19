@@ -14,7 +14,7 @@ int main(int argc, char** argv){
     ros::init(argc, argv, "global_planner_node");
     ros::NodeHandle nh;
 
-    ROS_INFO("Global Planner Started");
+    ROS_INFO("Initializing Global Planner");
     GlobalPlanner gp;
 
     gp.Init(&nh);
@@ -27,7 +27,7 @@ int main(int argc, char** argv){
 
     while(ros::ok() && running == false)
     {
-        ROS_INFO_THROTTLE(3, "Waiting on program start");
+        ROS_INFO_THROTTLE(10, "Waiting on program start");
         ros::spinOnce();
         r.sleep();
     }
@@ -35,13 +35,16 @@ int main(int argc, char** argv){
     gp.SendSound("mario_1_up.wav");
     ros::spinOnce();
 
-    while(ros::ok() && running == true)
+    ros::Time start_time = ros::Time::now();
+    ROS_INFO("Global Planner Started");
+    while(ros::ok() && running == true && !gp.isFinished())
     {
         gp.Execute();
         r.sleep();
     }
-
-    gp.Finished();
+    // gp.Finished(); // causes system exit
+    ROS_INFO("Global Planner finished in : %g seconds", (ros::Time::now() - start_time).toSec() );
+    gp.SendSound("mario_1_up.wav");
 
     ROS_INFO("GP Finished");
 }
