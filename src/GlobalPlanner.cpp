@@ -245,24 +245,13 @@ int GlobalPlanner::GetFirstAvailableBot(int waypointID, RobotState::Type type)
     // For all robots
     for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
     {
-        // If robot is waiting and has storage space
-        if (it->second->GetState() == RobotState::WAITING && it->second->GetStorageAvailable() > 0)
+        // If robot is waiting, is right kind, and has storage space
+        if (it->second->GetState() == RobotState::WAITING &&  // Robot is available
+            (type == RobotState::ANY || it->second->GetType() == type) && // And robot is right kind (any or collector or bin)
+            it->second->GetStorageAvailable() > 0) // And robot has storage space
         {
-            // Choose the first of the right type of robot
-            switch (type) {
-                case RobotState::COLLECTOR_BOT:
-                    if (it->second->GetType() == RobotState::COLLECTOR_BOT) { return it->first;}
-                    break;
-                
-                case RobotState::BIN_BOT: // Binbot only
-                    if (it->second->GetType() == RobotState::BIN_BOT) { return it->first; }
-                    break;
-                
-                case RobotState::ANY:
-                default:
-                    return it->first;
-            }
-            
+            // Choose the first match
+            return it->first;
         }
     }
     return NO_ROBOT_FOUND;
