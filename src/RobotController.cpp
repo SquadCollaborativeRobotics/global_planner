@@ -170,9 +170,9 @@ void RobotController::cb_waypointSub(const global_planner::WaypointMsg::ConstPtr
         switch(m_status.GetState())
         {
             case RobotState::WAITING:
-            ROS_INFO_STREAM("Move to new waypoint ("<<wpWrapper.GetID()<<")");
-            m_status.SetTaskID( wpWrapper.GetID() );
-            Transition(RobotState::NAVIGATING, &goal);
+                ROS_INFO_STREAM("Move to new waypoint ("<<wpWrapper.GetID()<<")");
+                m_status.SetTaskID( wpWrapper.GetID() );
+                Transition(RobotState::NAVIGATING, &goal);
 
             break;
             /*
@@ -225,8 +225,6 @@ void RobotController::cb_eStopSub(const std_msgs::Empty &msg)
  ***********************************************************************/
 void RobotController::SendRobotStatus()
 {
-    // boost::mutex::scoped_lock lock(m_statusMutex);
-
     UpdatePose();
     m_statusPub.publish(m_status.GetMessage());
 }
@@ -447,25 +445,32 @@ void RobotController::StateExecute()
     //      IF received a stop/cancel/estop: send waypoint result message (forced_stop) -> transition(WAITING)
     //      IF reached final pose of the waypoint, send waypoint result message (succeed) -> transition(WAITING)
     // ...
+    actionlib::SimpleClientGoalState::StateEnum result = action_client_ptr->getState().state_;
     switch(m_status.GetState())
     {
         case RobotState::NAVIGATING:
-            switch (action_client_ptr->getState())
+            switch (result)
             {
                 case actionlib::SimpleClientGoalState::SUCCEEDED:
-                ROS_INFO_STREAM("Successful movebase moving?");
-                SendWaypointFinished(TaskResult::SUCCESS);
-                Transition(RobotState::WAITING, 0);
-                break;
+                    ROS_INFO_STREAM("Successful movebase moving?");
+                    SendWaypointFinished(TaskResult::SUCCESS);
+                    Transition(RobotState::WAITING, 0);
+                    break;
                 case actionlib::SimpleClientGoalState::ABORTED:
+                case actionlib::SimpleClientGoalState::REJECTED:
+                case actionlib::SimpleClientGoalState::LOST:
+                case actionlib::SimpleClientGoalState::RECALLED:
+                case actionlib::SimpleClientGoalState::PREEMPTED:
+                    ROS_ERROR_STREAM("Navigation Failed: " << action_client_ptr->getState().toString() );
 
-                break;
+                    break;
+
                 case actionlib::SimpleClientGoalState::ACTIVE:
-                ROS_INFO_STREAM_THROTTLE(1, "Actively going to goal... Active state");
-                break;
+                case actionlib::SimpleClientGoalState::PENDING:
                 default:
                     ROS_INFO_STREAM_THROTTLE(1, "Not yet successful: " << action_client_ptr->getState().toString() );
-                break;
+                    break;
+            }
         break;
         case RobotState::WAITING:
             ROS_INFO_STREAM("Waiting for next command...");
