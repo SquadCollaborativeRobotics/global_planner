@@ -34,7 +34,7 @@ RobotController::~RobotController()
  * Returns: void
  * Effects:
  ***********************************************************************/
-void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotName, int storage_cap, int storage_used, bool type)
+void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotName, int storage_cap, int storage_used, RobotState::Type type)
 {
     m_nh = nh;
     m_listener = new tf::TransformListener(*nh);
@@ -72,12 +72,12 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
     if (robotType.compare("collector") == 0)
     {
         ROS_INFO_STREAM("Type: Collector");
-        type = true;
+        type = RobotState::COLLECTOR_BOT;
     }
     else
     {
         ROS_INFO_STREAM("Type: Binbot");
-        type = false;
+        type = RobotState::BIN_BOT;
     }
 
     m_status.SetType(type);
@@ -463,7 +463,7 @@ void RobotController::StateExecute()
         else
         {
             // Randomly finish the task
-            if (false && rand() % 250 == 0)
+            if (false && rand() % 250 == 0) // TODO : Move this override to a config option
             {
                 if (rand()%2 == 0)
                 {

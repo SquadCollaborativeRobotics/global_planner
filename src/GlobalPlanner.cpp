@@ -212,7 +212,7 @@ int GlobalPlanner::GetBestBinBot(int idOfRobotThatNeedsIt)
 
 int GlobalPlanner::GetBestCollectorbot(int goalID)
 {
-    return GetFirstAvailableBot(goalID, COLLECTOR_BOT);
+    return GetFirstAvailableBot(goalID, RobotState::COLLECTOR_BOT);
 }
 
 int GlobalPlanner::GetBestSearchBot(int waypointID)
@@ -228,7 +228,7 @@ int GlobalPlanner::GetBestSearchBot(int waypointID)
  ***********************************************************************/
 int GlobalPlanner::GetFirstAvailableBot(int waypointID) 
 {
-    return GetFirstAvailableBot(waypointID, ANY);
+    return GetFirstAvailableBot(waypointID, RobotState::ANY);
 }
 
 /***********************************************************************
@@ -237,7 +237,7 @@ int GlobalPlanner::GetFirstAvailableBot(int waypointID)
  * Returns: int id of robot
  * Effects: Returns the first available robot of the right type that is available (waiting and has storage space)
  ***********************************************************************/
-int GlobalPlanner::GetFirstAvailableBot(int waypointID, GlobalPlanner::ROBOT_TYPE type)
+int GlobalPlanner::GetFirstAvailableBot(int waypointID, RobotState::Type type)
 {
     // std::map<int, Waypoint_Ptr> waypoints = m_tm.GetWaypoints();
     // geometry_msgs::Pose pose = waypoints[waypointID]->GetPose();
@@ -250,15 +250,15 @@ int GlobalPlanner::GetFirstAvailableBot(int waypointID, GlobalPlanner::ROBOT_TYP
         {
             // Choose the first of the right type of robot
             switch (type) {
-                case COLLECTOR_BOT:
-                    if (it->second->GetType() == true) { return it->first;}
+                case RobotState::COLLECTOR_BOT:
+                    if (it->second->GetType() == RobotState::COLLECTOR_BOT) { return it->first;}
                     break;
                 
-                case BIN_BOT: // Binbot only
-                    if (it->second->GetType() == false) { return it->first; }
+                case RobotState::BIN_BOT: // Binbot only
+                    if (it->second->GetType() == RobotState::BIN_BOT) { return it->first; }
                     break;
                 
-                case ANY:
+                case RobotState::ANY:
                 default:
                     return it->first;
             }
@@ -267,7 +267,6 @@ int GlobalPlanner::GetFirstAvailableBot(int waypointID, GlobalPlanner::ROBOT_TYP
     }
     return NO_ROBOT_FOUND;
 }
-
 
 // System finished
 void GlobalPlanner::Finished()

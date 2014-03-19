@@ -50,7 +50,12 @@ public:
     void SendWaypointFinished(TaskResult::Status status);
     void SendDumpFinished(TaskResult::Status status);
 
-    void Init(ros::NodeHandle* nh, int robotID = -1, std::string robotName = "", int storage_cap = 3, int storage_used = 0, bool type = true);
+    void Init(ros::NodeHandle* nh, 
+              int robotID = -1,
+              std::string robotName = "",
+              int storage_cap = 3,
+              int storage_used = 0,
+              RobotState::Type type = RobotState::ANY);
     void Execute();
     void Finished();
 
@@ -61,7 +66,8 @@ private:
     void SetupCallbacks();
     void UpdatePose();
 
-    void Transition(RobotState::State newState, void* args=0);
+    void Transition(RobotState::State newState,
+                    void* args=0);
     void OnEntry(void* args=0);
     void StateExecute();
 

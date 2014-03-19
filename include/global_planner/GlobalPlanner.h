@@ -27,12 +27,6 @@
 class GlobalPlanner
 {
 public:
-    enum ROBOT_TYPE
-    {
-        ANY = 0,
-        COLLECTOR_BOT = 1,
-        BIN_BOT = 2
-    };
     GlobalPlanner();
     ~GlobalPlanner();
 
@@ -58,7 +52,7 @@ public:
     int GetBestSearchBot(int wpID);
 
     int GetFirstAvailableBot(int wpID);
-    int GetFirstAvailableBot(int wpID, ROBOT_TYPE type);
+    int GetFirstAvailableBot(int wpID, RobotState::Type type);
 
 
     void SendSound(std::string filename, int num_times);
