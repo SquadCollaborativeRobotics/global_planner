@@ -22,7 +22,8 @@
 #include <global_planner/SoundMsg.h>
 #include <boost/thread/mutex.hpp>
 
-#define NO_ROBOT_FOUND -1
+#define NO_ROBOT_FOUND -1 // Robot ID -1 is no robot found
+#define MAX_DIST 1000000 // Hardcoded for robot search routine for now, 1,000 km is a reasonable for this demo
 
 class GlobalPlanner
 {
@@ -54,6 +55,8 @@ public:
     int GetFirstAvailableBot();
     int GetFirstAvailableBot(RobotState::Type type);
 
+    int GetRobotClosestToWaypoint(int waypointID, RobotState::Type type);
+
 
     void SendSound(std::string filename, int num_times);
     void SendSound(std::string filename);
@@ -64,6 +67,9 @@ private:
 
     // get robot information
     void cb_robotStatus(const global_planner::RobotStatus::ConstPtr& msg);
+
+    // Gets x/y 2D distance between two poses
+    double Get2DPoseDistance(geometry_msgs::Pose a, geometry_msgs::Pose b);
 
     // Pointer to a registered ros NodeHandle
     ros::NodeHandle *m_nh;

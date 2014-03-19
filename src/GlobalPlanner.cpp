@@ -1,4 +1,5 @@
 #include <global_planner/GlobalPlanner.h>
+#include <math.h> /* sqrt */
 
 GlobalPlanner::GlobalPlanner()
 {
@@ -203,7 +204,8 @@ int GlobalPlanner::GetBestCollectorbot(int goalID)
 
 int GlobalPlanner::GetBestSearchBot(int waypointID)
 {
-    return GetFirstAvailableBot();
+    // return GetFirstAvailableBot();
+    return GetRobotClosestToWaypoint(waypointID, RobotState::ANY);
 }
 
 /***********************************************************************
@@ -238,6 +240,45 @@ int GlobalPlanner::GetFirstAvailableBot(RobotState::Type type)
         }
     }
     return NO_ROBOT_FOUND;
+}
+
+/***********************************************************************
+ *  Method: GlobalPlanner::GetRobotClosestToWaypoint
+ *  Params: int waypointID, GlobalPlanner::ROBOT_TYPE type
+ * Returns: int id of robot
+ * Effects: Returns the physically closest robot of the right type that is available (waiting and has storage space)
+ ***********************************************************************/
+int GlobalPlanner::GetRobotClosestToWaypoint(int waypointID, RobotState::Type type)
+{
+    std::map<int, Waypoint_Ptr> waypoints = m_tm.GetWaypoints();
+    geometry_msgs::Pose waypoint_pose = waypoints[waypointID]->GetPose();
+
+    int best_robot_id = NO_ROBOT_FOUND;
+    double best_distance = MAX_DIST;
+
+    // For all robots
+    for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
+    {
+        int robot_id = it->first;
+        Robot_Ptr robot = it->second;
+
+        // If robot is waiting, is right kind, and has storage space
+        if (robot->GetState() == RobotState::WAITING &&  // Robot is available
+            (type == RobotState::ANY || robot->GetType() == type) && // And robot is right kind (any or collector or bin)
+            robot->GetStorageAvailable() > 0) // And robot has storage space
+        {
+            // Get robot distance to waypoint
+            double dist = Get2DPoseDistance(robot->GetPose(), waypoint_pose);
+
+            // If closest robot so far, update
+            if (dist < best_distance)
+            {
+                best_distance = dist;
+                best_robot_id = robot_id;
+            }
+        }
+    }
+    return best_robot_id;
 }
 
 // System finished
@@ -329,3 +370,17 @@ void GlobalPlanner::SendSound(std::string filename)
     SendSound(filename, 1);
 }
 
+
+//// HELPER FUNCTIONS
+
+/***********************************************************************
+ *  Method: GlobalPlanner::Get2DPoseDistance
+ *  Params: geometry_msgs::Pose a, geometry_msgs::Pose b
+ * Returns: double x/y ground distance between two poses
+ * Effects: Returns the physically closest robot of the right type that is available (waiting and has storage space)
+ ***********************************************************************/
+double GlobalPlanner::Get2DPoseDistance(geometry_msgs::Pose a, geometry_msgs::Pose b) {
+    double dx = (b.position.x - a.position.x);
+    double dy = (b.position.y - a.position.y);
+    return sqrt( dx*dx + dy*dy );
+}
