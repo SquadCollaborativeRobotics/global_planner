@@ -192,32 +192,18 @@ std::vector<Robot_Ptr> GlobalPlanner::GetAvailableRobots()
 // Returns the best binbot for dumping with the robot specified in the param
 int GlobalPlanner::GetBestBinBot(int idOfRobotThatNeedsIt)
 {
-    for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
-    {
-        //if it is a binbot
-        if (it->second->GetType() == false)
-        {
-            if (it->second->GetState() == RobotState::WAITING)
-            {
-                if (it->second->GetStorageAvailable() > 0)
-                {
-                    return it->first;
-                }
-            }
-        }
-    }
-    return -1;
+    return GetFirstAvailableBot(RobotState::BIN_BOT);
 }
 
 // Returns the id of the best collector bot for given goal id
 int GlobalPlanner::GetBestCollectorbot(int goalID)
 {
-    return GetFirstAvailableBot(goalID, RobotState::COLLECTOR_BOT);
+    return GetFirstAvailableBot(RobotState::COLLECTOR_BOT);
 }
 
 int GlobalPlanner::GetBestSearchBot(int waypointID)
 {
-    return GetFirstAvailableBot(waypointID);
+    return GetFirstAvailableBot();
 }
 
 /***********************************************************************
@@ -226,22 +212,19 @@ int GlobalPlanner::GetBestSearchBot(int waypointID)
  * Returns: int id of robot
  * Effects: Returns the first available robot of any type that is available (waiting and has storage space)
  ***********************************************************************/
-int GlobalPlanner::GetFirstAvailableBot(int waypointID) 
+int GlobalPlanner::GetFirstAvailableBot() 
 {
-    return GetFirstAvailableBot(waypointID, RobotState::ANY);
+    return GetFirstAvailableBot(RobotState::ANY);
 }
 
 /***********************************************************************
  *  Method: GlobalPlanner::GetFirstAvailableBot
- *  Params: int waypointID, GlobalPlanner::ROBOT_TYPE type
+ *  Params: GlobalPlanner::ROBOT_TYPE type
  * Returns: int id of robot
  * Effects: Returns the first available robot of the right type that is available (waiting and has storage space)
  ***********************************************************************/
-int GlobalPlanner::GetFirstAvailableBot(int waypointID, RobotState::Type type)
+int GlobalPlanner::GetFirstAvailableBot(RobotState::Type type)
 {
-    // std::map<int, Waypoint_Ptr> waypoints = m_tm.GetWaypoints();
-    // geometry_msgs::Pose pose = waypoints[waypointID]->GetPose();
-
     // For all robots
     for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
     {
@@ -256,7 +239,6 @@ int GlobalPlanner::GetFirstAvailableBot(int waypointID, RobotState::Type type)
     }
     return NO_ROBOT_FOUND;
 }
-
 
 // System finished
 void GlobalPlanner::Finished()

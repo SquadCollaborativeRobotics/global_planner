@@ -51,8 +51,8 @@ public:
     int GetBestCollectorbot(int goalID);
     int GetBestSearchBot(int wpID);
 
-    int GetFirstAvailableBot(int wpID);
-    int GetFirstAvailableBot(int wpID, RobotState::Type type);
+    int GetFirstAvailableBot();
+    int GetFirstAvailableBot(RobotState::Type type);
 
 
     void SendSound(std::string filename, int num_times);
