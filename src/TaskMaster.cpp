@@ -453,6 +453,25 @@ std::vector<Waypoint_Ptr> TaskMaster::GetAvailableWaypoints()
     return v;
 }
 
+/***********************************************************************
+ *  Method: TaskMaster::isFinished()
+ *  Params:
+ * Returns: bool whether all waypoints have reached an end state
+ * Effects: Get whether all waypoints have reached an end state
+ ***********************************************************************/
+bool TaskMaster::isFinished()
+{
+    for (std::map<int, Waypoint_Ptr>::iterator it = m_waypointMap.begin(); it != m_waypointMap.end(); ++it)
+    {
+        // If it's avilable for task setting
+        if (it->second->GetStatus() == TaskResult::AVAILABLE || it->second->GetStatus() == TaskResult::INPROGRESS)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
 
 /***********************************************************************
  *  Method: TaskMaster::GetAvailableDumps

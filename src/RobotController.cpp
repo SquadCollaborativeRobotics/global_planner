@@ -275,7 +275,7 @@ void RobotController::SendDumpFinished(TaskResult::Status status)
 void RobotController::Execute()
 {
     ros::spinOnce();
-    ROS_INFO_STREAM_THROTTLE(3, m_status.ToString());
+    // ROS_INFO_STREAM_THROTTLE(3, m_status.ToString());
 
     // 1) Check to see if robot has reached goal & transition if needed
     // 2) Perform any state related actions
@@ -453,13 +453,13 @@ void RobotController::StateExecute()
             /*
         if (action_client_ptr->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
         {
-            ROS_INFO_STREAM("Successful movebase moving?");
+            ROS_INFO_STREAM("Finished Task.");
             SendWaypointFinished(TaskResult::SUCCESS);
             Transition(RobotState::WAITING, 0);
         }
         else if (action_client_ptr->getState() == actionlib::SimpleClientGoalState::ACTIVE)
         {
-            ROS_INFO_STREAM_THROTTLE(1, "Actively going to goal... NAVIGATING state");
+            // ROS_INFO_STREAM_THROTTLE(1, "Actively going to goal... NAVIGATING state");
         }
         else
         {

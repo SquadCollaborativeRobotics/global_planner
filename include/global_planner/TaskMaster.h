@@ -56,6 +56,8 @@ public:
     std::vector<Waypoint_Ptr> GetAvailableWaypoints();
     std::vector<Dump_Ptr> GetAvailableDumps();
 
+    bool isFinished();
+
     //Clear all lists of goals, waypoints, and dumps
     bool Clear();
 

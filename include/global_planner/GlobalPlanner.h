@@ -22,11 +22,19 @@
 #include <global_planner/SoundMsg.h>
 #include <boost/thread/mutex.hpp>
 
-#define NO_ROBOT_FOUND -1
+#define NO_ROBOT_FOUND -1 // Robot ID -1 is no robot found
+#define NO_WAYPOINT_FOUND -1 // Waypoint ID -1 is no robot found
+#define MAX_DIST 1000000 // Hardcoded for robot search routine for now, 1,000 km is a reasonable for this demo
 
 class GlobalPlanner
 {
 public:
+    enum PLANNER_TYPE
+    {
+        PLANNER_NAIVE,
+        PLANNER_CLOSEST_ROBOT,
+        PLANNER_CLOSEST_WAYPOINT
+    };
     GlobalPlanner();
     ~GlobalPlanner();
 
@@ -51,9 +59,19 @@ public:
     int GetBestCollectorbot(int goalID);
     int GetBestSearchBot(int wpID);
 
+    // Planners
+    void PlanNNRobot();
+    void PlanNNWaypoint();
+    void PlanNaive();
+
+    // Search algorithms
     int GetFirstAvailableBot();
     int GetFirstAvailableBot(RobotState::Type type);
 
+    int GetRobotClosestToWaypoint(int waypointID, RobotState::Type type);
+    int GetWaypointClosestToRobot(int robot_id);
+
+    bool isFinished();
 
     void SendSound(std::string filename, int num_times);
     void SendSound(std::string filename);
@@ -64,6 +82,9 @@ private:
 
     // get robot information
     void cb_robotStatus(const global_planner::RobotStatus::ConstPtr& msg);
+
+    // Gets x/y 2D distance between two poses
+    double Get2DPoseDistance(geometry_msgs::Pose a, geometry_msgs::Pose b);
 
     // Pointer to a registered ros NodeHandle
     ros::NodeHandle *m_nh;
@@ -86,4 +107,6 @@ private:
     ros::Time m_lastDisplay;
 
     boost::mutex m_robotMutex;
+
+    PLANNER_TYPE m_planner;
 };
