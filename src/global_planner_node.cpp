@@ -32,19 +32,17 @@ int main(int argc, char** argv){
         r.sleep();
     }
 
-    gp.SendSound("mario_1_up.wav");
     ros::spinOnce();
-
-    ros::Time start_time = ros::Time::now();
-    ROS_INFO("Global Planner Started");
+    
+    ROS_INFO("Node Starting Global Planner...");
+    gp.Start();
+    
     while(ros::ok() && running == true && !gp.isFinished())
     {
         gp.Execute();
         r.sleep();
     }
-    // gp.Finished(); // causes system exit
-    ROS_INFO("Global Planner finished in : %g seconds", (ros::Time::now() - start_time).toSec() );
-    gp.SendSound("mario_1_up.wav");
+    gp.Finished();
 
-    ROS_INFO("GP Finished");
+    ROS_INFO("GP Node Finished");
 }
