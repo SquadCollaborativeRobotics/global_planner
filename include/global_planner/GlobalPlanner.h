@@ -43,6 +43,9 @@ public:
 
     void Display();
 
+    // Called when starting (for statistics)
+    void Start();
+
     // Executive function
     void Execute();
 
@@ -72,6 +75,8 @@ public:
     int GetWaypointClosestToRobot(int robot_id);
 
     bool isFinished();
+    bool AssignRobotWaypoint(int robot_id, int waypoint_id);
+    double TimeSinceStart();
 
     void SendSound(std::string filename, int num_times);
     void SendSound(std::string filename);
@@ -109,4 +114,12 @@ private:
     boost::mutex m_robotMutex;
 
     PLANNER_TYPE m_planner;
+
+    // Statistics
+    ros::Time m_start_time;
+
+    // Map or robot_id to 
+    //                    map of waypoint id chosen and seconds since start it was chosen
+    std::map<int, std::map<int, double> > robot_waypoint_times;
+    // map<robot_id, map<waypoint_id, double_seconds_since_start> >
 };

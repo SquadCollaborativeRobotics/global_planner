@@ -206,12 +206,12 @@ void TaskMaster::cb_goalFinished(const global_planner::GoalFinished::ConstPtr& m
     m_goalMap[msg->id]->SetStatus(Conversion::IntToTaskResult(status));
     if (status == TaskResult::SUCCESS)
     {
-        //AWESOME
-        ROS_INFO_STREAM("Goal finished successfully... AWESOME!!!");
+        ROS_INFO_STREAM("Goal finished successfully");
     }
     else
     {
-        ROS_ERROR_STREAM("ERROR, Goal finished with status: "<<msg->status<<" : "<<Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
+        ROS_ERROR_STREAM("ERROR, Goal finished with status: " << msg->status 
+                         << " : " << Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
     }
 }
 
@@ -228,11 +228,12 @@ void TaskMaster::cb_waypointFinished(const global_planner::WaypointFinished::Con
     m_waypointMap[msg->id]->SetStatus(Conversion::IntToTaskResult(status));
     if (status == TaskResult::SUCCESS)
     {
-        ROS_INFO_STREAM("Waypoint reached successfully... AWESOME!!!");
+        ROS_INFO_STREAM("Waypoint reached successfully");
     }
     else
     {
-        ROS_ERROR_STREAM("ERROR, Waypoint finished with status: "<<msg->status<<" : "<<Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
+        ROS_ERROR_STREAM("ERROR, Waypoint finished with status: " << msg->status 
+                         << " : " << Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
         //FOR NOW, let's just say it's available after a failure
         m_waypointMap[msg->id]->SetStatus(TaskResult::AVAILABLE);
     }
@@ -252,7 +253,7 @@ void TaskMaster::cb_dumpFinished(const global_planner::DumpFinished::ConstPtr& m
 
     if (status == TaskResult::SUCCESS)
     {
-        ROS_INFO_STREAM("Dumping was successful... AWESOME!!!");
+        ROS_INFO_STREAM("Dumping was successful");
     }
     else
     {
