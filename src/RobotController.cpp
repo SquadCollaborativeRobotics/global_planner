@@ -112,13 +112,16 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
         return;
     }
 
+    //Setup april tag processor
+    m_tagProcessor = new AprilTagProcessor();
+    m_tagProcessor->Init(nh, robotID);
+
 
     action_client_ptr.reset( new MoveBaseClient("move_base", true) );
     // Wait for the action server to come up
     while(ros::ok() && !action_client_ptr->waitForServer(ros::Duration(1.0))){
         ROS_INFO("Waiting for the move_base action server to come up");
     }
-
 
     SetupCallbacks();
 
@@ -157,17 +160,16 @@ void RobotController::cb_waypointSub(const global_planner::WaypointMsg::ConstPtr
     //Check if this message is for you!
     if (wpWrapper.GetRobot() == m_status.GetID())
     {
-        ROS_INFO_STREAM("Received waypoint for me\n"<<wpWrapper.ToString());
-
-        move_base_msgs::MoveBaseGoal goal = Conversion::PoseToMoveBaseGoal(wpWrapper.GetPose());
+        ROS_INFO_STREAM("Received waypoint for me:\n"<<wpWrapper.ToString());
         // boost::mutex::scoped_lock lock(m_statusMutex);
 
         switch(m_status.GetState())
         {
             case RobotState::WAITING:
+                m_moveBaseGoal = Conversion::PoseToMoveBaseGoal(wpWrapper.GetPose());
                 ROS_INFO_STREAM("Move to new waypoint ("<<wpWrapper.GetID()<<")");
                 m_status.SetTaskID( wpWrapper.GetID() );
-                Transition(RobotState::NAVIGATING, &goal);
+                Transition(RobotState::NAVIGATING);
 
             break;
             /*
@@ -387,6 +389,7 @@ void RobotController::Transition(RobotState::State newState, void* args)
 {
     // boost::mutex::scoped_lock lock(m_statusMutex);
 
+    //TODO: make sure the state we are entering is valid based on the current state of the robot
     m_status.SetState(newState);
     OnEntry(args);
     ROS_INFO_STREAM("Transitioned to "<<RobotState::ToString(newState));
@@ -408,8 +411,11 @@ void RobotController::OnEntry(void *args)
         break;
         case RobotState::NAVIGATING:
         // ROS_INFO_STREAM("Starting OnEntry: Navigation state");
-        move_base_msgs::MoveBaseGoal *goal = (move_base_msgs::MoveBaseGoal *) args;
-        action_client_ptr->sendGoal(*goal);
+        action_client_ptr->sendGoal(m_moveBaseGoal);
+        // ROS_INFO_STREAM("Finished OnEntry: Navigation state");
+        case RobotState::NAVIGATING_TAG_SPOTTED:
+        // ROS_INFO_STREAM("Starting OnEntry: Navigation state");
+        action_client_ptr->cancelAllGoals();
         // ROS_INFO_STREAM("Finished OnEntry: Navigation state");
         break;
     }
@@ -449,28 +455,17 @@ void RobotController::StateExecute()
     switch(m_status.GetState())
     {
         case RobotState::NAVIGATING:
+            if (m_tagProcessor->ShouldPause())
+            {
+                Transition(RobotState::NAVIGATING_TAG_SPOTTED);
+                break;
+            }
             switch (result)
-            /*
-        if (action_client_ptr->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
-        {
-            ROS_INFO_STREAM("Finished Task.");
-            SendWaypointFinished(TaskResult::SUCCESS);
-            Transition(RobotState::WAITING, 0);
-        }
-        else if (action_client_ptr->getState() == actionlib::SimpleClientGoalState::ACTIVE)
-        {
-            // ROS_INFO_STREAM_THROTTLE(1, "Actively going to goal... NAVIGATING state");
-        }
-        else
-        {
-            // Randomly finish the task
-            if (false && rand() % 250 == 0) // TODO : Move this override to a config option
-            */
             {
                 case actionlib::SimpleClientGoalState::SUCCEEDED:
                     ROS_INFO_STREAM("Successful movebase moving?");
                     SendWaypointFinished(TaskResult::SUCCESS);
-                    Transition(RobotState::WAITING, 0);
+                    Transition(RobotState::WAITING);
                     break;
                 case actionlib::SimpleClientGoalState::ABORTED:
                 case actionlib::SimpleClientGoalState::REJECTED:
@@ -478,18 +473,32 @@ void RobotController::StateExecute()
                 case actionlib::SimpleClientGoalState::RECALLED:
                 case actionlib::SimpleClientGoalState::PREEMPTED:
                     ROS_ERROR_STREAM("Navigation Failed: " << action_client_ptr->getState().toString() );
-
+                    SendWaypointFinished(TaskResult::SUCCESS);
+                    Transition(RobotState::WAITING);
                     break;
 
                 case actionlib::SimpleClientGoalState::ACTIVE:
                 case actionlib::SimpleClientGoalState::PENDING:
                 default:
-                    ROS_INFO_STREAM_THROTTLE(1, "Not yet successful: " << action_client_ptr->getState().toString() );
+                    ROS_INFO_STREAM_THROTTLE(1, "Navigation still being attempted... state = " << action_client_ptr->getState().toString() );
                     break;
             }
         break;
+
+        //In this state, the robot should now be stopping and getting a more accurate view of the tag
+        case RobotState::NAVIGATING_TAG_SPOTTED:
+            if (m_tagProcessor->ShouldResume())
+            {
+                //Transition back to the navigating state, using the same goal as before
+                ROS_INFO("Resuming robot");
+                Transition(RobotState::NAVIGATING);
+                break;
+            }
+            ROS_INFO_STREAM_THROTTLE(0.5, "Waiting on the OK to resume from the tag processor");
+        break;
         case RobotState::WAITING:
             ROS_INFO_STREAM("Waiting for next command...");
+        break;
     }
 }
 
@@ -504,5 +513,3 @@ void RobotController::cb_odomSub(const nav_msgs::Odometry::ConstPtr &msg)
 {
     m_status.SetTwist(msg->twist.twist);
 }
-
-

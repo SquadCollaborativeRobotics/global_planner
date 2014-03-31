@@ -23,7 +23,7 @@ public:
     {
         return static_cast<int>(t);
     }
-    
+
     static const RobotState::Type IntToRobotType(int t)
     {
         return static_cast<RobotState::Type>(t);
@@ -32,13 +32,14 @@ public:
     enum State
     {
         WAITING = 0,
-        WAITING_FINISHED = 9,
+        // WAITING_FINISHED = 9,
         NAVIGATING = 10,
-        NAVIGATING_FINISHED = 19,
+        NAVIGATING_TAG_SPOTTED = 12,
+        // NAVIGATING_FINISHED = 19,
         DUMPING = 20,
-        DUMPING_FINISHED = 29,
+        // DUMPING_FINISHED = 29,
         COLLECTING = 30,
-        COLLECTING_FINISHED = 39,
+        // COLLECTING_FINISHED = 39,
     };
 
     static const int RobotStateToInt(RobotState::State s)

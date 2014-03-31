@@ -120,6 +120,7 @@ add_dependencies(global_planner_lib ${PROJECT_NAME}_generate_messages_cpp)
 
 add_library(robot_controller_lib
   src/RobotController.cpp
+  src/AprilTagProcessor.cpp
 )
 target_link_libraries(robot_controller_lib ${catkin_LIBRARIES})
 add_dependencies(robot_controller_lib ${PROJECT_NAME}_generate_messages_cpp)

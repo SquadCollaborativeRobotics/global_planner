@@ -20,6 +20,7 @@
 #include <global_planner/GoalFinished.h>
 #include <global_planner/WaypointFinished.h>
 #include <global_planner/DumpFinished.h>
+#include <global_planner/AprilTagProcessor.h>
 
 #include "RobotStatusWrapper.h"
 #include "GoalWrapper.h"
@@ -50,7 +51,7 @@ public:
     void SendWaypointFinished(TaskResult::Status status);
     void SendDumpFinished(TaskResult::Status status);
 
-    void Init(ros::NodeHandle* nh, 
+    void Init(ros::NodeHandle* nh,
               int robotID = -1,
               std::string robotName = "",
               int storage_cap = 3,
@@ -105,4 +106,9 @@ private:
     // Mutex to make sure we are only getting commands when we should (mainly: not during transitions)
     boost::mutex m_statusMutex;
 
+    //The most recent long term goal passed in to the navigation stack
+    move_base_msgs::MoveBaseGoal m_moveBaseGoal;
+
+    //April Tag processor
+    AprilTagProcessor* m_tagProcessor;
 };
