@@ -50,11 +50,31 @@ public:
     void SetRobot(int robotID){ m_msg.robotID = robotID; };
     void SetStatus(TaskResult::Status s){ m_msg.status = Conversion::TaskResultToInt(s); };
 
+    std::string GetStatusMessage()
+    {
+        int status = GetStatus();
+        return (GetCompleted() ? "DONE       " : 
+                                 (GetInProgress() ? "IN PROGRESS" : 
+                                                    (GetAvailable() ? "AVAILABLE  " : "FAILED     ")));
+    }
+
     std::string ToString()
     {
         std::stringstream ss;
         geometry_msgs::Pose p = GetPose();
-        ss<<"Waypoint id = "<<GetID()<<" | status = "<<GetStatus()<<" | updated at time: "<<GetTime()<<" -- "<< p.position.x << ' ' << p.position.y << ' ' << p.orientation.z << ' ' << p.orientation.w;
+        ss << "Waypoint(" << GetID() << ") "
+            << GetStatusMessage()
+            <<" [x:"<< p.position.x << ", y:" << p.position.y << ", w:" << p.orientation.w << ']';
+        // << " | updated at time: "<<GetTime()<<" -- "<< p.position.x << ' ' << p.position.y << ' ' << p.orientation.z << ' ' << p.orientation.w;
+        return ss.str();
+    }
+
+    std::string ToShortString()
+    {
+        std::stringstream ss;
+        int status = GetStatus();
+        ss << "WP(" << GetID() << ") "
+            << GetStatusMessage();
         return ss.str();
     }
 
