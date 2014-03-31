@@ -407,10 +407,10 @@ void RobotController::OnEntry(void *args)
         m_status.SetTaskID(-1);
         break;
         case RobotState::NAVIGATING:
-        ROS_INFO_STREAM("Starting OnEntry: Navigation state");
+        // ROS_INFO_STREAM("Starting OnEntry: Navigation state");
         move_base_msgs::MoveBaseGoal *goal = (move_base_msgs::MoveBaseGoal *) args;
         action_client_ptr->sendGoal(*goal);
-        ROS_INFO_STREAM("Finished OnEntry: Navigation state");
+        // ROS_INFO_STREAM("Finished OnEntry: Navigation state");
         break;
     }
 }
