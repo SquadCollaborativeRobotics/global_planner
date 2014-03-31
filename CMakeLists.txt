@@ -15,6 +15,8 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib_msgs
 )
 
+find_package(april_tags)
+
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system thread)
 
@@ -81,6 +83,7 @@ generate_messages(
     geometry_msgs
     actionlib_msgs
     std_msgs
+    april_tags
 )
 
 ###################################
