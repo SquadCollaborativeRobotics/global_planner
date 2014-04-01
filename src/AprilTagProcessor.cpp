@@ -189,6 +189,8 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
 
     Execute();
 }
+
+
 /***********************************************************************
  *  Method: AprilTagProcessor::GetType
  *  Params: int tagID
@@ -197,6 +199,11 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
  ***********************************************************************/
 AprilTagProcessor::TAG_TYPE AprilTagProcessor::GetType(int tagID)
 {
+    if (m_goalTypeMap.find(tagID) != m_goalTypeMap.end())
+    {
+        return m_goalTypeMap[tagID];
+    }
+    return AprilTagProcessor::UNKNOWN;
 }
 
 
@@ -208,6 +215,24 @@ AprilTagProcessor::TAG_TYPE AprilTagProcessor::GetType(int tagID)
  ***********************************************************************/
 bool AprilTagProcessor::PosesDiffer(geometry_msgs::PoseWithCovariance &poseWithCovariance1, geometry_msgs::PoseWithCovariance &poseWithCovariance2)
 {
+    geometry_msgs::Pose pose1 = poseWithCovariance1.pose;
+    geometry_msgs::Pose pose2 = poseWithCovariance2.pose;
+
+    double diffX = abs(pose1.position.x - pose2.position.x);
+    double diffY = abs(pose1.position.x - pose2.position.x);
+    double diffTheta = abs(pose1.orientation.z - pose2.orientation.z);
+
+    //Check linear distance
+    static const double considerableDistance = 0.15; //15 cm difference is too much
+    if (sqrt(diffX*diffX + diffY*diffY) > considerableDistance)
+        return true;
+
+    //Check difference in theta
+    static const double considerableDifferenceTheta = 0.26; //15 degrees is too much
+    if (diffTheta > considerableDifferenceTheta)
+        return true;
+
+    return false;
 }
 
 
@@ -239,4 +264,27 @@ bool AprilTagProcessor::IsLandmarkVisible()
 
         return true;
     }
+}
+
+
+/***********************************************************************
+ *  Method: AprilTagProcessor::PrintTransform
+ *  Params: tf::StampedTransform &transform
+ * Returns: void
+ * Effects:
+ ***********************************************************************/
+void AprilTagProcessor::PrintTransform(tf::StampedTransform &transform)
+{
+    ROS_INFO_STREAM("Time: "<<transform.stamp_<<" | Parent: "<<transform.frame_id_<<" | Child?: "<<transform.child_frame_id_<<"\nTransform:");
+    tf::Matrix3x3 mat = transform.getBasis();
+    for (int i=0 ; i<3; i++)
+    {
+        std::cout << "[";
+        for (int j=0; j<3; j++)
+        {
+            std::cout<<mat[i][j]<<" ";
+        }
+        std::cout << transform.getOrigin()[i] << "]" << std::endl;
+    }
+    std::cout << "]";
 }
