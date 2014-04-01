@@ -85,6 +85,42 @@ bool AprilTagProcessor::UpdatePose()
 {
     bool retVal = false;
 
+    std::vector<int> landmarks;
+    GetLandmarks(landmarks);
+    int bestLandmarkId = -1;
+    // double closestLandmark = 9999999;
+
+    //Pick best tag to use for localization (assuming there are several options)
+    for (int i = 0; i < landmarks.size(); ++i)
+    {
+        int tagID = landmarks[i];
+        ros::Time tagSeenTime = LastSeenTime(tagID);
+        if (m_lastImageTime == m_lastImageTime)
+        {
+            // closestLandmark = dist;
+            bestLandmarkId = tagID;
+        }
+    }
+
+    if (bestLandmarkId < 0)
+    {
+        ROS_ERROR_STREAM("No images are in camera frame");
+        return false;
+    }
+
+    //Update the pose of the robot
+    //
+    //First, get the frame names: (one for landmark, one for april tag)
+
+    std::string landmark_frame;
+    std::string april_frame;
+    if (m_tfListener->canTransform(landmark_frame, april_frame, ros::Time(0)))
+    {
+
+    }
+
+    if (retVal == true)
+        m_lastLocalizeTime = ros::Time::now();
     return retVal;
 }
 
@@ -179,8 +215,12 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
 
     for (int i = 0; i < numTags; ++i)
     {
-        if (m_pose[i].header.stamp != m_lastImageTime) {
-            m_pose[msg->tag_ids[i]] = msg->poses[i];
+        m_pose[msg->tag_ids[i]] = msg->poses[i];
+
+        // m_pose[msg->tag_ids[i]] = CameraPoseToGlobalPose(msg->poses[i]);
+
+        if (m_pose[msg->tag_ids[i]].header.stamp - m_lastLocalizeTime > ros::Duration(9.0) ) {
+            //The robot hasn't updated in a while...
             m_shouldPause = true;
         }
     }
@@ -288,3 +328,17 @@ void AprilTagProcessor::PrintTransform(tf::StampedTransform &transform)
     }
     std::cout << "]";
 }
+
+
+/***********************************************************************
+ *  Method: AprilTagProcessor::GetDistance
+ *  Params: tf::StampedTransform &tf
+ * Returns: double
+ * Effects:
+ ***********************************************************************/
+double AprilTagProcessor::GetDistance(tf::StampedTransform &tf)
+{
+    return sqrt(tf.getOrigin()[0]*tf.getOrigin()[0] + tf.getOrigin()[1]*tf.getOrigin()[1]);
+}
+
+
