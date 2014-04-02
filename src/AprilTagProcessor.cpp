@@ -39,14 +39,23 @@ AprilTagProcessor::~AprilTagProcessor()
  ***********************************************************************/
 bool AprilTagProcessor::Init(ros::NodeHandle *nh, int robotID)
 {
-    m_tagSub = nh->subscribe("april_tags", 100, &AprilTagProcessor::cb_aprilTags, this);
+    //Setup subscribers
+    m_tagSub = nh->subscribe("april_tags", 10, &AprilTagProcessor::cb_aprilTags, this);
+    m_amclPoseSub = nh->subscribe("amcl_pose", 1, &AprilTagProcessor::cb_amclPose, this);
+    m_odomSub = nh->subscribe("odom", 1, &AprilTagProcessor::cb_odom, this);
     m_robotID = robotID;
     m_tfListener.reset( new tf::TransformListener(*nh) );
 
+    //Setup tag types
     m_goalTypeMap[3] = AprilTagProcessor::LANDMARK;
     m_goalTypeMap[5] = AprilTagProcessor::LANDMARK;
     m_goalTypeMap[8] = AprilTagProcessor::GOAL;
     m_goalTypeMap[6] = AprilTagProcessor::GOAL;
+
+    //Setup publishers
+    m_goalPub = nh->advertise<global_planner::GoalMsg>("garbageCan", 100);
+    m_newPosePub = nh->advertise<geometry_msgs::PoseStamped>("new_pose", 100);
+    m_newInitialPosePub = nh->advertise<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 100);
 }
 
 
@@ -399,15 +408,7 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
         m_pose[msg->tag_ids[i]] = msg->poses[i];
 
         AprilTagProcessor::TAG_TYPE type = GetType(msg->tag_ids[i]);
-        if (type == AprilTagProcessor::GOAL)
-        {
-            m_seesGoal = true;
-        }
-        else if(type == AprilTagProcessor::LANDMARK)
-        {
-
-        }
-        else
+        if (type == AprilTagProcessor::UNKNOWN )
         {
             ROS_ERROR("ERROR: Unkown tag type detected");
         }
@@ -448,6 +449,30 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
     }
 
     m_lastImageTime = msg->poses[0].header.stamp;
+}
+
+
+/***********************************************************************
+ *  Method: AprilTagProcessor::cb_odom
+ *  Params: const nav_msgs::Odometry::ConstPtr &msg
+ * Returns: void
+ * Effects:
+ ***********************************************************************/
+void AprilTagProcessor::cb_odom(const nav_msgs::Odometry::ConstPtr &msg)
+{
+    m_odom = *msg;
+}
+
+
+/***********************************************************************
+ *  Method: AprilTagProcessor::cb_amclPose
+ *  Params: const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg
+ * Returns: void
+ * Effects:
+ ***********************************************************************/
+void AprilTagProcessor::cb_amclPose(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg)
+{
+    m_amclPose = *msg;
 }
 
 

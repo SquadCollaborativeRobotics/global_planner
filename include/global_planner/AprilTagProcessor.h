@@ -47,6 +47,8 @@ public:
 
 private:
     void cb_aprilTags(const april_tags::AprilTagList::ConstPtr &msg);
+    void cb_odom(const nav_msgs::Odometry::ConstPtr& msg);
+    void cb_amclPose(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg);
 
     bool UpdatePose();
     bool FindGoals();
