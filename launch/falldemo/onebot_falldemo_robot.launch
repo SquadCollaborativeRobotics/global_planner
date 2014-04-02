@@ -1,0 +1,15 @@
+<launch>
+  <!-- first robot... -->
+  <!-- <group ns="robot1"> -->
+    <node pkg="global_planner" type="robot_controller_node" name="controller" output="screen" launch-prefix="xterm -e" >
+      <param name="robot_name" value="Cristoff" />
+      <param name="base_frame" value="robot_center" />
+      <!-- <param name="tf_prefix" value="/robot1_tf" /> -->
+      <param name="tf_prefix" value="" />
+      <param name="robot_id" value="1" />
+      <param name="type" value="collector" />
+      <param name="storage_used" value="0" />
+      <param name="storage_capacity" value="3" />
+    </node>
+  <!-- </group> -->
+</launch>
