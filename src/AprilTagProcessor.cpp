@@ -342,3 +342,80 @@ double AprilTagProcessor::GetDistance(tf::StampedTransform &tf)
 }
 
 
+/***********************************************************************
+ *  Method: AprilTagProcessor::GetTagFrameName
+ *  Params: int tagID
+ * Returns: std::string
+ * Effects:
+ ***********************************************************************/
+std::string AprilTagProcessor::GetTagFrameName(int tagID)
+{
+    if (GetType(tagID) == AprilTagProcessor::LANDMARK)
+    {
+        std::stringstream ss;
+        ss << "april_tag["<<tagID<<"]";
+        return ss.str();
+    }
+    return NULL;
+}
+
+
+/***********************************************************************
+ *  Method: AprilTagProcessor::GetLandmarkFrameName
+ *  Params: int tagID
+ * Returns: std::string
+ * Effects: Returns the frame name of the tag
+ ***********************************************************************/
+std::string AprilTagProcessor::GetLandmarkFrameName(int tagID)
+{
+    if (GetType(tagID) == AprilTagProcessor::LANDMARK)
+    {
+        std::stringstream ss;
+        ss << "landmark["<<tagID<<"]";
+        return ss.str();
+    }
+    return NULL;
+}
+
+
+/***********************************************************************
+ *  Method: AprilTagProcessor::GetIDFromFrameName
+ *  Params: std::string frame_name
+ * Returns: int
+ * Effects:
+ ***********************************************************************/
+int AprilTagProcessor::GetIDFromFrameName(std::string frame_name)
+{
+    char str[16];
+    int id;
+    sscanf(frame_name.c_str(), "%s[%d]", str, &id);
+    return id;
+}
+
+
+/***********************************************************************
+ *  Method: AprilTagProcessor::GetMapTransform
+ *  Params: std::string frame_name, tf::StampedTransform &tf
+ * Returns: bool
+ * Effects: gives you the location of a frame in map coordinates,
+ * if possible
+ ***********************************************************************/
+bool AprilTagProcessor::GetMapTransform(std::string frame_name, tf::StampedTransform &tf)
+{
+    if (GetTransform("map", frame_name.c_str(), tf))
+        return true;
+    else
+        return false;
+}
+
+
+/***********************************************************************
+ *  Method: AprilTagProcessor::GetTransform
+ *  Params: std::string frame_name1, std::string frame_name2, tf::StampedTransform &tf
+ * Returns: bool
+ * Effects:
+ ***********************************************************************/
+bool AprilTagProcessor::GetTransform(std::string frame_name1, std::string frame_name2, tf::StampedTransform &tf)
+{
+}
+

@@ -10,6 +10,7 @@
 #include <nav_msgs/Odometry.h>
 #include <math.h>
 #include <stdlib.h>
+#include <sstream>
 #include <april_tags/AprilTagList.h>
 #include <april_tags/AprilTag.h>
 #include <tf/transform_listener.h>
@@ -58,11 +59,12 @@ private:
     bool PosesDiffer(geometry_msgs::PoseWithCovariance& poseWithCovariance1, geometry_msgs::PoseWithCovariance& poseWithCovariance2);
     void PrintTransform(tf::StampedTransform& transform);
 
-    tf::StampedTransform GetMapLandmarkTransform(int tagID);
-    tf::StampedTransform GetMapTransform(std::string frame_name);
+    bool GetMapTransform(std::string frame_name, tf::StampedTransform &tf);
+    bool GetTransform(std::string frame_name1, std::string frame_name2, tf::StampedTransform &tf);
 
     std::string GetTagFrameName(int tagID);
     std::string GetLandmarkFrameName(int tagID);
+    int GetIDFromFrameName(std::string frame_name);
 
     // A map that keeps track of all tags seen and the time it was last seen (using the pose stamped time)
     std::map<int, geometry_msgs::PoseStamped> m_pose;
