@@ -165,9 +165,9 @@ void RobotController::cb_waypointSub(const global_planner::WaypointMsg::ConstPtr
         switch(m_status.GetState())
         {
             case RobotState::WAITING:
-            ROS_INFO_STREAM("Move to new waypoint ("<<wpWrapper.GetID()<<")");
-            m_status.SetTaskID( wpWrapper.GetID() );
-            Transition(RobotState::NAVIGATING, &goal);
+                ROS_INFO_STREAM("Move to new waypoint ("<<wpWrapper.GetID()<<")");
+                m_status.SetTaskID( wpWrapper.GetID() );
+                Transition(RobotState::NAVIGATING, &goal);
 
             break;
             /*
@@ -222,8 +222,6 @@ void RobotController::cb_eStopSub(const std_msgs::Empty &msg)
  ***********************************************************************/
 void RobotController::SendRobotStatus()
 {
-    // boost::mutex::scoped_lock lock(m_statusMutex);
-
     UpdatePose();
     m_statusPub.publish(m_status.GetMessage());
 }
@@ -447,9 +445,12 @@ void RobotController::StateExecute()
     //      IF received a stop/cancel/estop: send waypoint result message (forced_stop) -> transition(WAITING)
     //      IF reached final pose of the waypoint, send waypoint result message (succeed) -> transition(WAITING)
     // ...
+    actionlib::SimpleClientGoalState::StateEnum result = action_client_ptr->getState().state_;
     switch(m_status.GetState())
     {
         case RobotState::NAVIGATING:
+            switch (result)
+            /*
         if (action_client_ptr->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
         {
             ROS_INFO_STREAM("Finished Task.");
@@ -464,19 +465,31 @@ void RobotController::StateExecute()
         {
             // Randomly finish the task
             if (false && rand() % 250 == 0) // TODO : Move this override to a config option
+            */
             {
-                if (rand()%2 == 0)
-                {
+                case actionlib::SimpleClientGoalState::SUCCEEDED:
+                    ROS_INFO_STREAM("Successful movebase moving?");
                     SendWaypointFinished(TaskResult::SUCCESS);
-                }
-                else
-                {
-                    SendWaypointFinished(TaskResult::FAILURE);
-                }
-                Transition(RobotState::WAITING, 0);
+                    Transition(RobotState::WAITING, 0);
+                    break;
+                case actionlib::SimpleClientGoalState::ABORTED:
+                case actionlib::SimpleClientGoalState::REJECTED:
+                case actionlib::SimpleClientGoalState::LOST:
+                case actionlib::SimpleClientGoalState::RECALLED:
+                case actionlib::SimpleClientGoalState::PREEMPTED:
+                    ROS_ERROR_STREAM("Navigation Failed: " << action_client_ptr->getState().toString() );
+
+                    break;
+
+                case actionlib::SimpleClientGoalState::ACTIVE:
+                case actionlib::SimpleClientGoalState::PENDING:
+                default:
+                    ROS_INFO_STREAM_THROTTLE(1, "Not yet successful: " << action_client_ptr->getState().toString() );
+                    break;
             }
-            ROS_INFO_STREAM_THROTTLE(1, "Not yet successful: " << action_client_ptr->getState().toString() );
-        }
+        break;
+        case RobotState::WAITING:
+            ROS_INFO_STREAM("Waiting for next command...");
     }
 }
 
