@@ -12,5 +12,5 @@
   <!-- <node pkg="global_planner" type="human_interface_node" name="human_interface_node">
   </node> -->
 
-  <include file="$(find global_planner)/launch/onebot_falldemo_robot.launch" />
+  <include file="$(find global_planner)/launch/falldemo/onebot_falldemo_robot.launch" />
 </launch>
