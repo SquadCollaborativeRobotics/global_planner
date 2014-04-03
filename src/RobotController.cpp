@@ -445,24 +445,25 @@ void RobotController::StateExecute()
     //      IF received a stop/cancel/estop: send waypoint result message (forced_stop) -> transition(WAITING)
     //      IF reached final pose of the waypoint, send waypoint result message (succeed) -> transition(WAITING)
     // ...
-    actionlib::SimpleClientGoalState::StateEnum result = action_client_ptr->getState().state_;
     switch(m_status.GetState())
     {
         case RobotState::NAVIGATING:
+        {
+            actionlib::SimpleClientGoalState::StateEnum result = action_client_ptr->getState().state_;
             switch (result)
             /*
-        if (action_client_ptr->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
-        {
-            ROS_INFO_STREAM("Finished Task.");
-            SendWaypointFinished(TaskResult::SUCCESS);
-            Transition(RobotState::WAITING, 0);
-        }
-        else if (action_client_ptr->getState() == actionlib::SimpleClientGoalState::ACTIVE)
-        {
-            // ROS_INFO_STREAM_THROTTLE(1, "Actively going to goal... NAVIGATING state");
-        }
-        else
-        {
+            if (action_client_ptr->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+            {
+                ROS_INFO_STREAM("Finished Task.");
+                SendWaypointFinished(TaskResult::SUCCESS);
+                Transition(RobotState::WAITING, 0);
+            }
+            else if (action_client_ptr->getState() == actionlib::SimpleClientGoalState::ACTIVE)
+            {
+                // ROS_INFO_STREAM_THROTTLE(1, "Actively going to goal... NAVIGATING state");
+            }
+            else
+            {
             // Randomly finish the task
             if (false && rand() % 250 == 0) // TODO : Move this override to a config option
             */
@@ -487,9 +488,11 @@ void RobotController::StateExecute()
                     ROS_INFO_STREAM_THROTTLE(1, "Not yet successful: " << action_client_ptr->getState().toString() );
                     break;
             }
-        break;
+            break;
+        }
+
         case RobotState::WAITING:
-            ROS_INFO_STREAM("Waiting for next command...");
+            ROS_INFO_STREAM_THROTTLE(1,"Waiting for next command...");
     }
 }
 
