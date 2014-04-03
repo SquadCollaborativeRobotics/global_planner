@@ -67,10 +67,14 @@ private:
     void SetupCallbacks();
     void UpdatePose();
 
+    /*********************************
+     * State stuff
+     ********************************/
     void Transition(RobotState::State newState,
                     void* args=0);
     void OnEntry(void* args=0);
     void StateExecute();
+    ros::Time m_timeEnteringState;
 
     // Subscribers to the global planner
     ros::Subscriber m_goalSub;
@@ -90,7 +94,7 @@ private:
     RobotStatusWrapper m_status;
 
     ros::NodeHandle* m_nh;
-    tf::TransformListener* m_listener;
+    boost::shared_ptr<tf::TransformListener> m_listener;
 
     std::string base_frame;
     /**
@@ -110,5 +114,5 @@ private:
     move_base_msgs::MoveBaseGoal m_moveBaseGoal;
 
     //April Tag processor
-    AprilTagProcessor* m_tagProcessor;
+    boost::shared_ptr<AprilTagProcessor> m_tagProcessor;
 };

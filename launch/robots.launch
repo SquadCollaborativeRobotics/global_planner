@@ -10,6 +10,8 @@
       <param name="storage_used" value="0" />
       <param name="storage_capacity" value="3" />
     </node>
+
+    <include file="$(find april_tags)/launch/april_tags.launch" />
   </group>
 
   <!-- second robot... -->
@@ -23,5 +25,7 @@
       <param name="storage_used" value="0" />
       <param name="storage_capacity" value="3" />
     </node>
+
+    <include file="$(find april_tags)/launch/april_tags.launch" />
   </group>
 </launch>

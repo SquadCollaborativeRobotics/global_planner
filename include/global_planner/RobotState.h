@@ -40,6 +40,7 @@ public:
         // DUMPING_FINISHED = 29,
         COLLECTING = 30,
         // COLLECTING_FINISHED = 39,
+        UNINITIALIZED = 99
     };
 
     static const int RobotStateToInt(RobotState::State s)

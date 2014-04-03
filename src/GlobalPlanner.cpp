@@ -22,7 +22,9 @@ bool GlobalPlanner::Init(ros::NodeHandle* nh)
     ROS_INFO_STREAM("Initializing TaskMaster");
     std::string waypointFile("testList1.points");
     if (m_nh->getParam("/global_planner/waypoints_file", waypointFile))
+    {
         ROS_INFO_STREAM("Read from file: "<<waypointFile);
+    }
 
     // Planner types :
     // naive : original, for each waypoint in order of file, choose first available robot
@@ -31,13 +33,16 @@ bool GlobalPlanner::Init(ros::NodeHandle* nh)
     std::string planner("naive");
     m_planner = PLANNER_NAIVE;
     if (m_nh->getParam("/global_planner/planner", planner))
+    {
         ROS_INFO_STREAM("Planner set from file to " << planner);
-        if (planner.compare("closest_robot") == 0) {
-            m_planner = PLANNER_CLOSEST_ROBOT;
-        }
-        else if (planner.compare("closest_waypoint") == 0) {
-            m_planner = PLANNER_CLOSEST_WAYPOINT;
-        }
+    }
+
+    if (planner.compare("closest_robot") == 0) {
+        m_planner = PLANNER_CLOSEST_ROBOT;
+    }
+    else if (planner.compare("closest_waypoint") == 0) {
+        m_planner = PLANNER_CLOSEST_WAYPOINT;
+    }
 
     m_tm.Init(nh, m_robots, waypointFile);
 
@@ -49,32 +54,32 @@ bool GlobalPlanner::Init(ros::NodeHandle* nh)
 void GlobalPlanner::Display()
 {
     m_lastDisplay = ros::Time::now();
-    // ROS_INFO_STREAM("Robot Status");
-    // for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
-    // {
-    //     ROS_INFO_STREAM(it->second->ToString());
-    // }
+    ROS_INFO_STREAM("Robot Status:");
+    for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
+    {
+        ROS_INFO_STREAM(it->second->ToString());
+    }
 
-    // ROS_INFO_STREAM("Waypoint Status");
-    // std::map<int, Waypoint_Ptr> wps = m_tm.GetWaypoints();
-    // for (std::map<int, Waypoint_Ptr>::iterator it = wps.begin(); it != wps.end(); ++it)
-    // {
-    //     ROS_INFO_STREAM(it->second->ToString());
-    // }
+    ROS_INFO_STREAM("Waypoint Status:");
+    std::map<int, Waypoint_Ptr> wps = m_tm.GetWaypoints();
+    for (std::map<int, Waypoint_Ptr>::iterator it = wps.begin(); it != wps.end(); ++it)
+    {
+        ROS_INFO_STREAM(it->second->ToString());
+    }
 
-    // ROS_INFO_STREAM("Showing goals...");
-    // std::map<int, Goal_Ptr> goals = m_tm.GetGoals();
-    // for (std::map<int, Goal_Ptr>::iterator it = goals.begin(); it != goals.end(); ++it)
-    // {
-    //     ROS_INFO_STREAM(it->second->ToString());
-    // }
+    ROS_INFO_STREAM("Goal Status:");
+    std::map<int, Goal_Ptr> goals = m_tm.GetGoals();
+    for (std::map<int, Goal_Ptr>::iterator it = goals.begin(); it != goals.end(); ++it)
+    {
+        ROS_INFO_STREAM(it->second->ToString());
+    }
 
-    // ROS_INFO_STREAM("Showing Dumps...");
-    // std::map<int, Dump_Ptr> dumps = m_tm.GetDumps();
-    // for (std::map<int, Dump_Ptr>::iterator it = dumps.begin(); it != dumps.end(); ++it)
-    // {
-    //     ROS_INFO_STREAM(it->second->ToString());
-    // }
+    ROS_INFO_STREAM("Dump Status");
+    std::map<int, Dump_Ptr> dumps = m_tm.GetDumps();
+    for (std::map<int, Dump_Ptr>::iterator it = dumps.begin(); it != dumps.end(); ++it)
+    {
+        ROS_INFO_STREAM(it->second->ToString());
+    }
 }
 
 // Executive function
@@ -86,7 +91,7 @@ void GlobalPlanner::Execute()
 
     if ((ros::Time::now() - m_lastDisplay) > ros::Duration(3))
     {
-        Display();
+        //Display();
     }
 
     // Get Robot Status...
@@ -168,17 +173,16 @@ void GlobalPlanner::Execute()
     }
 */
     // If no available waypoints, do nothing
-    if (m_tm.GetAvailableWaypoints().size() <= 0) {
-        ROS_WARN_STREAM_THROTTLE(10, "No Available Waypoints! (" 
-                                     << m_tm.GetAvailableWaypoints().size() << ") " 
+    if (m_tm.GetAvailableWaypoints().size() == 0) {
+        ROS_WARN_STREAM_THROTTLE(10, "No Available Waypoints! ("
+                                     << m_tm.GetAvailableWaypoints().size() << ") "
                                      << (isFinished() ? "FIN" : "GP Waiting") );
-        
+
         // Print out status of all waypoints
         std::map<int, Waypoint_Ptr> allWaypoints = m_tm.GetWaypoints();
         std::stringstream ss;
         for (std::map<int, Waypoint_Ptr>::iterator it = allWaypoints.begin(); it != allWaypoints.end(); ++it)
         {
-            
             ss << it->second->GetID() << "-" << it->second->GetStatusMessage() << " ";
         }
         ROS_INFO_STREAM_THROTTLE(10, ss.str() );
@@ -204,7 +208,7 @@ void GlobalPlanner::Execute()
 
 /***********************************************************************
  *  Method: GlobalPlanner::PlanNNWaypoint
- *  Params: 
+ *  Params:
  * Returns:
  * Effects: Iterate over available robots and choose the nearest available waypoint
  ***********************************************************************/
@@ -262,7 +266,7 @@ bool GlobalPlanner::AssignRobotWaypoint(int robot_id, int waypoint_id)
 {
     Waypoint_Ptr wp = m_tm.GetWaypoints()[waypoint_id];
     ROS_INFO_STREAM("Assigning Robot " << m_robots[robot_id]->GetName() << "(" << robot_id << ") : Waypoint ("<< waypoint_id <<")" );
-    
+
     // Assign waypoint to robot
     wp->SetRobot(robot_id);
     wp->SetStatus(TaskResult::INPROGRESS);
@@ -281,7 +285,7 @@ bool GlobalPlanner::AssignRobotWaypoint(int robot_id, int waypoint_id)
 
 /***********************************************************************
  *  Method: GlobalPlanner::PlanNNRobot
- *  Params: 
+ *  Params:
  * Returns:
  * Effects: Iterate over waypoints and choose the nearest available robot
  ***********************************************************************/
@@ -297,7 +301,7 @@ void GlobalPlanner::PlanNNRobot()
         // int bestRobot = GetFirstAvailableBot(); // NAIVE SOLUTION
         if (bestRobot != NO_ROBOT_FOUND)
         {
-            // ROS_INFO_STREAM("Found a robot to explore waypoint ("<<wp->GetID()<<") : "<<bestRobot);            
+            // ROS_INFO_STREAM("Found a robot to explore waypoint ("<<wp->GetID()<<") : "<<bestRobot);
             // Assign Robot to Waypoint
             if ( !AssignRobotWaypoint(bestRobot , wp->GetID()) )
             {
@@ -314,7 +318,7 @@ void GlobalPlanner::PlanNNRobot()
 
 /***********************************************************************
  *  Method: GlobalPlanner::PlanNaive
- *  Params: 
+ *  Params:
  * Returns:
  * Effects: Naively iterates over waypoints in order and  assigns first available robot to each waypoint
  ***********************************************************************/
@@ -330,7 +334,7 @@ void GlobalPlanner::PlanNaive()
         int bestRobot = GetFirstAvailableBot(); // NAIVE SOLUTION
         if (bestRobot != NO_ROBOT_FOUND)
         {
-            // ROS_INFO_STREAM("Found a robot to explore waypoint ("<<wp->GetID()<<") : "<<bestRobot);            
+            // ROS_INFO_STREAM("Found a robot to explore waypoint ("<<wp->GetID()<<") : "<<bestRobot);
             // Assign Robot to Waypoint
             if ( !AssignRobotWaypoint(bestRobot , wp->GetID()) )
             {
@@ -347,7 +351,7 @@ void GlobalPlanner::PlanNaive()
 
 /***********************************************************************
  *  Method: GlobalPlanner::GetAvailableRobots
- *  Params: 
+ *  Params:
  * Returns: std::vector<Robot_Ptr> of all available robots
  * Effects: Returns all robots that are in the available state
  ***********************************************************************/
@@ -406,7 +410,7 @@ int GlobalPlanner::GetBestSearchBot(int waypointID)
  * Returns: int id of robot
  * Effects: Returns the first available robot of any type that is available (waiting and has storage space)
  ***********************************************************************/
-int GlobalPlanner::GetFirstAvailableBot() 
+int GlobalPlanner::GetFirstAvailableBot()
 {
     return GetFirstAvailableBot(RobotState::ANY);
 }
@@ -477,7 +481,7 @@ int GlobalPlanner::GetRobotClosestToWaypoint(int waypointID, RobotState::Type ty
 int GlobalPlanner::GetWaypointClosestToRobot(int robot_id) {
     // List of available waypoints
     std::vector<Waypoint_Ptr> availableWaypoints = m_tm.GetAvailableWaypoints();
-    
+
     // Break if all waypoints reached.
     if (availableWaypoints.size() == 0) { return NO_WAYPOINT_FOUND; }
 
@@ -485,7 +489,7 @@ int GlobalPlanner::GetWaypointClosestToRobot(int robot_id) {
 
     // Robot pose
     geometry_msgs::Pose robot_pose = m_robots[robot_id]->GetPose();
-    
+
     // idx of best waypoint so far
     int best_waypoint_id = NO_WAYPOINT_FOUND;
 
@@ -521,11 +525,11 @@ void GlobalPlanner::Finished()
     SendSound("mario_1_up.wav");
     // TODO: Wrap up statistics here.
     ROS_INFO("Global Planner finished in : %g seconds", TimeSinceStart() );
-    
+
     // Print out assignment table
     ROS_INFO_STREAM("Robots - Waypoint Assignment Table:");
-    for (std::map<int, std::map<int, double> >::iterator robot_it = robot_waypoint_times.begin(); 
-         robot_it != robot_waypoint_times.end(); 
+    for (std::map<int, std::map<int, double> >::iterator robot_it = robot_waypoint_times.begin();
+         robot_it != robot_waypoint_times.end();
          ++robot_it)
     {
         std::stringstream ss;

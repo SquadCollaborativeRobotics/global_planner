@@ -12,10 +12,10 @@
  *  Params:
  * Effects: Initializer, sets pointers to null
  ***********************************************************************/
-RobotController::RobotController()
+RobotController::RobotController():
+m_nh(0)
 {
-    m_nh = 0;
-    m_listener = 0;
+    m_status.SetState(RobotState::UNINITIALIZED);
 }
 
 
@@ -38,7 +38,7 @@ RobotController::~RobotController()
 void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotName, int storage_cap, int storage_used, RobotState::Type type)
 {
     m_nh = nh;
-    m_listener = new tf::TransformListener(*nh);
+    m_listener.reset( new tf::TransformListener(*nh) );
 
     if (m_nh->getParam("controller/robot_id", robotID))
         ROS_INFO_STREAM("Set robot ID: "<<robotID);
@@ -113,9 +113,8 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
     }
 
     //Setup april tag processor
-    m_tagProcessor = new AprilTagProcessor();
+    m_tagProcessor.reset( new AprilTagProcessor() );
     m_tagProcessor->Init(nh, robotID);
-
 
     action_client_ptr.reset( new MoveBaseClient("move_base", true) );
     // Wait for the action server to come up
@@ -125,10 +124,10 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
 
     SetupCallbacks();
 
-
     ROS_INFO_STREAM("Robot has setup the movebase client");
 
     Transition(RobotState::WAITING);
+    m_timeEnteringState = ros::Time::now();
 
     ROS_INFO_STREAM("Finished initializing");
 }
@@ -390,6 +389,10 @@ void RobotController::Transition(RobotState::State newState, void* args)
     // boost::mutex::scoped_lock lock(m_statusMutex);
 
     //TODO: make sure the state we are entering is valid based on the current state of the robot
+    if (m_status.GetState() != newState)
+    {
+        m_timeEnteringState = ros::Time::now();
+    }
     m_status.SetState(newState);
     OnEntry(args);
     ROS_INFO_STREAM("Transitioned to "<<RobotState::ToString(newState));
@@ -407,16 +410,14 @@ void RobotController::OnEntry(void *args)
     switch(m_status.GetState())
     {
         case RobotState::WAITING:
-        m_status.SetTaskID(-1);
-        break;
+            m_status.SetTaskID(-1);
+            break;
         case RobotState::NAVIGATING:
-        // ROS_INFO_STREAM("Starting OnEntry: Navigation state");
-        action_client_ptr->sendGoal(m_moveBaseGoal);
-        // ROS_INFO_STREAM("Finished OnEntry: Navigation state");
+            action_client_ptr->sendGoal(m_moveBaseGoal);
+            break;
         case RobotState::NAVIGATING_TAG_SPOTTED:
-        // ROS_INFO_STREAM("Starting OnEntry: Navigation state");
-        action_client_ptr->cancelAllGoals();
-        // ROS_INFO_STREAM("Finished OnEntry: Navigation state");
+            action_client_ptr->cancelAllGoals();
+            break;
         break;
     }
 }
