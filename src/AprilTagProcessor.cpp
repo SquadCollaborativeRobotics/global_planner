@@ -56,6 +56,8 @@ bool AprilTagProcessor::Init(ros::NodeHandle *nh, int robotID)
     m_goalPub = nh->advertise<global_planner::GoalMsg>("garbageCan", 100);
     m_newPosePub = nh->advertise<geometry_msgs::PoseStamped>("new_pose", 100);
     m_newInitialPosePub = nh->advertise<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 100);
+
+    ROS_INFO("Successfully setup the april tag processor");
 }
 
 
@@ -66,13 +68,28 @@ bool AprilTagProcessor::Init(ros::NodeHandle *nh, int robotID)
  ***********************************************************************/
 bool AprilTagProcessor::Execute()
 {
+    bool retVal = false;
     if (IsStopped())
     {
-        FindGoals();
-        UpdatePose();
-        return true;
+        if (true)
+        {
+            ROS_INFO_STREAM_THROTTLE(0.5, "Searching for goals");
+            retVal = FindGoals();
+        }
+
+        if (false)
+        {
+            ROS_INFO_STREAM_THROTTLE(0.5, "Searching for landmarks");
+            retVal = UpdatePose();
+        }
     }
-    return false;
+    else
+    {
+        ROS_ERROR_STREAM_THROTTLE(0.5, "ERROR: Robot is not yet stopped");
+    }
+    if (retVal == true)
+        m_shouldPause = false;
+    return retVal;
 }
 
 
@@ -97,8 +114,11 @@ bool AprilTagProcessor::ShouldPause()
 bool AprilTagProcessor::ShouldResume()
 {
     //Wait at least a second before allowing the robot to resume
-    if (ros::Time::now() - m_lastLocalizeTime > ros::Duration(1.0))
+    if (m_seesLandmark && (ros::Time::now() - m_lastLocalizeTime > ros::Duration(1.0)))
+    {
+        ROS_INFO("Waiting a little bit before resuming");
         return false;
+    }
     return !m_shouldPause;
 }
 
@@ -136,7 +156,7 @@ bool AprilTagProcessor::UpdatePose()
 
     if (bestLandmarkId < 0)
     {
-        ROS_ERROR_STREAM("No landmarks are in camera frame");
+        ROS_INFO_STREAM_THROTTLE(5.0, "No landmarks are in camera frame");
         return false;
     }
 
@@ -257,6 +277,10 @@ bool AprilTagProcessor::FindGoals()
     std::vector<int> goals;
     GetGoals(goals);
     // double closestLandmark = 9999999;
+    //
+    bool retVal = false;
+
+    ROS_INFO_STREAM("There are : "<<goals.size()<<" goals to search through");
 
     //Pick best tag to use for localization (assuming there are several options)
     for (int i = 0; i < goals.size(); ++i)
@@ -264,13 +288,18 @@ bool AprilTagProcessor::FindGoals()
         int tagID = goals[i];
         ros::Time tagSeenTime = LastSeenTime(tagID);
 
+        // ROS_INFO_STREAM("GOAL["<<tagID<<"] = time = "<<tagSeenTime);
+
         if (tagSeenTime == m_lastImageTime)
         {
+            // ROS_INFO_STREAM("Tag ["<<tagID<< "] is being viewed now");
             std::string goal_frame = GetTagFrameName(tagID);
+            // ROS_INFO_STREAM("Tag ["<<tagID<< "] has a frame name of: "<<goal_frame);
 
             tf::StampedTransform transform;
             if (GetTransform("map", goal_frame, transform))
             {
+                ROS_INFO_STREAM("We can transform the goal into the map frame");
                 global_planner::GoalMsg can;
                 geometry_msgs::PoseStamped ps;
                 tf::Quaternion quat;
@@ -295,13 +324,17 @@ bool AprilTagProcessor::FindGoals()
 
                 //Finish creating message & publish
                 can.pose = ps.pose;
-                //TODO: make more correct
-                can.id = 6;
+                can.id = tagID;
 
                 m_goalPub.publish(can);
                 m_goalSendTime[tagID] = ros::Time::now();
 
-                ROS_ERROR("Sent goal pose");
+                ROS_INFO_STREAM("Sent goal pose with ID: "<<tagID);
+                retVal = true;
+            }
+            else
+            {
+                ROS_ERROR_STREAM("Cannot transform from map to "<<goal_frame);
             }
         }
     }
@@ -310,7 +343,7 @@ bool AprilTagProcessor::FindGoals()
     //
     //First, get the frame names: (one for landmark, one for april tag)
 
-    return true;
+    return retVal;
 }
 
 
@@ -320,13 +353,14 @@ bool AprilTagProcessor::FindGoals()
  * Returns: void
  * Effects:
  ***********************************************************************/
-void AprilTagProcessor::GetLandmarks(std::vector<int> vec)
+void AprilTagProcessor::GetLandmarks(std::vector<int>& vec)
 {
     vec.clear();
     for (std::map<int, AprilTagProcessor::TAG_TYPE>::iterator i = m_goalTypeMap.begin(); i != m_goalTypeMap.end(); ++i)
     {
         if (i->second == LANDMARK)
         {
+            // ROS_INFO_STREAM("Tag ["<<i->first<< "] is a landmark");
             vec.push_back(i->first);
         }
     }
@@ -339,13 +373,14 @@ void AprilTagProcessor::GetLandmarks(std::vector<int> vec)
  * Returns: void
  * Effects:
  ***********************************************************************/
-void AprilTagProcessor::GetGoals(std::vector<int> vec)
+void AprilTagProcessor::GetGoals(std::vector<int>& vec)
 {
     vec.clear();
     for (std::map<int, AprilTagProcessor::TAG_TYPE>::iterator i = m_goalTypeMap.begin(); i != m_goalTypeMap.end(); ++i)
     {
         if (i->second == GOAL)
         {
+            // ROS_INFO_STREAM("Tag ["<<i->first<< "] is a goal");
             vec.push_back(i->first);
         }
     }
@@ -400,17 +435,19 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
     }
     else
     {
-        ROS_INFO_STREAM(msg->poses.size()<<" tags seen in the robot's camera this time");
+        m_lastImageTime = msg->poses[0].header.stamp;
+        ROS_INFO_STREAM_THROTTLE(2.0, msg->poses.size()<<" tags seen in the robot's camera this time");
     }
 
     for (int i = 0; i < numTags; ++i)
     {
-        m_pose[msg->tag_ids[i]] = msg->poses[i];
+        int tagID = msg->tag_ids[i];
+        m_pose[tagID] = msg->poses[i];
 
-        AprilTagProcessor::TAG_TYPE type = GetType(msg->tag_ids[i]);
+        AprilTagProcessor::TAG_TYPE type = GetType(tagID);
         if (type == AprilTagProcessor::UNKNOWN )
         {
-            ROS_ERROR("ERROR: Unkown tag type detected");
+            ROS_ERROR_STREAM("ERROR: Unkown tag type detected: id = "<<tagID);
         }
 
         if (type != AprilTagProcessor::UNKNOWN)
@@ -421,9 +458,9 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
                 if (type == AprilTagProcessor::LANDMARK)
                 {
                     // Only need to update if it's been a while since the robot localized
-                    if (m_pose[msg->tag_ids[i]].header.stamp - m_lastLocalizeTime > ros::Duration(9.0) ) {
+                    if (m_pose[tagID].header.stamp - m_lastLocalizeTime > ros::Duration(9.0) ) {
                         //Check if the tag is closer than the threshold distance
-                        if (GetDistance(m_pose[msg->tag_ids[i]]) < UPDATE_RANGE_THRESHOLD)
+                        if (GetDistance(m_pose[tagID]) < UPDATE_RANGE_THRESHOLD)
                         {
                             m_shouldPause = true;
                             m_seesLandmark = true;
@@ -433,11 +470,11 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
                 else if (type == AprilTagProcessor::GOAL)
                 {
                     // Only attempt to send the goal again if it's been a while since last sending it
-                    if (m_pose[msg->tag_ids[i]].header.stamp - LastGoalSendTime(msg->tag_ids[i]) > ros::Duration(9.0) ) {
+                    if (m_pose[tagID].header.stamp - LastGoalSendTime(tagID) > ros::Duration(9.0) ) {
                         //The robot hasn't updated in a while...
 
                         //Check if the tag is closer than the threshold distance
-                        if (GetDistance(m_pose[msg->tag_ids[i]]) < UPDATE_RANGE_THRESHOLD)
+                        if (GetDistance(m_pose[tagID]) < UPDATE_RANGE_THRESHOLD)
                         {
                             m_shouldPause = true;
                             m_seesGoal = true;
@@ -447,8 +484,6 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
             }
         }
     }
-
-    m_lastImageTime = msg->poses[0].header.stamp;
 }
 
 
@@ -555,18 +590,19 @@ bool AprilTagProcessor::IsLandmarkVisible()
  ***********************************************************************/
 void AprilTagProcessor::PrintTransform(tf::StampedTransform &transform)
 {
-    ROS_INFO_STREAM("Time: "<<transform.stamp_<<" | Parent: "<<transform.frame_id_<<" | Child?: "<<transform.child_frame_id_<<"\nTransform:");
     tf::Matrix3x3 mat = transform.getBasis();
+    std::stringstream ss;
     for (int i=0 ; i<3; i++)
     {
-        std::cout << "[";
+        ss << "[";
         for (int j=0; j<3; j++)
         {
-            std::cout<<mat[i][j]<<" ";
+            ss << mat[i][j] << " ";
         }
-        std::cout << transform.getOrigin()[i] << "]" << std::endl;
+        ss  << transform.getOrigin()[i] << "]" << std::endl;
     }
-    std::cout << "]";
+    ss << "]";
+    ROS_INFO_STREAM("Time: "<<transform.stamp_<<" | Parent: "<<transform.frame_id_<<" | Child?: "<<transform.child_frame_id_<<"\nTransform: \n"<<ss.str());
 }
 
 
@@ -590,13 +626,13 @@ double AprilTagProcessor::GetDistance(tf::StampedTransform &tf)
  ***********************************************************************/
 std::string AprilTagProcessor::GetTagFrameName(int tagID)
 {
-    if (GetType(tagID) == AprilTagProcessor::LANDMARK)
+    if (GetType(tagID) != AprilTagProcessor::UNKNOWN)
     {
         std::stringstream ss;
         ss << "april_tag["<<tagID<<"]";
         return ss.str();
     }
-    return NULL;
+    return std::string();
 }
 
 
@@ -614,7 +650,7 @@ std::string AprilTagProcessor::GetLandmarkFrameName(int tagID)
         ss << "landmark["<<tagID<<"]";
         return ss.str();
     }
-    return NULL;
+    return std::string();
 }
 
 

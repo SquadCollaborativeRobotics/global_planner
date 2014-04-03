@@ -61,12 +61,14 @@ public:
             return "WAITING";
             case RobotState::NAVIGATING:
             return "NAVIGATING";
+            case RobotState::NAVIGATING_TAG_SPOTTED:
+            return "NAVIGATING_TAG_SPOTTED";
             case RobotState::DUMPING:
             return "DUMPING";
             case RobotState::COLLECTING:
             return "COLLECTING";
             default:
-            return "UNKNOWN robot state";
+            return "UNKNOWN robot state (or not implemented in ToString func";
         }
     }
 };

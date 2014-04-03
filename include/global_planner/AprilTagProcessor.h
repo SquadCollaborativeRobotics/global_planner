@@ -55,8 +55,8 @@ private:
 
     ros::Time LastSeenTime(int tagID);
     ros::Time LastGoalSendTime(int tagID);
-    void GetLandmarks(std::vector<int> ret);
-    void GetGoals(std::vector<int> ret);
+    void GetLandmarks(std::vector<int>& ret);
+    void GetGoals(std::vector<int>& ret);
 
 
     AprilTagProcessor::TAG_TYPE GetType(int tagID);
