@@ -23,7 +23,7 @@ int main(int argc, char** argv){
 
     ros::Subscriber toggleSub = nh.subscribe("/toggle_planner", 10, toggle_planner);
 
-    ros::Rate r(50);
+    ros::Rate r(15);
 
     while(ros::ok() && running == false)
     {
@@ -33,10 +33,10 @@ int main(int argc, char** argv){
     }
 
     ros::spinOnce();
-    
+
     ROS_INFO("Node Starting Global Planner...");
     gp.Start();
-    
+
     while(ros::ok() && running == true && !gp.isFinished())
     {
         gp.Execute();

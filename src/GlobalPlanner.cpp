@@ -116,8 +116,6 @@ void GlobalPlanner::Execute()
     //      OPTIONAL: IF need to cancel robot's current goal -> Send Cancel Message First AND update the task it was assigned to
     //      Send Waypoint Message
 
-    boost::mutex::scoped_lock lock(m_robotMutex);
-
     // std::vector<Robot_Ptr> availableRobots = GetAvailableRobots();
 
     //TODO: Handoff
@@ -550,16 +548,6 @@ bool GlobalPlanner::isFinished() {
 // setup callbacks, regiser services, load waypoints...
 bool GlobalPlanner::SetupCallbacks()
 {
-    /*
-    for (std::map<int, Robot_Ptr >::iterator it=m_robots.begin(); it!=m_robots.end(); ++it)
-    {
-        std::string robotStatusTopic = "/";
-        robotStatusTopic += it->second->GetName();
-        robotStatusTopic += "/status";
-        ros::Subscriber sub = m_nh->subscribe(robotStatusTopic, 10, &GlobalPlanner::cb_robotStatus, this);
-    }
-    */
-
     m_robotSub = m_nh->subscribe("robot_status", 10, &GlobalPlanner::cb_robotStatus, this);
     m_eStopPub = m_nh->advertise<std_msgs::Empty>("e_stop_pub", 100);
 
@@ -573,28 +561,30 @@ bool GlobalPlanner::SetupCallbacks()
 // Get robot information TODO: better definition
 void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& msg)
 {
-    if (m_robotMutex.try_lock())
+    int id = msg->id;
+    // ROS_INFO_STREAM_THROTTLE(1, "Received robot status: "<<id);
+    global_planner::RobotStatus status = *msg;
+
+    std::map<int, Robot_Ptr>::iterator it = m_robots.find(id);
+    //If it is already in the map...
+    if(it != m_robots.end())
     {
-        int id = msg->id;
-        // ROS_INFO_STREAM_THROTTLE(1, "Received robot status: "<<id);
-        global_planner::RobotStatus status = *msg;
-
-        std::map<int, Robot_Ptr>::iterator it = m_robots.find(id);
-        //If it is already in the map...
-        if(it != m_robots.end())
-        {
-            m_robots[id]->SetData(status);
-        }
-        else
-        {
-            Robot_Ptr ptr(new RobotStatusWrapper());
-            ptr->SetData(status);
-            m_robots[id] = ptr;
-
-            ROS_INFO_STREAM("Added new robot: "<<ptr->ToString());
-        }
+        // m_robots[id]->SetData(status);
     }
-    m_robotMutex.unlock();
+    else
+    {
+        Robot_Ptr ptr( new RobotStatusWrapper() );
+        ptr->SetData(status);
+        m_robots[id] = ptr;
+
+        std::stringstream ss;
+        ss << "/robot_status/"<<id;
+        ros::ServiceClient client = m_nh->serviceClient<global_planner::RobotStatusSrv>(ss.str(), true);
+
+        m_statusServices.push_back(client);
+
+        ROS_INFO_STREAM("Added new robot: "<<ptr->ToString());
+    }
 }
 
 

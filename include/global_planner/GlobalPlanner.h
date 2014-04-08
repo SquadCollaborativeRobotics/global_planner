@@ -19,6 +19,7 @@
 #include <std_msgs/Empty.h>
 #include <global_planner/RobotStatusWrapper.h>
 #include <global_planner/RobotState.h>
+#include <global_planner/RobotStatusSrv.h>
 #include <global_planner/SoundMsg.h>
 #include <boost/thread/mutex.hpp>
 
@@ -99,6 +100,7 @@ private:
 
     //Subscriber to robot status callbacks
     ros::Subscriber m_robotSub;
+    std::vector<ros::ServiceClient> m_statusServices;
 
     // E-Stop Publisher
     ros::Publisher m_eStopPub;
@@ -118,7 +120,7 @@ private:
     // Statistics
     ros::Time m_start_time;
 
-    // Map or robot_id to 
+    // Map or robot_id to
     //                    map of waypoint id chosen and seconds since start it was chosen
     std::map<int, std::map<int, double> > robot_waypoint_times;
     // map<robot_id, map<waypoint_id, double_seconds_since_start> >
