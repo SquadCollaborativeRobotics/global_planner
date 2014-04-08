@@ -10,5 +10,6 @@
     <param name="storage_capacity" value="3" />
   </node>
 
-  <include file="$(find april_tags)/launch/april_tags.launch" output="log" />
+  <include file="$(find april_tags)/launch/april_tags.launch">
+  </include>
 </launch>

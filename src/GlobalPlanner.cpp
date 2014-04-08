@@ -504,7 +504,6 @@ int GlobalPlanner::GetWaypointClosestToRobot(int robot_id) {
             best_distance = dist;
             best_waypoint_id = wp->GetID();
         }
-
     }
     return best_waypoint_id;
 }

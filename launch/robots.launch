@@ -1,7 +1,9 @@
 <launch>
+  <include file="$(find global_planner)/launch/computers.machine" />
+
   <!-- first robot... -->
   <group ns="robot1">
-    <node pkg="global_planner" type="robot_controller_node" name="controller" output="screen" launch-prefix="xterm -e" >
+    <node pkg="global_planner" type="robot_controller_node" name="controller" output="screen" launch-prefix="xterm -e" machine="Cristoff">
       <param name="robot_name" value="Cristoff" />
       <param name="base_frame" value="robot_center" />
       <param name="tf_prefix" value="/robot1_tf" />
@@ -11,13 +13,15 @@
       <param name="storage_capacity" value="3" />
     </node>
 
-    <include file="$(find april_tags)/launch/april_tags.launch" />
+    <include file="$(find april_tags)/launch/april_tags.launch">
+      <arg name="machineName" value="Cristoff" />
+    </include>
   </group>
 
   <!-- second robot... -->
   <group ns="robot2">
-    <node pkg="global_planner" type="robot_controller_node" name="controller" output="screen" launch-prefix="xterm -e" >
-      <param name="robot_name" value="Teddy" />
+    <node pkg="global_planner" type="robot_controller_node" name="controller" output="screen" launch-prefix="xterm -e" machine="Pepe">
+      <param name="robot_name" value="Pepe" />
       <param name="base_frame" value="robot_center" />
       <param name="tf_prefix" value="/robot2_tf" />
       <param name="robot_id" value="2" />
@@ -26,6 +30,8 @@
       <param name="storage_capacity" value="3" />
     </node>
 
-    <include file="$(find april_tags)/launch/april_tags.launch" />
+    <include file="$(find april_tags)/launch/april_tags.launch">
+      <arg name="machineName" value="Pepe" />
+    </include>
   </group>
 </launch>
