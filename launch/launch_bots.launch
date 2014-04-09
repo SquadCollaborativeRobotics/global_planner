@@ -1,0 +1,42 @@
+<launch>
+    <arg name="sim" default="1" />
+    <arg name="one_bot" default="1" />
+    <arg name="two_bots" default="0" />
+    <arg name="cubicle" default="1" />
+
+    <!-- run if using gazebo simulator -->
+    <group if="$(arg sim)">
+        <!-- start cubicle world -->
+        <group if="$(arg cubicle)">
+            <include file="$(find collectorbot_gazebo)/launch/shawn/cubicle_world.launch" />
+            <include file="$(find collectorbot_gazebo)/launch/april_tags_gazebo.launch" />
+        </group>
+
+        <group if="$(arg one_bot)">
+            <include file="$(find collectorbot_gazebo)/launch/OneBot/onebot_robot.launch"/>
+            <include file="$(find collectorbot_gazebo)/launch/OneBot/onebot_movebase.launch"/>
+            <include file="$(find global_planner)/launch/one_robot.launch"/>
+        </group>
+        <group if="$(arg two_bots)">
+            <!-- include our robots -->
+            <include file="$(find collectorbot_gazebo)/launch/TwoBots/Cubicle/twobots_cubicle_robots.launch"/>
+
+            <!-- Run two robots amcl localization -->
+            <include file="$(find collectorbot_gazebo)/launch/TwoBots/twobots_amcl.launch"/>
+
+            <!-- Run two robots movebase  -->
+            <include file="$(find collectorbot_gazebo)/launch/TwoBots/twobots_move_base.launch"/>
+
+            <!-- Run robot controllers -->
+            <include file="$(find global_planner)/launch/robots.launch" />
+        </group>
+    </group>
+
+    <!-- Run if using real world environment -->
+    <group unless="$(arg sim)">
+        <include file="$(find global_planner)/launch/robots.launch" />
+        <!-- need to include map -->
+    </group>
+
+    <include file="$(find global_planner)/launch/global_planner.launch" />
+</launch>

@@ -2,7 +2,8 @@
   <include file="$(find global_planner)/launch/computers.machine" />
 
   <!-- launch global planner -->
-  <node pkg="global_planner" type="global_planner_node" name="global_planner" output="screen" machine="Master">
+  <!-- machine="Master" -->
+  <node pkg="global_planner" type="global_planner_node" name="global_planner" output="screen" launch-prefix="terminator -x" >
     <param name="waypoints_file" value="cubicle.points" />
     <!-- naive/closest_robot/closest_waypoint -->
     <!-- <param name="planner" value="naive" />  -->
@@ -13,6 +14,4 @@
   <!-- human interface -->
   <!-- <node pkg="global_planner" type="human_interface_node" name="human_interface_node">
   </node> -->
-
-  <include file="$(find global_planner)/launch/robots.launch" />
 </launch>
