@@ -489,6 +489,7 @@ void RobotController::StateExecute()
                         ROS_INFO_STREAM_THROTTLE(1, "Navigation still being attempted... state = " << action_client_ptr->getState().toString() );
                         break;
                 }
+
             }
         break;
 
@@ -506,7 +507,6 @@ void RobotController::StateExecute()
                     sleep(0.5);
                     ros::spinOnce();
                 }
-                //TODO: TEMPORARY transition to waiting. switch to NAVIGATING LATER
                 Transition(RobotState::NAVIGATING);
                 break;
             }
@@ -514,7 +514,8 @@ void RobotController::StateExecute()
             {
                 ROS_INFO_STREAM_THROTTLE(0.5, "Waiting on the OK to resume from the tag processor");
             }
-        break;
+            break;
+
         case RobotState::WAITING:
             //ROS_INFO_STREAM_THROTTLE(2.0, "Waiting for next command...");
             // if (m_tagProcessor->ShouldPause())
@@ -522,6 +523,7 @@ void RobotController::StateExecute()
             //     Transition(RobotState::NAVIGATING_TAG_SPOTTED);
             //     break;
             // }
+            ROS_INFO_STREAM_THROTTLE(3,"Waiting for next command...");
         break;
     }
 }
