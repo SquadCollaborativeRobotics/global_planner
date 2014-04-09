@@ -23,24 +23,32 @@ int main(int argc, char** argv){
 
     ros::Subscriber toggleSub = nh.subscribe("/toggle_planner", 10, toggle_planner);
 
-    ros::Rate r(15);
+    ros::Rate r(5);
 
-    while(ros::ok() && running == false)
-    {
-        ROS_INFO_THROTTLE(10, "Waiting on program start");
-        ros::spinOnce();
-        r.sleep();
-    }
+    // while(ros::ok())
+    // {
+    //     ROS_INFO_THROTTLE(10, "Waiting on program start");
+    //     ros::spinOnce();
+    //     r.sleep();
+    // }
 
     ros::spinOnce();
 
     ROS_INFO("Node Starting Global Planner...");
     gp.Start();
 
-    while(ros::ok() && running == true && !gp.isFinished())
+    while(ros::ok() && !gp.isFinished())
     {
-        gp.Execute();
+        if (running)
+        {
+            gp.Execute();
+        }
+        else
+        {
+            ROS_INFO_THROTTLE(5.0, "Global Planner is paused");
+        }
         r.sleep();
+        ros::spinOnce();
     }
     gp.Finished();
 

@@ -71,13 +71,13 @@ bool AprilTagProcessor::Execute()
     bool retVal = false;
     if (IsStopped())
     {
-        if (true)
+        if (false)
         {
             ROS_INFO_STREAM_THROTTLE(0.5, "Searching for goals");
             retVal = FindGoals();
         }
 
-        if (false)
+        if (true)
         {
             ROS_INFO_STREAM_THROTTLE(0.5, "Searching for landmarks");
             retVal = UpdatePose();
@@ -114,11 +114,12 @@ bool AprilTagProcessor::ShouldPause()
 bool AprilTagProcessor::ShouldResume()
 {
     //Wait at least a second before allowing the robot to resume
-    if (m_seesLandmark && (ros::Time::now() - m_lastLocalizeTime > ros::Duration(1.0)))
-    {
-        ROS_INFO("Waiting a little bit before resuming");
-        return false;
-    }
+    // if (m_seesLandmark && (ros::Time::now() - m_lastLocalizeTime < ros::Duration(5.0)))
+    // {
+    //     ROS_INFO_STREAM_THROTTLE(1.0, "Waiting a little bit before resuming. Last localization time = "
+    //         <<m_lastLocalizeTime);
+    //     return false;
+    // }
     return !m_shouldPause;
 }
 
@@ -164,15 +165,18 @@ bool AprilTagProcessor::UpdatePose()
     //
     //First, get the frame names: (one for landmark, one for april tag)
 
-    std::string landmark_frame;
+    std::string landmark_frame = GetLandmarkFrameName(bestLandmarkId);
     std::string april_frame;
 
     tf::StampedTransform mapLandmarkTF;
+    m_cameraFrame = std::string("camera_link");
+    m_robotBaseFrame = std::string("robot_center");
     if (GetMapTransform(landmark_frame, mapLandmarkTF))
     {
         tf::StampedTransform tagCameraTF;
 
         std::string tagFrameString = GetTagFrameName(bestLandmarkId);
+        // ROS_INFO_STREAM("Tag frame string = "<<tagFrameString<<"  m_cameraFrame = "<<m_cameraFrame);
         if (GetTransform(tagFrameString, m_cameraFrame, tagCameraTF))
         {
             tf::StampedTransform cameraBaseTF;
@@ -220,7 +224,6 @@ bool AprilTagProcessor::UpdatePose()
                 poseStamped.header.stamp = tagCameraTF.stamp_;
                 poseStamped.pose = poseWithCovariance.pose;
 
-
                 if (PosesDiffer(m_amclPose.pose, newRobotPoseMsg.pose))
                 {
                     m_newPosePub.publish(poseStamped);
@@ -229,11 +232,12 @@ bool AprilTagProcessor::UpdatePose()
                     m_shouldPause = false;
 
                     //wait for amcl to reinitialize
-                    ROS_INFO_STREAM("Wait for AMCL to reinitialize");
+                    ROS_INFO_STREAM_THROTTLE(0.5, "Wait for AMCL to reinitialize");
                 }
                 else
                 {
                     ROS_WARN_STREAM("Poses do not differ enough to need april tag localization");
+                    m_lastLocalizeTime = ros::Time::now();
                     m_shouldPause = false;
                 }
                 return true;
@@ -241,22 +245,22 @@ bool AprilTagProcessor::UpdatePose()
             else
             {
                 ROS_ERROR("Cannot transform from camera to robot base");
-                return false;
+                return true;
             }
         }
         else
         {
             ROS_ERROR("Cannot transform from tag to camera");
-            return false;
+            return true;
         }
     }
     else
     {
         ROS_ERROR("Cannot transform from map to landmark");
-        return false;
+        return true;
     }
 
-    return false;
+    return true;
 }
 
 
@@ -462,8 +466,13 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
                         //Check if the tag is closer than the threshold distance
                         if (GetDistance(m_pose[tagID]) < UPDATE_RANGE_THRESHOLD)
                         {
+                            ROS_INFO_STREAM_THROTTLE(0.5, "We got a winner landmark here. Should Update = true");
                             m_shouldPause = true;
                             m_seesLandmark = true;
+                        }
+                        else
+                        {
+                            ROS_INFO_STREAM_THROTTLE(1.0, "Landmark not close enough");
                         }
                     }
                 }

@@ -416,6 +416,7 @@ void RobotController::OnEntry(void *args)
             action_client_ptr->sendGoal(m_moveBaseGoal);
             break;
         case RobotState::NAVIGATING_TAG_SPOTTED:
+            ROS_INFO_STREAM("Cancelling goals due to april tag processor");
             action_client_ptr->cancelAllGoals();
             break;
         break;
@@ -453,6 +454,7 @@ void RobotController::StateExecute()
     //      IF reached final pose of the waypoint, send waypoint result message (succeed) -> transition(WAITING)
     // ...
     bool execResult = false;
+    ROS_ERROR_STREAM_THROTTLE(1.0, "STATE: "<<RobotState::ToString(m_status.GetState()));
     switch(m_status.GetState())
     {
         case RobotState::NAVIGATING:
@@ -477,8 +479,8 @@ void RobotController::StateExecute()
                     case actionlib::SimpleClientGoalState::RECALLED:
                     case actionlib::SimpleClientGoalState::PREEMPTED:
                         ROS_ERROR_STREAM("Navigation Failed: " << action_client_ptr->getState().toString() );
-                        SendWaypointFinished(TaskResult::SUCCESS);
-                        Transition(RobotState::WAITING);
+                        //SendWaypointFinished(TaskResult::FAILURE);
+                        //Transition(RobotState::WAITING);
                         break;
 
                     case actionlib::SimpleClientGoalState::ACTIVE:
@@ -498,8 +500,14 @@ void RobotController::StateExecute()
             {
                 //Transition back to the navigating state, using the same goal as before
                 ROS_INFO("Resuming robot");
+                ros::Time time = ros::Time::now();
+                while(ros::ok() && ros::Time::now() - time < ros::Duration(1.0))
+                {
+                    sleep(0.5);
+                    ros::spinOnce();
+                }
                 //TODO: TEMPORARY transition to waiting. switch to NAVIGATING LATER
-                Transition(RobotState::WAITING);
+                Transition(RobotState::NAVIGATING);
                 break;
             }
             else
@@ -508,12 +516,12 @@ void RobotController::StateExecute()
             }
         break;
         case RobotState::WAITING:
-            ROS_INFO_STREAM_THROTTLE(2.0, "Waiting for next command...");
-            if (m_tagProcessor->ShouldPause())
-            {
-                Transition(RobotState::NAVIGATING_TAG_SPOTTED);
-                break;
-            }
+            //ROS_INFO_STREAM_THROTTLE(2.0, "Waiting for next command...");
+            // if (m_tagProcessor->ShouldPause())
+            // {
+            //     Transition(RobotState::NAVIGATING_TAG_SPOTTED);
+            //     break;
+            // }
         break;
     }
 }
