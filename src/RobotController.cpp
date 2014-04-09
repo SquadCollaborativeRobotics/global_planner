@@ -41,34 +41,34 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
     m_listener = new tf::TransformListener(*nh);
 
     if (m_nh->getParam("controller/robot_id", robotID))
-        ROS_INFO_STREAM("Set robot ID: "<<robotID);
+        ROS_INFO_STREAM("Set robot ID: " << robotID);
     else
-        ROS_ERROR_STREAM("Did not read robot ID: default = "<<robotID);
+        ROS_ERROR_STREAM("Did not read robot ID: default = " << robotID);
     m_status.SetID(robotID);
 
     if (m_nh->getParam("controller/robot_name", robotName))
-        ROS_INFO_STREAM("Read robot name: "<<robotName);
+        ROS_INFO_STREAM("Read robot name: " << robotName);
     else
-        ROS_ERROR_STREAM("Did not read robot name: default = "<<robotName);
+        ROS_ERROR_STREAM("Did not read robot name: default = " << robotName);
     m_status.SetName(robotName);
 
     if(m_nh->getParam("controller/storage_capacity", storage_cap))
-        ROS_INFO_STREAM("Read storage capacity: "<<storage_cap);
+        ROS_INFO_STREAM("Read storage capacity: " << storage_cap);
     else
-        ROS_ERROR_STREAM("Did not read storage capacity: default = "<<storage_cap);
+        ROS_ERROR_STREAM("Did not read storage capacity: default = " << storage_cap);
     m_status.SetStorageCapacity(storage_cap);
 
     if(m_nh->getParam("controller/storage_used", storage_used))
-        ROS_INFO_STREAM("Read storage used: "<<storage_used);
+        ROS_INFO_STREAM("Read storage used: " << storage_used);
     else
-        ROS_ERROR_STREAM("Did not read storage used: default = "<<storage_used);
+        ROS_ERROR_STREAM("Did not read storage used: default = " << storage_used);
     m_status.SetStorageUsed(storage_used);
 
     std::string robotType;
     if (m_nh->getParam("controller/type", robotType))
-        ROS_INFO_STREAM("Read robot type: "<<robotType);
+        ROS_INFO_STREAM("Read robot type: " << robotType);
     else
-        ROS_ERROR_STREAM("Did not read type: default = "<<robotType);
+        ROS_ERROR_STREAM("Did not read type: default = " << robotType);
 
     if (robotType.compare("collector") == 0)
     {
@@ -85,30 +85,30 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
 
     std::string tf_prefix;
     if (m_nh->getParam("controller/tf_prefix", tf_prefix))
-        ROS_INFO_STREAM("Read tf prefix: "<<tf_prefix);
+        ROS_INFO_STREAM("Read tf prefix: " << tf_prefix);
     else
-        ROS_ERROR_STREAM("Did not read tf_prefix: default = "<<tf_prefix);
+        ROS_ERROR_STREAM("Did not read tf_prefix: default = " << tf_prefix);
 
     if (m_nh->getParam("controller/base_frame", base_frame))
-        ROS_INFO_STREAM("Read base frame: "<<base_frame);
+        ROS_INFO_STREAM("Read base frame: " << base_frame);
     else
-        ROS_ERROR_STREAM("Did not read base_frame: default = "<<base_frame);
+        ROS_ERROR_STREAM("Did not read base_frame: default = " << base_frame);
 
     base_frame = tf_prefix + "/"+base_frame;
 
     if (robotID < 0)
     {
-        ROS_ERROR_STREAM("ERROR: Received invalid robot id: "<<robotID);
+        ROS_ERROR_STREAM("ERROR: Received invalid robot id: " << robotID);
         return;
     }
     if (storage_cap < 0)
     {
-        ROS_ERROR_STREAM("ERROR: invalid storage capacity: "<<storage_cap);
+        ROS_ERROR_STREAM("ERROR: invalid storage capacity: " << storage_cap);
         return;
     }
     if (storage_used > storage_cap)
     {
-        ROS_ERROR_STREAM("ERROR: storage used > storage capacity: used="<<storage_used<< ", cap="<<storage_cap);
+        ROS_ERROR_STREAM("ERROR: storage used > storage capacity: used=" << storage_used <<  ", cap=" << storage_cap);
         return;
     }
 
@@ -157,7 +157,7 @@ void RobotController::cb_waypointSub(const global_planner::WaypointMsg::ConstPtr
     //Check if this message is for you!
     if (wpWrapper.GetRobot() == m_status.GetID())
     {
-        ROS_INFO_STREAM("Received waypoint for me\n"<<wpWrapper.ToString());
+        ROS_INFO_STREAM("Received waypoint:\n" << wpWrapper.ToString());
 
         move_base_msgs::MoveBaseGoal goal = Conversion::PoseToMoveBaseGoal(wpWrapper.GetPose());
         // boost::mutex::scoped_lock lock(m_statusMutex);
@@ -165,26 +165,22 @@ void RobotController::cb_waypointSub(const global_planner::WaypointMsg::ConstPtr
         switch(m_status.GetState())
         {
             case RobotState::WAITING:
-                ROS_INFO_STREAM("Move to new waypoint ("<<wpWrapper.GetID()<<")");
+                ROS_INFO_STREAM("Move to new waypoint (" << wpWrapper.GetID() << ")");
                 m_status.SetTaskID( wpWrapper.GetID() );
                 Transition(RobotState::NAVIGATING, &goal);
 
             break;
-            /*
             case RobotState::NAVIGATING:
-            ROS_ERROR_STREAM("Woah there nelly, we are already navigating to a waypoint... cancel that action first");
-            //TODO: Cancel
-            ROS_INFO_STREAM("Now that I assume we've canceled that, let's reassign the waypoint.");
+            ROS_ERROR_STREAM("WARNING: In Navigation State, Ignoring Waypoint.");
             break;
+
             case RobotState::DUMPING:
-            ROS_ERROR_STREAM("Get out of here, I'm making a dump... cancel that action first");
-            //TODO: Cancel
+            ROS_ERROR_STREAM("WARNING: In Dumping State, Ignoring Waypoint.");
             break;
+
             case RobotState::COLLECTING:
-            ROS_ERROR_STREAM("Hold on, I'm collecting the shit out of something");
-            //TODO: Cancel
+            ROS_ERROR_STREAM("WARNING: In Collecting State, Ignoring Waypoint.");
             break;
-            */
         }
     }
 }
@@ -389,7 +385,7 @@ void RobotController::Transition(RobotState::State newState, void* args)
 
     m_status.SetState(newState);
     OnEntry(args);
-    ROS_INFO_STREAM("Transitioned to "<<RobotState::ToString(newState));
+    ROS_INFO_STREAM("Transitioned to " << RobotState::ToString(newState));
 }
 
 
@@ -451,48 +447,34 @@ void RobotController::StateExecute()
         {
             actionlib::SimpleClientGoalState::StateEnum result = action_client_ptr->getState().state_;
             switch (result)
-            /*
-            if (action_client_ptr->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
-            {
-                ROS_INFO_STREAM("Finished Task.");
-                SendWaypointFinished(TaskResult::SUCCESS);
-                Transition(RobotState::WAITING, 0);
-            }
-            else if (action_client_ptr->getState() == actionlib::SimpleClientGoalState::ACTIVE)
-            {
-                // ROS_INFO_STREAM_THROTTLE(1, "Actively going to goal... NAVIGATING state");
-            }
-            else
-            {
-            // Randomly finish the task
-            if (false && rand() % 250 == 0) // TODO : Move this override to a config option
-            */
             {
                 case actionlib::SimpleClientGoalState::SUCCEEDED:
-                    ROS_INFO_STREAM("Successful movebase moving?");
+                    ROS_INFO_STREAM("Waypoint Reached");
                     SendWaypointFinished(TaskResult::SUCCESS);
                     Transition(RobotState::WAITING, 0);
                     break;
                 case actionlib::SimpleClientGoalState::ABORTED:
+
                 case actionlib::SimpleClientGoalState::REJECTED:
-                case actionlib::SimpleClientGoalState::LOST:
+                case actionlib::SimpleClientGoalState::LOST: // SendWaypointFinished(TaskResult::NAVSTACK_FAILURE); // ?
                 case actionlib::SimpleClientGoalState::RECALLED:
                 case actionlib::SimpleClientGoalState::PREEMPTED:
-                    ROS_ERROR_STREAM("Navigation Failed: " << action_client_ptr->getState().toString() );
-
+                    ROS_ERROR_STREAM_THROTTLE(5, "Navigation Failed: "  <<  action_client_ptr->getState().toString() );
+                    SendWaypointFinished(TaskResult::FAILURE);
+                    Transition(RobotState::WAITING, 0);
                     break;
 
                 case actionlib::SimpleClientGoalState::ACTIVE:
                 case actionlib::SimpleClientGoalState::PENDING:
                 default:
-                    ROS_INFO_STREAM_THROTTLE(1, "Not yet successful: " << action_client_ptr->getState().toString() );
+                    ROS_INFO_STREAM_THROTTLE(5, "In Progress: "  <<  action_client_ptr->getState().toString() );
                     break;
             }
             break;
         }
 
         case RobotState::WAITING:
-            ROS_INFO_STREAM_THROTTLE(1,"Waiting for next command...");
+            ROS_INFO_STREAM_THROTTLE(10,"Waiting for next command...");
     }
 }
 
@@ -507,5 +489,3 @@ void RobotController::cb_odomSub(const nav_msgs::Odometry::ConstPtr &msg)
 {
     m_status.SetTwist(msg->twist.twist);
 }
-
-
