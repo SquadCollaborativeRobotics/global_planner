@@ -129,6 +129,7 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
     Transition(RobotState::WAITING);
     m_timeEnteringState = ros::Time::now();
 
+
     ROS_INFO_STREAM("Finished initializing");
 }
 
@@ -221,10 +222,13 @@ void RobotController::cb_eStopSub(const std_msgs::Empty &msg)
  * Effects: Sends the current status over ROS to any listening
  * 	nodes
  ***********************************************************************/
-void RobotController::SendRobotStatus()
+bool RobotController::SendRobotStatus(global_planner::RobotStatusSrv::Request  &req,
+                                      global_planner::RobotStatusSrv::Response &res)
 {
     UpdatePose();
-    m_statusPub.publish(m_status.GetMessage());
+    res.status = m_status.GetMessage();
+    m_lastStatusUpdate = ros::Time::now();
+    return true;
 }
 
 
@@ -282,7 +286,13 @@ void RobotController::Execute()
     // 2) Perform any state related actions
     StateExecute();
 
-    SendRobotStatus();
+    //Don't need anymore since we're using services
+    if (ros::Time::now() - m_lastStatusUpdate > ros::Duration(1))
+    {
+        ROS_ERROR_STREAM_THROTTLE(1.0, "Robot has not been in communication for "<<(ros::Time::now() - m_lastStatusUpdate) << " seconds");
+        UpdatePose();
+        m_statusPub.publish(m_status.GetMessage());
+    }
 }
 
 
@@ -315,7 +325,7 @@ void RobotController::Resume()
  * Effects: Gathers any needed information to update the underlying
  * 	status message
  ***********************************************************************/
-void RobotController::UpdatePose()
+bool RobotController::UpdatePose()
 {
     //get current pose of the robot
     tf::StampedTransform transform;
@@ -334,9 +344,11 @@ void RobotController::UpdatePose()
         pose.orientation.z = msg.rotation.z;
         pose.orientation.w = msg.rotation.w;
         m_status.SetPose(pose);
+        return true;
     }
     catch (tf::TransformException& ex){
         ROS_ERROR_THROTTLE(5, "%s",ex.what());
+        return false;
     }
 }
 
@@ -373,6 +385,13 @@ void RobotController::SetupCallbacks()
     m_goalFinishedPub = m_nh->advertise<global_planner::GoalFinished>("/goal_finished", 10);
     m_waypointFinishedPub = m_nh->advertise<global_planner::WaypointFinished>("/waypoint_finished", 10);
     m_dumpFinishedPub = m_nh->advertise<global_planner::DumpFinished>("/dump_finished", 10);
+
+    std::string serviceTopic = Conversion::RobotIDToServiceName(m_status.GetID());
+    m_statusService = m_nh->advertiseService(serviceTopic, &RobotController::SendRobotStatus, this);
+
+    //Let the global planner know that this robot is alive an active
+    UpdatePose();
+    m_statusPub.publish(m_status.GetMessage());
 
     ROS_INFO_STREAM("Finished setting up topics");
 }
