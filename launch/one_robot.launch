@@ -2,7 +2,7 @@
   <!-- first robot... --> <!--launch-prefix="xterm -e" -->
   <node pkg="global_planner" type="robot_controller_node" name="controller" output="screen" >
     <param name="robot_name" value="Cristoff" />
-    <param name="base_frame" value="robot_center" />
+    <param name="base_frame" value="base_link" />
     <param name="tf_prefix" value="" />
     <param name="robot_id" value="1" />
     <param name="type" value="collector" />

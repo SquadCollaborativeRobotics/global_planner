@@ -19,6 +19,15 @@ m_seesLandmark(false),
 m_lastImageTime(ros::Time(0)),
 m_lastLocalizeTime(ros::Time(0))
 {
+    m_cameraFrame = std::string("camera_link");
+
+    if (m_nh->getParam("controller/base_frame", m_robotBaseFrame))
+        ROS_INFO_STREAM("Read base frame: "<<m_robotBaseFrame);
+    else
+    {
+        m_robotBaseFrame = std::string("base_link");
+        ROS_ERROR_STREAM("Did not read base_frame: default = "<<m_robotBaseFrame);
+    }
 }
 
 
@@ -171,17 +180,19 @@ bool AprilTagProcessor::UpdatePose()
     std::string april_frame;
 
     tf::StampedTransform mapLandmarkTF;
-    m_cameraFrame = std::string("camera_link");
-    m_robotBaseFrame = std::string("robot_center");
+
+    //Transform from map to landmark
     if (GetMapTransform(landmark_frame, mapLandmarkTF))
     {
         tf::StampedTransform tagCameraTF;
 
         std::string tagFrameString = GetTagFrameName(bestLandmarkId);
         // ROS_INFO_STREAM("Tag frame string = "<<tagFrameString<<"  m_cameraFrame = "<<m_cameraFrame);
+        // Transform from camera to tag
         if (GetTransform(tagFrameString, m_cameraFrame, tagCameraTF))
         {
             tf::StampedTransform cameraBaseTF;
+            // transform from camera to base frame
             if (GetTransform(m_cameraFrame, m_robotBaseFrame, cameraBaseTF))
             {
                 // New amcl pose, in tf form
@@ -226,7 +237,8 @@ bool AprilTagProcessor::UpdatePose()
                 poseStamped.header.stamp = tagCameraTF.stamp_;
                 poseStamped.pose = poseWithCovariance.pose;
 
-                if (PosesDiffer(m_amclPose.pose, newRobotPoseMsg.pose))
+                //TODO change
+                if (true || PosesDiffer(m_amclPose.pose, newRobotPoseMsg.pose))
                 {
                     m_newPosePub.publish(poseStamped);
                     m_newInitialPosePub.publish(newRobotPoseMsg);
