@@ -95,6 +95,7 @@ void GlobalPlanner::Execute()
     }
 
     // Get Robot Status...
+    QueryRobots();
 
     // FOR each pair of robots that're just chillin in a dump stage and are stopped near the handoff location
     //      Pick best bot to meet with?
@@ -568,7 +569,7 @@ void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& 
     //If it is already in the map...
     if(it != m_robots.end())
     {
-        m_robots[id]->SetData(status);
+        // m_robots[id]->SetData(status);
     }
     else
     {
@@ -576,11 +577,11 @@ void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& 
         ptr->SetData(status);
         m_robots[id] = ptr;
 
-        std::stringstream ss;
-        ss << "/robot_status/"<<id;
-        ros::ServiceClient client = m_nh->serviceClient<global_planner::RobotStatusSrv>(ss.str(), true);
+        std::string serviceTopic = Conversion::RobotIDToServiceName(id);
+        //create a persistant service with this
+        ros::ServiceClient client = m_nh->serviceClient<global_planner::RobotStatusSrv>(serviceTopic, true);
 
-        m_statusServices.push_back(client);
+        m_statusServices[id] = client;
 
         ROS_INFO_STREAM("Added new robot: "<<ptr->ToString());
     }
@@ -636,3 +637,30 @@ double GlobalPlanner::TimeSinceStart()
 {
     return (ros::Time::now() - m_start_time).toSec();
 }
+/***********************************************************************
+ *  Method: GlobalPlanner::QueryRobots
+ *  Params:
+ * Returns: void
+ * Effects:
+ ***********************************************************************/
+void GlobalPlanner::QueryRobots()
+{
+    for (std::map<int, ros::ServiceClient>::iterator it = m_statusServices.begin(); it != m_statusServices.end(); ++it)
+    {
+        global_planner::RobotStatusSrv s;
+        s.request.id = it->first;
+        if (it->second)
+        {
+            if (it->second.call(s))
+            {
+                ROS_INFO_STREAM("Received response from robot: "<<s.response.status.id);
+            }
+            else
+            {
+                ROS_ERROR_STREAM("Could not receive response from robot: "<<it->first);
+            }
+        }
+    }
+}
+
+

@@ -92,6 +92,8 @@ private:
     // Gets x/y 2D distance between two poses
     double Get2DPoseDistance(geometry_msgs::Pose a, geometry_msgs::Pose b);
 
+    void QueryRobots();
+
     // Pointer to a registered ros NodeHandle
     ros::NodeHandle *m_nh;
 
@@ -100,7 +102,7 @@ private:
 
     //Subscriber to robot status callbacks
     ros::Subscriber m_robotSub;
-    std::vector<ros::ServiceClient> m_statusServices;
+    std::map<int, ros::ServiceClient> m_statusServices;
 
     // E-Stop Publisher
     ros::Publisher m_eStopPub;

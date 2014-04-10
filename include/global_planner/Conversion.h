@@ -84,4 +84,11 @@ public:
 
         return goal;
     }
+
+    static const std::string RobotIDToServiceName(int id)
+    {
+        std::stringstream ss;
+        ss << "/robot_status/"<<id;
+        return ss.str();
+    }
 };

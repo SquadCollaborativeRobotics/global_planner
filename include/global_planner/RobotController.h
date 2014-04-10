@@ -21,6 +21,7 @@
 #include <global_planner/WaypointFinished.h>
 #include <global_planner/DumpFinished.h>
 #include <global_planner/AprilTagProcessor.h>
+#include <global_planner/RobotStatusSrv.h>
 
 #include "RobotStatusWrapper.h"
 #include "GoalWrapper.h"
@@ -44,8 +45,6 @@ public:
 
     // void cb_statusService(const std_msgs::Int32 id);
 
-    //Send the robot's status message
-    void SendRobotStatus();
 
     void SendGoalFinished(TaskResult::Status status);
     void SendWaypointFinished(TaskResult::Status status);
@@ -65,7 +64,10 @@ public:
 
 private:
     void SetupCallbacks();
-    void UpdatePose();
+    bool UpdatePose();
+    //Send the robot's status message
+    bool SendRobotStatus(global_planner::RobotStatusSrv::Request  &req,
+                         global_planner::RobotStatusSrv::Response &res);
 
     /*********************************
      * State stuff
