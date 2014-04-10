@@ -660,6 +660,10 @@ void GlobalPlanner::QueryRobots()
                 ROS_ERROR_STREAM("Could not receive response from robot: "<<it->first);
             }
         }
+        else
+        {
+            ROS_ERROR_STREAM("Not connected to robot: "<<it->first);
+        }
     }
 }
 

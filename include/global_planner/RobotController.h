@@ -117,4 +117,6 @@ private:
 
     //April Tag processor
     boost::shared_ptr<AprilTagProcessor> m_tagProcessor;
+
+    ros::Time m_lastStatusUpdate;
 };

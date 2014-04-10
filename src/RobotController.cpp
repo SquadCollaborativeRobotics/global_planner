@@ -227,6 +227,7 @@ bool RobotController::SendRobotStatus(global_planner::RobotStatusSrv::Request  &
 {
     UpdatePose();
     res.status = m_status.GetMessage();
+    m_lastStatusUpdate = ros::Time::now();
     return true;
 }
 
@@ -286,7 +287,12 @@ void RobotController::Execute()
     StateExecute();
 
     //Don't need anymore since we're using services
-    // SendRobotStatus();
+    if (ros::Time::now() - m_lastStatusUpdate > ros::Duration(1))
+    {
+        ROS_ERROR_STREAM("It's been a while since the global planner has queried me... "<<(ros::Time::now() - m_lastStatusUpdate) << " seconds");
+        UpdatePose();
+        m_statusPub.publish(m_status.GetMessage());
+    }
 }
 
 
@@ -374,7 +380,7 @@ void RobotController::SetupCallbacks()
 
     m_odomSub = m_nh->subscribe("odom", 10, &RobotController::cb_odomSub, this);
 
-    // m_statusPub = m_nh->advertise<global_planner::RobotStatus>("/robot_status", 100);
+    m_statusPub = m_nh->advertise<global_planner::RobotStatus>("/robot_status", 100);
 
     m_goalFinishedPub = m_nh->advertise<global_planner::GoalFinished>("/goal_finished", 10);
     m_waypointFinishedPub = m_nh->advertise<global_planner::WaypointFinished>("/waypoint_finished", 10);
