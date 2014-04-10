@@ -49,11 +49,11 @@ bool AprilTagProcessor::Init(ros::NodeHandle *nh, int robotID)
     //Setup tag types
     m_goalTypeMap[3] = AprilTagProcessor::LANDMARK;
     m_goalTypeMap[5] = AprilTagProcessor::LANDMARK;
-    m_goalTypeMap[8] = AprilTagProcessor::GOAL;
+    // m_goalTypeMap[8] = AprilTagProcessor::GOAL;
     m_goalTypeMap[6] = AprilTagProcessor::GOAL;
 
     //Setup publishers
-    m_goalPub = nh->advertise<global_planner::GoalMsg>("garbageCan", 100);
+    m_goalPub = nh->advertise<global_planner::GoalSeen>("garbageCan", 100);
     m_newPosePub = nh->advertise<geometry_msgs::PoseStamped>("new_pose", 100);
     m_newInitialPosePub = nh->advertise<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 100);
 
@@ -68,25 +68,27 @@ bool AprilTagProcessor::Init(ros::NodeHandle *nh, int robotID)
  ***********************************************************************/
 bool AprilTagProcessor::Execute()
 {
-    bool retVal = false;
+    bool foundGoal, foundLandmark;
+    foundGoal = foundLandmark = false;
     if (IsStopped())
     {
-        if (false)
+        if (true)
         {
             ROS_INFO_STREAM_THROTTLE(0.5, "Searching for goals");
-            retVal = FindGoals();
+            foundGoal = FindGoals();
         }
 
         if (true)
         {
             ROS_INFO_STREAM_THROTTLE(0.5, "Searching for landmarks");
-            retVal = UpdatePose();
+            foundLandmark = UpdatePose();
         }
     }
     else
     {
         ROS_ERROR_STREAM_THROTTLE(0.5, "ERROR: Robot is not yet stopped");
     }
+    bool retVal = foundGoal || foundLandmark;
     if (retVal == true)
         m_shouldPause = false;
     return retVal;
@@ -284,7 +286,7 @@ bool AprilTagProcessor::FindGoals()
     //
     bool retVal = false;
 
-    ROS_INFO_STREAM("There are : "<<goals.size()<<" goals to search through");
+    // ROS_INFO_STREAM("There are : "<<goals.size()<<" goals to search through");
 
     //Pick best tag to use for localization (assuming there are several options)
     for (int i = 0; i < goals.size(); ++i)
@@ -304,7 +306,7 @@ bool AprilTagProcessor::FindGoals()
             if (GetTransform("map", goal_frame, transform))
             {
                 ROS_INFO_STREAM("We can transform the goal into the map frame");
-                global_planner::GoalMsg can;
+                global_planner::GoalSeen goal;
                 geometry_msgs::PoseStamped ps;
                 tf::Quaternion quat;
 
@@ -327,10 +329,11 @@ bool AprilTagProcessor::FindGoals()
                 ps.pose.orientation = quatMsg;
 
                 //Finish creating message & publish
-                can.pose = ps.pose;
-                can.id = tagID;
+                goal.id = tagID;
+                goal.time = ros::Time::now();
+                goal.pose = ps.pose;
 
-                m_goalPub.publish(can);
+                m_goalPub.publish(goal);
                 m_goalSendTime[tagID] = ros::Time::now();
 
                 ROS_INFO_STREAM("Sent goal pose with ID: "<<tagID);
@@ -480,7 +483,7 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
                 {
                     // Only attempt to send the goal again if it's been a while since last sending it
                     if (m_pose[tagID].header.stamp - LastGoalSendTime(tagID) > ros::Duration(9.0) ) {
-                        //The robot hasn't updated in a while...
+                        //The goal hasn't been updated in a while...
 
                         //Check if the tag is closer than the threshold distance
                         if (GetDistance(m_pose[tagID]) < UPDATE_RANGE_THRESHOLD)

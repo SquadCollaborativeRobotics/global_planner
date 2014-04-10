@@ -210,7 +210,7 @@ void TaskMaster::cb_goalFinished(const global_planner::GoalFinished::ConstPtr& m
     }
     else
     {
-        ROS_ERROR_STREAM("ERROR, Goal finished with status: " << msg->status 
+        ROS_ERROR_STREAM("ERROR, Goal finished with status: " << msg->status
                          << " : " << Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
     }
 }
@@ -232,7 +232,7 @@ void TaskMaster::cb_waypointFinished(const global_planner::WaypointFinished::Con
     }
     else
     {
-        ROS_ERROR_STREAM("ERROR, Waypoint finished with status: " << msg->status 
+        ROS_ERROR_STREAM("ERROR, Waypoint finished with status: " << msg->status
                          << " : " << Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
         //FOR NOW, let's just say it's available after a failure
         m_waypointMap[msg->id]->SetStatus(TaskResult::AVAILABLE);
@@ -303,7 +303,6 @@ void TaskMaster::cb_goalSeen(const global_planner::GoalSeen::ConstPtr &msg)
     }
     else //Not yet in the map
     {
-        ROS_INFO_STREAM("Creating new goal in map: "<<goalID);
 
         ros::Time time = msg->time;
         geometry_msgs::Pose pose = msg->pose;
@@ -313,6 +312,7 @@ void TaskMaster::cb_goalSeen(const global_planner::GoalSeen::ConstPtr &msg)
         ptr->SetID(goalID);
         ptr->SetTime(time);
         ptr->SetStatus(TaskResult::AVAILABLE);
+        ROS_INFO_STREAM("Creating new goal in map: "<<goalID<<" : "<<ptr->ToString());
         ROS_INFO_STREAM("Adding to map");
         m_goalMap[goalID] = ptr;
     }
@@ -367,7 +367,7 @@ bool TaskMaster::SetupTopics()
     m_dumpPub = m_nh->advertise<global_planner::DumpMsg>("dump_pub", 10);
 
     ROS_INFO_STREAM("Setting up subscriber for goals seen");
-    m_goalSeenSub = m_nh->subscribe("goal_seen", 10, &TaskMaster::cb_goalSeen, this);
+    m_goalSeenSub = m_nh->subscribe("garbageCan", 10, &TaskMaster::cb_goalSeen, this);
 
     ROS_INFO_STREAM("Finished Setting up subscribers");
 }

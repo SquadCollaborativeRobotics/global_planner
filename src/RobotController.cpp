@@ -454,7 +454,7 @@ void RobotController::StateExecute()
     //      IF reached final pose of the waypoint, send waypoint result message (succeed) -> transition(WAITING)
     // ...
     bool execResult = false;
-    ROS_ERROR_STREAM_THROTTLE(1.0, "STATE: "<<RobotState::ToString(m_status.GetState()));
+    ROS_INFO_STREAM_THROTTLE(1.0, "STATE: "<<RobotState::ToString(m_status.GetState()));
     switch(m_status.GetState())
     {
         case RobotState::NAVIGATING:
@@ -479,8 +479,8 @@ void RobotController::StateExecute()
                     case actionlib::SimpleClientGoalState::RECALLED:
                     case actionlib::SimpleClientGoalState::PREEMPTED:
                         ROS_ERROR_STREAM("Navigation Failed: " << action_client_ptr->getState().toString() );
-                        //SendWaypointFinished(TaskResult::FAILURE);
-                        //Transition(RobotState::WAITING);
+                        SendWaypointFinished(TaskResult::FAILURE);
+                        Transition(RobotState::WAITING);
                         break;
 
                     case actionlib::SimpleClientGoalState::ACTIVE:
@@ -523,7 +523,7 @@ void RobotController::StateExecute()
             //     Transition(RobotState::NAVIGATING_TAG_SPOTTED);
             //     break;
             // }
-            ROS_INFO_STREAM_THROTTLE(3,"Waiting for next command...");
+            // ROS_INFO_STREAM_THROTTLE(3,"Waiting for next command...");
         break;
     }
 }

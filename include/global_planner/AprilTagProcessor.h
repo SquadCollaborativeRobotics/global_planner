@@ -14,7 +14,7 @@
 #include <april_tags/AprilTagList.h>
 #include <april_tags/AprilTag.h>
 #include <tf/transform_listener.h>
-#include <global_planner/GoalMsg.h>
+#include <global_planner/GoalSeen.h>
 
 #include <boost/shared_ptr.hpp>
 
