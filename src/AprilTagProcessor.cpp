@@ -20,14 +20,6 @@ m_lastImageTime(ros::Time(0)),
 m_lastLocalizeTime(ros::Time(0))
 {
     m_cameraFrame = std::string("camera_link");
-
-    if (m_nh->getParam("controller/base_frame", m_robotBaseFrame))
-        ROS_INFO_STREAM("Read base frame: "<<m_robotBaseFrame);
-    else
-    {
-        m_robotBaseFrame = std::string("base_link");
-        ROS_ERROR_STREAM("Did not read base_frame: default = "<<m_robotBaseFrame);
-    }
 }
 
 
@@ -48,12 +40,13 @@ AprilTagProcessor::~AprilTagProcessor()
  ***********************************************************************/
 bool AprilTagProcessor::Init(ros::NodeHandle *nh, int robotID)
 {
+    m_nh = nh;
     //Setup subscribers
-    m_tagSub = nh->subscribe("april_tags", 10, &AprilTagProcessor::cb_aprilTags, this);
-    m_amclPoseSub = nh->subscribe("amcl_pose", 1, &AprilTagProcessor::cb_amclPose, this);
-    m_odomSub = nh->subscribe("odom", 1, &AprilTagProcessor::cb_odom, this);
+    m_tagSub = m_nh->subscribe("april_tags", 10, &AprilTagProcessor::cb_aprilTags, this);
+    m_amclPoseSub = m_nh->subscribe("amcl_pose", 1, &AprilTagProcessor::cb_amclPose, this);
+    m_odomSub = m_nh->subscribe("odom", 1, &AprilTagProcessor::cb_odom, this);
     m_robotID = robotID;
-    m_tfListener.reset( new tf::TransformListener(*nh) );
+    m_tfListener.reset( new tf::TransformListener(*m_nh) );
 
     //Setup tag types
     m_goalTypeMap[3] = AprilTagProcessor::LANDMARK;
@@ -62,9 +55,19 @@ bool AprilTagProcessor::Init(ros::NodeHandle *nh, int robotID)
     m_goalTypeMap[6] = AprilTagProcessor::GOAL;
 
     //Setup publishers
-    m_goalPub = nh->advertise<global_planner::GoalSeen>("garbageCan", 100);
-    m_newPosePub = nh->advertise<geometry_msgs::PoseStamped>("new_pose", 100);
-    m_newInitialPosePub = nh->advertise<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 100);
+    m_goalPub = m_nh->advertise<global_planner::GoalSeen>("garbageCan", 100);
+    m_newPosePub = m_nh->advertise<geometry_msgs::PoseStamped>("new_pose", 100);
+    m_newInitialPosePub = m_nh->advertise<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 100);
+
+    if (m_nh->getParam("controller/base_frame", m_robotBaseFrame))
+    {
+        ROS_INFO_STREAM("Read base frame: "<<m_robotBaseFrame);
+    }
+    else
+    {
+        m_robotBaseFrame = std::string("base_link");
+        ROS_ERROR_STREAM("Did not read base_frame: default = "<<m_robotBaseFrame);
+    }
 
     ROS_INFO("Successfully setup the april tag processor");
 }
