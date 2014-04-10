@@ -95,7 +95,9 @@ void GlobalPlanner::Execute()
     }
 
     // Get Robot Status...
+    ROS_INFO("Getting new info from robots");
     QueryRobots();
+    ROS_INFO("Finished updating the robots");
 
     // FOR each pair of robots that're just chillin in a dump stage and are stopped near the handoff location
     //      Pick best bot to meet with?
@@ -575,13 +577,12 @@ void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& 
     {
         Robot_Ptr ptr( new RobotStatusWrapper() );
         ptr->SetData(status);
+        ptr->SetState(RobotState::UNINITIALIZED);
         m_robots[id] = ptr;
 
         std::string serviceTopic = Conversion::RobotIDToServiceName(id);
         //create a persistant service with this
-        ros::ServiceClient client = m_nh->serviceClient<global_planner::RobotStatusSrv>(serviceTopic, true);
-
-        m_statusServices[id] = client;
+        m_statusServices[id] = m_nh->serviceClient<global_planner::RobotStatusSrv>(serviceTopic, true);
 
         ROS_INFO_STREAM("Added new robot: "<<ptr->ToString());
     }
@@ -653,7 +654,8 @@ void GlobalPlanner::QueryRobots()
         {
             if (it->second.call(s))
             {
-                ROS_INFO_STREAM("Received response from robot: "<<s.response.status.id);
+                ROS_INFO_STREAM_THROTTLE(10.0, "Received response from robot: "<<s.response.status.id);
+                m_robots[s.request.id]->SetData(s.response.status);
             }
             else
             {
@@ -662,6 +664,8 @@ void GlobalPlanner::QueryRobots()
         }
         else
         {
+            std::string serviceTopic = Conversion::RobotIDToServiceName(it->first);
+            m_statusServices[it->first] = m_nh->serviceClient<global_planner::RobotStatusSrv>(serviceTopic, true);
             ROS_ERROR_STREAM("Not connected to robot: "<<it->first);
         }
     }

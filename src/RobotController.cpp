@@ -289,7 +289,7 @@ void RobotController::Execute()
     //Don't need anymore since we're using services
     if (ros::Time::now() - m_lastStatusUpdate > ros::Duration(1))
     {
-        ROS_ERROR_STREAM("It's been a while since the global planner has queried me... "<<(ros::Time::now() - m_lastStatusUpdate) << " seconds");
+        ROS_ERROR_STREAM_THROTTLE(1.0, "Robot has not been in communication for "<<(ros::Time::now() - m_lastStatusUpdate) << " seconds");
         UpdatePose();
         m_statusPub.publish(m_status.GetMessage());
     }
@@ -387,7 +387,7 @@ void RobotController::SetupCallbacks()
     m_dumpFinishedPub = m_nh->advertise<global_planner::DumpFinished>("/dump_finished", 10);
 
     std::string serviceTopic = Conversion::RobotIDToServiceName(m_status.GetID());
-    ros::ServiceServer service = m_nh->advertiseService(serviceTopic, &RobotController::SendRobotStatus, this);
+    m_statusService = m_nh->advertiseService(serviceTopic, &RobotController::SendRobotStatus, this);
 
     //Let the global planner know that this robot is alive an active
     UpdatePose();

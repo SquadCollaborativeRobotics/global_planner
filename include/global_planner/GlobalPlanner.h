@@ -102,7 +102,7 @@ private:
 
     //Subscriber to robot status callbacks
     ros::Subscriber m_robotSub;
-    std::map<int, ros::ServiceClient> m_statusServices;
+    std::map<int, ros::ServiceClient > m_statusServices;
 
     // E-Stop Publisher
     ros::Publisher m_eStopPub;

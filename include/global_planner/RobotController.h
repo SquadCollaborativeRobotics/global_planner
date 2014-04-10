@@ -91,7 +91,7 @@ private:
     ros::Publisher m_waypointFinishedPub;
     ros::Publisher m_dumpFinishedPub;
 
-    // ros::ServiceServer m_statusService;
+    ros::ServiceServer m_statusService;
 
     RobotStatusWrapper m_status;
 
