@@ -34,6 +34,10 @@
 #include <global_planner/WaypointFinished.h>
 #include <global_planner/DumpFinished.h>
 
+#include <global_planner/WaypointSrv.h>
+#include <global_planner/DumpSrv.h>
+#include <global_planner/GoalSrv.h>
+
 
 class TaskMaster
 {
@@ -85,6 +89,8 @@ private:
     bool SetupTopics();
     bool RegisterServices();
 
+    void UpdateRobotMap(std::map< int, Robot_Ptr > new_robots);
+
     // ros NodeHandle used for publishing and tf stuff
     ros::NodeHandle* m_nh;
 
@@ -123,7 +129,11 @@ private:
     ros::Subscriber m_waypointSub;
     ros::Subscriber m_dumpSub;
 
-    // Also, we only need to publish on one topic, since it'll make it easier for robots to listen to.
+    // ServiceClients for the waypoints, goals, and dumps
+    std::map<int, ros::ServiceClient > m_waypointClients;
+    std::map<int, ros::ServiceClient > m_goalClients;
+    std::map<int, ros::ServiceClient > m_dumpClients;
+
     ros::Publisher m_goalPub;
     ros::Publisher m_waypointPub;
     ros::Publisher m_dumpPub;

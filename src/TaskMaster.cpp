@@ -23,7 +23,7 @@ bool TaskMaster::Init(ros::NodeHandle* nh, std::map<int, Robot_Ptr> robots, std:
 
     Clear();
 
-    m_robots = robots;
+    UpdateRobotMap(robots);
 
     SetupTopics();
     RegisterServices();
@@ -35,6 +35,19 @@ bool TaskMaster::Init(ros::NodeHandle* nh, std::map<int, Robot_Ptr> robots, std:
     LoadWaypoints(path_to_waypoints);
 
     ros::spinOnce();
+}
+
+
+/***********************************************************************
+ *  Method: TaskMaster::updateRobotMap
+ *  Params: std::map<int, Robot_Ptr> new_robots
+ * Returns: void
+ * Effects:
+ ***********************************************************************/
+void TaskMaster::UpdateRobotMap(std::map<int, Robot_Ptr> new_robots)
+{
+    m_robots = new_robots;
+    RegisterServices();
 }
 
 
@@ -380,6 +393,16 @@ bool TaskMaster::SetupTopics()
  ***********************************************************************/
 bool TaskMaster::RegisterServices()
 {
+    for (std::map<int, Robot_Ptr>::iterator i = m_robots.begin(); i != m_robots.end(); ++i)
+    {
+        std::string waypointServiceTopic = Conversion::RobotIDToWaypointTopic(i->first);
+        std::string goalServiceTopic = Conversion::RobotIDToGoalTopic(i->first);
+        std::string dumpServiceTopic = Conversion::RobotIDToDumpTopic(i->first);
+
+        m_waypointClients[i->first] = m_nh->serviceClient<global_planner::WaypointSrv>(waypointServiceTopic, true);
+        m_dumpClients[i->first] = m_nh->serviceClient<global_planner::DumpSrv>(dumpServiceTopic, true);
+        m_goalClients[i->first] = m_nh->serviceClient<global_planner::GoalSrv>(goalServiceTopic, true);
+    }
 }
 
 /***********************************************************************
@@ -492,3 +515,5 @@ std::vector<Dump_Ptr> TaskMaster::GetAvailableDumps()
     }
     return v;
 }
+
+
