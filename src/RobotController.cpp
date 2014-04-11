@@ -194,6 +194,39 @@ void RobotController::cb_waypointSub(const global_planner::WaypointMsg::ConstPtr
  ***********************************************************************/
 void RobotController::cb_dumpSub(const global_planner::DumpMsg::ConstPtr &msg)
 {
+    DumpWrapper dumpWrapper;
+    global_planner::DumpMsg dump_msg= *msg;
+    dumpWrapper.SetData(dump_msg);
+
+    //Check if this message is for you!
+    if (dumpWrapper.GetRobot1() == m_status.GetID() ||  dumpWrapper.GetRobot2() == m_status.GetID())
+    {
+        ROS_INFO_STREAM("Received dump:\n" << dumpWrapper.ToString());
+
+        move_base_msgs::MoveBaseGoal goal = dumpWrapper.GetRobot1() == m_status.GetID() ? Conversion::PoseToMoveBaseGoal(dumpWrapper.GetPose1()) : Conversion::PoseToMoveBaseGoal(dumpWrapper.GetPose2());
+        
+        // boost::mutex::scoped_lock lock(m_statusMutex);
+
+        switch(m_status.GetState())
+        {
+            case RobotState::WAITING:
+            ROS_ERROR_STREAM("WARNING: In Waiting State, Ignoring Dump.");
+            break;
+            case RobotState::NAVIGATING:
+            ROS_ERROR_STREAM("WARNING: In Navigation State, Ignoring Dump.");
+            break;
+
+            case RobotState::DUMPING:
+            ROS_INFO_STREAM("Move to dump meet (#" << dumpWrapper.GetID() << ")");
+            m_status.SetTaskID( dumpWrapper.GetID() );
+            Transition(RobotState::DUMPING, &goal);
+            break;
+
+            case RobotState::COLLECTING:
+            ROS_ERROR_STREAM("WARNING: In Collecting State, Ignoring Dump.");
+            break;
+        }
+    }
 }
 
 
@@ -448,7 +481,37 @@ void RobotController::StateExecute()
             actionlib::SimpleClientGoalState::StateEnum result = action_client_ptr->getState().state_;
             switch (result)
             {
-                case actionlib::SimpleClientGoalState::SUCCEEDED:
+                case actionlib::SimpleClientGoalState::SUCCEEDED:)
+                    ROS_INFO_STREAM("Waypoint Reached");
+                    SendWaypointFinished(TaskResult::SUCCESS);
+                    Transition(RobotState::WAITING, 0);
+                    break;
+                case actionlib::SimpleClientGoalState::ABORTED:
+
+                case actionlib::SimpleClientGoalState::REJECTED:
+                case actionlib::SimpleClientGoalState::LOST: // SendWaypointFinished(TaskResult::NAVSTACK_FAILURE); // ?
+                case actionlib::SimpleClientGoalState::RECALLED:
+                case actionlib::SimpleClientGoalState::PREEMPTED:
+                    ROS_ERROR_STREAM_THROTTLE(5, "Navigation Failed: "  <<  action_client_ptr->getState().toString() );
+                    SendWaypointFinished(TaskResult::FAILURE);
+                    Transition(RobotState::WAITING, 0);
+                    break;
+
+                case actionlib::SimpleClientGoalState::ACTIVE:
+                case actionlib::SimpleClientGoalState::PENDING:
+                default:
+                    ROS_INFO_STREAM_THROTTLE(5, "In Progress: "  <<  action_client_ptr->getState().toString() );
+                    break;
+            }
+            break;
+        }
+
+        case RobotState::DUMPING:
+        {
+            actionlib::SimpleClientGoalState::StateEnum result = action_client_ptr->getState().state_;
+            switch (result)
+            {
+                case actionlib::SimpleClientGoalState::SUCCEEDED:)
                     ROS_INFO_STREAM("Waypoint Reached");
                     SendWaypointFinished(TaskResult::SUCCESS);
                     Transition(RobotState::WAITING, 0);

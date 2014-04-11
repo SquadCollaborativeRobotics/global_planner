@@ -17,6 +17,7 @@
 #include "TaskMaster.h"
 #include "Conversion.h"
 #include <std_msgs/Empty.h>
+#include <geometry_msgs/Pose.h>
 #include <global_planner/RobotStatusWrapper.h>
 #include <global_planner/RobotState.h>
 #include <global_planner/SoundMsg.h>
@@ -72,6 +73,8 @@ public:
     int GetFirstAvailableBot(RobotState::Type type);
 
     int GetRobotClosestToWaypoint(int waypointID, RobotState::Type type);
+    int GetRobotClosestToGoal(int goalID, RobotState::Type type);
+    int GetRobotClosestToPose(geometry_msgs::Pose pose, RobotState::Type type);
     int GetWaypointClosestToRobot(int robot_id);
 
     bool isFinished();
