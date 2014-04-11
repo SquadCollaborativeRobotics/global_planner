@@ -67,6 +67,9 @@ add_message_files(
 add_service_files(
   FILES
     RobotStatusSrv.srv
+    GoalSrv.srv
+    WaypointSrv.srv
+    DumpSrv.srv
 )
 
 ## Generate actions in the 'action' folder

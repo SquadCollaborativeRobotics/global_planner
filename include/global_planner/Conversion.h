@@ -91,4 +91,22 @@ public:
         ss << "/robot_status/"<<id;
         return ss.str();
     }
+    static const std::string RobotIDToWaypointTopic(int id)
+    {
+        std::stringstream ss;
+        ss << "/waypoints/"<<id;
+        return ss.str();
+    }
+    static const std::string RobotIDToGoalTopic(int id)
+    {
+        std::stringstream ss;
+        ss << "/goals/"<<id;
+        return ss.str();
+    }
+    static const std::string RobotIDToDumpTopic(int id)
+    {
+        std::stringstream ss;
+        ss << "/goals/"<<id;
+        return ss.str();
+    }
 };

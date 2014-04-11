@@ -23,6 +23,10 @@
 #include <global_planner/AprilTagProcessor.h>
 #include <global_planner/RobotStatusSrv.h>
 
+#include <global_planner/WaypointSrv.h>
+#include <global_planner/GoalSrv.h>
+#include <global_planner/DumpSrv.h>
+
 #include "RobotStatusWrapper.h"
 #include "GoalWrapper.h"
 #include "WaypointWrapper.h"
@@ -37,11 +41,15 @@ public:
     RobotController();
     ~RobotController();
 
-    void cb_goalSub(const global_planner::GoalMsg::ConstPtr& msg);
-    void cb_waypointSub(const global_planner::WaypointMsg::ConstPtr& msg);
-    void cb_dumpSub(const global_planner::DumpMsg::ConstPtr& msg);
-    void cb_eStopSub(const std_msgs::Empty& msg);
-    void cb_odomSub(const nav_msgs::Odometry::ConstPtr& msg);
+    bool cb_goalSub(global_planner::GoalSrv::Request  &req,
+                    global_planner::GoalSrv::Response &res);
+    bool cb_waypointSub(global_planner::WaypointSrv::Request  &req,
+                        global_planner::WaypointSrv::Response &res);
+    bool cb_dumpSub(global_planner::DumpSrv::Request  &req,
+                    global_planner::DumpSrv::Response &res);
+
+    void cb_eStopSub(const std_msgs::Empty &msg);
+    void cb_odomSub(const nav_msgs::Odometry::ConstPtr &msg);
 
     // void cb_statusService(const std_msgs::Int32 id);
 
@@ -79,9 +87,9 @@ private:
     ros::Time m_timeEnteringState;
 
     // Subscribers to the global planner
-    ros::Subscriber m_goalSub;
-    ros::Subscriber m_waypointSub;
-    ros::Subscriber m_dumpSub;
+    ros::ServiceServer m_goalService;
+    ros::ServiceServer m_waypointService;
+    ros::ServiceServer m_dumpService;
     ros::Subscriber m_eStopSub;
     ros::Subscriber m_odomSub;
 

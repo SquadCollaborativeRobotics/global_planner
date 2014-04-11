@@ -28,11 +28,10 @@ bool TaskMaster::Init(ros::NodeHandle* nh, std::map<int, Robot_Ptr> robots, std:
     SetupTopics();
     RegisterServices();
 
-
+    // Load waypoint file
     std::string path_to_waypoints = ros::package::getPath("global_planner");
     path_to_waypoints += std::string("/resources/waypoint_lists/");
     path_to_waypoints += waypoint_filename;
-
     LoadWaypoints(path_to_waypoints);
 
     ros::spinOnce();

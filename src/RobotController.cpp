@@ -136,25 +136,27 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
 
 /***********************************************************************
  *  Method: RobotController::cb_goalSub
- *  Params: const global_planner::GoalMsg::ConstPtr &msg
+ *  Params: const global_planner::GoalMsg &msg
  * Returns: void
  * Effects: callback for goal messages
  ***********************************************************************/
-void RobotController::cb_goalSub(const global_planner::GoalMsg::ConstPtr &msg)
+bool RobotController::cb_goalSub(global_planner::GoalSrv::Request  &req,
+                                 global_planner::GoalSrv::Response &res)
 {
 }
 
 
 /***********************************************************************
  *  Method: RobotController::cb_waypointSub
- *  Params: const global_planner::WaypointMsg::ConstPtr &msg
+ *  Params: const global_planner::WaypointMsg &msg
  * Returns: void
  * Effects: callback for waypoint messages
  ***********************************************************************/
-void RobotController::cb_waypointSub(const global_planner::WaypointMsg::ConstPtr &msg)
+bool RobotController::cb_waypointSub(global_planner::WaypointSrv::Request  &req,
+                                     global_planner::WaypointSrv::Response &res)
 {
     WaypointWrapper wpWrapper;
-    global_planner::WaypointMsg wm= *msg;
+    global_planner::WaypointMsg wm= req.msg;
     wpWrapper.SetData(wm);
 
     //Check if this message is for you!
@@ -189,16 +191,18 @@ void RobotController::cb_waypointSub(const global_planner::WaypointMsg::ConstPtr
             */
         }
     }
+    return true;
 }
 
 
 /***********************************************************************
  *  Method: RobotController::cb_dumpSub
- *  Params: const global_planner::DumpMsg::ConstPtr &msg
+ *  Params: const global_planner::DumpMsg &msg
  * Returns: void
  * Effects: callback for dump messages
  ***********************************************************************/
-void RobotController::cb_dumpSub(const global_planner::DumpMsg::ConstPtr &msg)
+bool RobotController::cb_dumpSub(global_planner::DumpSrv::Request  &req,
+                                 global_planner::DumpSrv::Response &res)
 {
 }
 
@@ -376,9 +380,6 @@ void RobotController::Finished()
  ***********************************************************************/
 void RobotController::SetupCallbacks()
 {
-    m_goalSub = m_nh->subscribe("/goal_pub", 10, &RobotController::cb_goalSub, this);
-    m_waypointSub = m_nh->subscribe("/waypoint_pub", 10, &RobotController::cb_waypointSub, this);
-    m_dumpSub = m_nh->subscribe("/dump_pub", 10, &RobotController::cb_dumpSub, this);
     m_eStopSub = m_nh->subscribe("/e_stop", 10, &RobotController::cb_eStopSub, this);
 
     m_odomSub = m_nh->subscribe("odom", 10, &RobotController::cb_odomSub, this);
@@ -389,8 +390,17 @@ void RobotController::SetupCallbacks()
     m_waypointFinishedPub = m_nh->advertise<global_planner::WaypointFinished>("/waypoint_finished", 10);
     m_dumpFinishedPub = m_nh->advertise<global_planner::DumpFinished>("/dump_finished", 10);
 
-    std::string serviceTopic = Conversion::RobotIDToServiceName(m_status.GetID());
-    m_statusService = m_nh->advertiseService(serviceTopic, &RobotController::SendRobotStatus, this);
+    std::string statusServiceTopic = Conversion::RobotIDToServiceName(m_status.GetID());
+    m_statusService = m_nh->advertiseService(statusServiceTopic, &RobotController::SendRobotStatus, this);
+
+    std::string waypointServiceTopic = Conversion::RobotIDToWaypointTopic(m_status.GetID());
+    m_waypointService = m_nh->advertiseService(waypointServiceTopic, &RobotController::cb_waypointSub, this);
+
+    std::string goalServiceTopic = Conversion::RobotIDToGoalTopic(m_status.GetID());
+    m_goalService = m_nh->advertiseService(goalServiceTopic, &RobotController::cb_goalSub, this);
+
+    std::string dumpServiceTopic = Conversion::RobotIDToDumpTopic(m_status.GetID());
+    m_dumpService = m_nh->advertiseService(dumpServiceTopic, &RobotController::cb_dumpSub, this);
 
     //Let the global planner know that this robot is alive an active
     UpdatePose();
