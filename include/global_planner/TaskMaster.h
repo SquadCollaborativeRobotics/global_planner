@@ -37,6 +37,7 @@
 #include <global_planner/WaypointSrv.h>
 #include <global_planner/DumpSrv.h>
 #include <global_planner/GoalSrv.h>
+#include <global_planner/GoalSrv.h>
 
 
 class TaskMaster
@@ -104,24 +105,6 @@ private:
     // List of dumps that need to be accomplished
     std::map<int, Dump_Ptr > m_dumpMap;
 
-    /**
-     * List of publishers & subscribers that will communicate with the robots
-     */
-    /**
-    // List of goal subcribers accessed by the robot id
-    std::map<int, ros::Subscriber > m_goalSubs;
-    // List of waypoint subscribers accessed by the robot id
-    std::map<int, ros::Subscriber > m_waypointSubs;
-    // List of dump subscribers accessed by the robot id
-    std::map<int, ros::Subscriber > m_dumpSubs;
-
-    // List of goal publishers accessed by the robot id
-    std::map<int, ros::Publisher > m_goalPubs;
-    // List of waypoint publishers accessed by the robot id
-    std::map<int, ros::Publisher > m_waypointPubs;
-    // List of dump publishers accessed by the robot id
-    std::map<int, ros::Publisher > m_dumpPubs;
-    **/
 
     //For now, we'll just listen to one topic for goals, waypoints, and dump results,
     //  since everything is being published with an ID anyways
@@ -129,17 +112,17 @@ private:
     ros::Subscriber m_waypointSub;
     ros::Subscriber m_dumpSub;
 
+    ros::Subscriber m_goalSeenSub;
+    ros::Subscriber m_dumpNeededSub;
+
+
+    /**
+     * List of services that will communicate with the robots
+     */
     // ServiceClients for the waypoints, goals, and dumps
     std::map<int, ros::ServiceClient > m_waypointClients;
     std::map<int, ros::ServiceClient > m_goalClients;
     std::map<int, ros::ServiceClient > m_dumpClients;
-
-    ros::Publisher m_goalPub;
-    ros::Publisher m_waypointPub;
-    ros::Publisher m_dumpPub;
-
-    ros::Subscriber m_goalSeenSub;
-    ros::Subscriber m_dumpNeededSub;
 
     // List of robots in the system
     std::map< int, Robot_Ptr > m_robots;

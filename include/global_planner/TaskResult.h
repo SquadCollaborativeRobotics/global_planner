@@ -21,6 +21,7 @@ public:
         FAILURE = 3,
         FORCE_STOP = 4,
         NAVSTACK_FAILURE = 5,
+        COMM_FAILURE = 10,
         UNINITIALIZED = 99,
     };
 };

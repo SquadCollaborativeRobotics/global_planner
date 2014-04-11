@@ -158,6 +158,7 @@ bool RobotController::cb_waypointSub(global_planner::WaypointSrv::Request  &req,
     WaypointWrapper wpWrapper;
     global_planner::WaypointMsg wm= req.msg;
     wpWrapper.SetData(wm);
+    res.result = -1;
 
     //Check if this message is for you!
     if (wpWrapper.GetRobot() == m_status.GetID())
@@ -172,7 +173,7 @@ bool RobotController::cb_waypointSub(global_planner::WaypointSrv::Request  &req,
                 ROS_INFO_STREAM("Move to new waypoint ("<<wpWrapper.GetID()<<")");
                 m_status.SetTaskID( wpWrapper.GetID() );
                 Transition(RobotState::NAVIGATING);
-
+                res.result = 0;
             break;
             /*
             case RobotState::NAVIGATING:

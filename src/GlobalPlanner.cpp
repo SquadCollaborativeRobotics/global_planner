@@ -270,16 +270,25 @@ bool GlobalPlanner::AssignRobotWaypoint(int robot_id, int waypoint_id)
 
     // Assign waypoint to robot
     wp->SetRobot(robot_id);
-    wp->SetStatus(TaskResult::INPROGRESS);
 
     // Assign robot to best waypoint
-    m_robots[robot_id]->SetState(RobotState::NAVIGATING);
-    m_tm.SendWaypoint(waypoint_id);
+    if (m_tm.SendWaypoint(waypoint_id))
+    {
+        //Update lists of waypoints/robots
+        m_robots[robot_id]->SetState(RobotState::NAVIGATING);
+        wp->SetStatus(TaskResult::INPROGRESS);
+        // Track assignment in statistics
+        // map<robot_id, map<waypoint_id, double_seconds_since_start> >
+        robot_waypoint_times[robot_id].insert(std::pair<int,double> (waypoint_id, TimeSinceStart() ) );
+        // robot_waypoint_times.insert(std::pair<int, std::map<int,double> >(robot_id,));
+    }
+    else
+    {
+        wp->SetRobot(-1);
+        wp->SetStatus(TaskResult::COMM_FAILURE);
+        ROS_ERROR_STREAM("Could not assign waypoint["<<waypoint_id<<"] to robot ["<<robot_id<<"]");
+    }
 
-    // Track assignment in statistics
-    // map<robot_id, map<waypoint_id, double_seconds_since_start> >
-    robot_waypoint_times[robot_id].insert(std::pair<int,double> (waypoint_id, TimeSinceStart() ) );
-    // robot_waypoint_times.insert(std::pair<int, std::map<int,double> >(robot_id,));
 
     return true;
 }
