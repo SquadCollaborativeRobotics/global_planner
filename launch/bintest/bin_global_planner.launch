@@ -1,0 +1,17 @@
+<launch>
+  <!-- launch global planner -->
+  <node pkg="global_planner" type="global_planner_node" name="global_planner" output="screen">
+    <!-- <param name="waypoints_file" value="cubicle.points" /> -->
+    <param name="waypoints_file" value="cubicle.points" />
+    <!-- naive/closest_robot/closest_waypoint -->
+    <param name="planner" value="naive" /> 
+    <!-- <param name="planner" value="closest_waypoint" />  -->
+    <!-- <param name="planner" value="closest_robot" />  -->
+  </node>
+
+  <!-- human interface -->
+  <!-- <node pkg="global_planner" type="human_interface_node" name="human_interface_node">
+  </node> -->
+
+  <include file="$(find global_planner)/launch/bintest/binrobots.launch" />
+</launch>
