@@ -52,5 +52,7 @@ int main(int argc, char** argv){
     }
     gp.Finished();
 
-    ROS_INFO("GP Node Finished");
+    ROS_INFO("GP Node Finished. Press any key to exit");
+    std::string end;
+    std::cin>>end;
 }

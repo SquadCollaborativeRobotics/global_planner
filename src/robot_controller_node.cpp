@@ -21,5 +21,8 @@ int main(int argc, char** argv){
 
     rc.Finished();
 
-    ROS_INFO("Finished");
+    ROS_INFO("Robot node Finished. Press any key to exit");
+
+    std::string end;
+    std::cin>>end;
 }

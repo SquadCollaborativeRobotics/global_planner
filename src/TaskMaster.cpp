@@ -200,6 +200,10 @@ bool TaskMaster::Clear()
     m_waypointMap.clear();
     m_goalMap.clear();
     m_robots.clear();
+
+    m_waypointClients.clear();
+    m_goalClients.clear();
+    m_dumpClients.clear();
 }
 
 

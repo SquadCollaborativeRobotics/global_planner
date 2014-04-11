@@ -84,13 +84,12 @@ public:
     void cb_goalSeen(const global_planner::GoalSeen::ConstPtr& msg);
 
     void LoadWaypoints(std::string filename);
+    void UpdateRobotMap(std::map< int, Robot_Ptr > new_robots);
 
 private:
     // Initialize lists, setup callbacks, regiser services
     bool SetupTopics();
     bool RegisterServices();
-
-    void UpdateRobotMap(std::map< int, Robot_Ptr > new_robots);
 
     // ros NodeHandle used for publishing and tf stuff
     ros::NodeHandle* m_nh;
