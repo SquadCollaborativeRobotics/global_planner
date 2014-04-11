@@ -124,7 +124,7 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
 
     SetupCallbacks();
 
-    ROS_INFO_STREAM("Robot has setup the movebase client");
+    ROS_DEBUG_STREAM("Robot has setup the movebase client");
 
     Transition(RobotState::WAITING);
     m_timeEnteringState = ros::Time::now();
@@ -160,7 +160,7 @@ void RobotController::cb_waypointSub(const global_planner::WaypointMsg::ConstPtr
     //Check if this message is for you!
     if (wpWrapper.GetRobot() == m_status.GetID())
     {
-        ROS_INFO_STREAM("Received waypoint for me:\n"<<wpWrapper.ToString());
+        ROS_DEBUG_STREAM("Received waypoint for me:\n"<<wpWrapper.ToString());
         // boost::mutex::scoped_lock lock(m_statusMutex);
 
         switch(m_status.GetState())
@@ -212,6 +212,9 @@ void RobotController::cb_dumpSub(const global_planner::DumpMsg::ConstPtr &msg)
  ***********************************************************************/
 void RobotController::cb_eStopSub(const std_msgs::Empty &msg)
 {
+    ROS_INFO("eStop received");
+    action_client_ptr->cancelAllGoals();
+    Transition(RobotState::ESTOP);
 }
 
 
@@ -376,7 +379,7 @@ void RobotController::SetupCallbacks()
     m_goalSub = m_nh->subscribe("/goal_pub", 10, &RobotController::cb_goalSub, this);
     m_waypointSub = m_nh->subscribe("/waypoint_pub", 10, &RobotController::cb_waypointSub, this);
     m_dumpSub = m_nh->subscribe("/dump_pub", 10, &RobotController::cb_dumpSub, this);
-    m_eStopSub = m_nh->subscribe("/e_stop_pub", 10, &RobotController::cb_eStopSub, this);
+    m_eStopSub = m_nh->subscribe("/e_stop", 10, &RobotController::cb_eStopSub, this);
 
     m_odomSub = m_nh->subscribe("odom", 10, &RobotController::cb_odomSub, this);
 
@@ -473,7 +476,7 @@ void RobotController::StateExecute()
     //      IF reached final pose of the waypoint, send waypoint result message (succeed) -> transition(WAITING)
     // ...
     bool execResult = false;
-    ROS_INFO_STREAM_THROTTLE(1.0, "STATE: "<<RobotState::ToString(m_status.GetState()));
+    // ROS_INFO_STREAM_THROTTLE(1.0, "STATE: "<<RobotState::ToString(m_status.GetState()));
     switch(m_status.GetState())
     {
         case RobotState::NAVIGATING:
@@ -505,7 +508,7 @@ void RobotController::StateExecute()
                     case actionlib::SimpleClientGoalState::ACTIVE:
                     case actionlib::SimpleClientGoalState::PENDING:
                     default:
-                        ROS_INFO_STREAM_THROTTLE(1, "Navigation still being attempted... state = " << action_client_ptr->getState().toString() );
+                        ROS_INFO_STREAM_THROTTLE(10, "Navigation still being attempted... state = " << action_client_ptr->getState().toString() );
                         break;
                 }
 
@@ -515,18 +518,19 @@ void RobotController::StateExecute()
         //In this state, the robot should now be stopping and getting a more accurate view of the tag
         case RobotState::NAVIGATING_TAG_SPOTTED:
             execResult = m_tagProcessor->Execute();
-            ROS_INFO_STREAM_THROTTLE(0.5, "Result from execute: "<<execResult);
+            ROS_DEBUG_STREAM_THROTTLE(0.5, "Result from execute: "<<execResult);
             if (m_tagProcessor->ShouldResume())
             {
                 //Transition back to the navigating state, using the same goal as before
                 ROS_INFO("Resuming robot");
                 ros::Time time = ros::Time::now();
-                while(ros::ok() && ros::Time::now() - time < ros::Duration(1.0))
+                while(ros::ok() && ros::Time::now() - time < ros::Duration(5.0))
                 {
-                    sleep(0.5);
+                    sleep(0.1);
                     ros::spinOnce();
                 }
                 Transition(RobotState::NAVIGATING);
+                ROS_INFO("Finished resuming");
                 break;
             }
             else

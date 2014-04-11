@@ -40,7 +40,8 @@ public:
         // DUMPING_FINISHED = 29,
         COLLECTING = 30,
         // COLLECTING_FINISHED = 39,
-        UNINITIALIZED = 99
+        UNINITIALIZED = 99,
+        ESTOP = 100
     };
 
     static const int RobotStateToInt(RobotState::State s)
@@ -67,6 +68,8 @@ public:
             return "DUMPING";
             case RobotState::COLLECTING:
             return "COLLECTING";
+            case RobotState::ESTOP:
+            return "ESTOP";
             default:
             return "UNKNOWN robot state (or not implemented in ToString func";
         }

@@ -367,7 +367,7 @@ bool TaskMaster::SetupTopics()
     m_dumpPub = m_nh->advertise<global_planner::DumpMsg>("dump_pub", 10);
 
     ROS_INFO_STREAM("Setting up subscriber for goals seen");
-    m_goalSeenSub = m_nh->subscribe("garbageCan", 10, &TaskMaster::cb_goalSeen, this);
+    m_goalSeenSub = m_nh->subscribe("goal_seen", 10, &TaskMaster::cb_goalSeen, this);
 
     ROS_INFO_STREAM("Finished Setting up subscribers");
 }
