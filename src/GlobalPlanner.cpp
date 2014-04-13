@@ -279,6 +279,7 @@ bool GlobalPlanner::AssignRobotWaypoint(int robot_id, int waypoint_id)
         // map<robot_id, map<waypoint_id, double_seconds_since_start> >
         robot_waypoint_times[robot_id].insert(std::pair<int,double> (waypoint_id, TimeSinceStart() ) );
         // robot_waypoint_times.insert(std::pair<int, std::map<int,double> >(robot_id,));
+        ROS_INFO_STREAM("Successfully sent waypoint to robot "<<robot_id);
     }
     else
     {

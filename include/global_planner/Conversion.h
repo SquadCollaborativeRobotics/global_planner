@@ -106,7 +106,7 @@ public:
     static const std::string RobotIDToDumpTopic(int id)
     {
         std::stringstream ss;
-        ss << "/goals/"<<id;
+        ss << "/dumps/"<<id;
         return ss.str();
     }
 };

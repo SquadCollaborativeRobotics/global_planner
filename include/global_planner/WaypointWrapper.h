@@ -34,11 +34,11 @@ public:
 
     ~WaypointWrapper(){};
 
-    void Init(int id, int robotID, TaskResult::Status status, double x, double y, double z, double w)
+    void Init(int id, int robotID, TaskResult::Status status, double x, double y, double rz, double rw)
     {
         SetID(id);
         SetTime(ros::Time::now());
-        geometry_msgs::Pose p = Conversion::SetPose(x,y,z,w);
+        geometry_msgs::Pose p = Conversion::SetPose(x,y,rz,rw);
         SetPose(p);
         SetRobot(robotID);
         SetStatus(status);
@@ -53,8 +53,8 @@ public:
     std::string GetStatusMessage()
     {
         int status = GetStatus();
-        return (GetCompleted() ? "DONE       " : 
-                                 (GetInProgress() ? "IN PROGRESS" : 
+        return (GetCompleted() ? "DONE       " :
+                                 (GetInProgress() ? "IN PROGRESS" :
                                                     (GetAvailable() ? "AVAILABLE  " : "FAILED     ")));
     }
 

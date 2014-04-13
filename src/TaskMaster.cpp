@@ -109,16 +109,16 @@ void TaskMaster::LoadWaypoints(std::string filename)
     for(int i=0; getline(fin,s); i++){
         //use the string 's' as input stream, the usage of 'sin' is just like 'cin'
         std::istringstream sin(s);
-        double x,y,z,w;
+        double x,y,rz,rw;
         int id;
         sin>>id;
         sin>>x;
         sin>>y;
-        sin>>z;
-        sin>>w;
-        Waypoint_Ptr wp(new WaypointWrapper(id, x,y,z,w));
+        sin>>rz;
+        sin>>rw;
+        Waypoint_Ptr wp(new WaypointWrapper(id, x, y, rz, rw));
 
-        ROS_INFO_STREAM("Loaded waypoint["<<i<<"]: "<<x<<", "<<y<<", "<<z<<", "<<w);
+        ROS_INFO_STREAM("Loaded waypoint["<<i<<"]: "<<x<<", "<<y<<", "<<rz<<", "<<rw);
         AddWaypoint(wp);
     }
 }
@@ -216,11 +216,12 @@ bool TaskMaster::Clear()
 bool TaskMaster::SendWaypoint(int wpID)
 {
     global_planner::WaypointMsg wpMsg = m_waypointMap[wpID]->GetMessage();
-    if (wpID != -1)
+    int robotID = wpMsg.robotID;
+    if (wpID != -1 && robotID >= 0)
     {
         global_planner::WaypointSrv s;
         s.request.msg = wpMsg;
-        if (m_waypointClients[wpID].call(s))
+        if (m_waypointClients[robotID].call(s))
         {
             if (s.response.result == 0)
             {
@@ -228,13 +229,19 @@ bool TaskMaster::SendWaypoint(int wpID)
             }
             else
             {
+                ROS_ERROR_STREAM("Sending waypoint. Bad response (resp = "<<s.response.result<<") from robot: "<<robotID);
                 return false;
             }
         }
         else
         {
+            ROS_ERROR_STREAM("Failed to connect to robot["<<robotID);
             return false;
         }
+    }
+    else
+    {
+        ROS_ERROR_STREAM("Sending waypoint. invalid id's: wp = "<<wpID<<", robot = "<<robotID);
     }
     return false;
 }
@@ -253,7 +260,7 @@ bool TaskMaster::SendGoal(int goalID)
     {
         global_planner::GoalSrv s;
         s.request.msg = gm;
-        if (m_goalClients[gm.id].call(s))
+        if (m_goalClients[gm.robotID].call(s))
         {
             if (s.response.result == 0)
             {

@@ -24,4 +24,29 @@ public:
         COMM_FAILURE = 10,
         UNINITIALIZED = 99,
     };
+
+    static const std::string ToString(TaskResult::Status s)
+    {
+        switch (s)
+        {
+            case SUCCESS:
+                return "SUCCESS";
+            case AVAILABLE:
+                return "AVAILABLE";
+            case INPROGRESS:
+                return "INPROGRESS";
+            case FAILURE:
+                return "FAILURE";
+            case FORCE_STOP:
+                return "FORCE_STOP";
+            case NAVSTACK_FAILURE:
+                return "NAVSTACK_FAILURE";
+            case COMM_FAILURE:
+                return "COMM_FAILURE";
+            case UNINITIALIZED:
+                return "UNINITIALIZED";
+            default:
+                return"ERROR: UNKNOWN RESULT";
+        }
+    }
 };

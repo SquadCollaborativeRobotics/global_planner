@@ -295,9 +295,9 @@ void RobotController::Execute()
     StateExecute();
 
     //Don't need anymore since we're using services
-    if (ros::Time::now() - m_lastStatusUpdate > ros::Duration(1))
+    if (ros::Time::now() - m_lastStatusUpdate > ros::Duration(5))
     {
-        ROS_ERROR_STREAM_THROTTLE(1.0, "Robot has not been in communication for "<<(ros::Time::now() - m_lastStatusUpdate) << " seconds");
+        ROS_ERROR_STREAM_THROTTLE(5.0, "Robot has not been in communication for "<<(ros::Time::now() - m_lastStatusUpdate) << " seconds");
         UpdatePose();
         m_statusPub.publish(m_status.GetMessage());
     }
@@ -377,7 +377,7 @@ void RobotController::Finished()
  *  Method: RobotController::SetupCallbacks
  *  Params:
  * Returns: void
- * Effects:	Sets up the subscribers and publishers for the bott
+ * Effects:	Sets up the subscribers, publishers, and services for the bot
  ***********************************************************************/
 void RobotController::SetupCallbacks()
 {
@@ -535,7 +535,7 @@ void RobotController::StateExecute()
                 //Transition back to the navigating state, using the same goal as before
                 ROS_INFO("Resuming robot");
                 ros::Time time = ros::Time::now();
-                while(ros::ok() && ros::Time::now() - time < ros::Duration(5.0))
+                while(ros::ok() && ros::Time::now() - time < ros::Duration(2.0))
                 {
                     sleep(0.1);
                     ros::spinOnce();
