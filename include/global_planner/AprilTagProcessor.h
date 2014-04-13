@@ -18,7 +18,7 @@
 
 #include <boost/shared_ptr.hpp>
 
-#define STOP_LIN_THRESHOLD 0.02 //Meters/sec
+#define STOP_LIN_THRESHOLD 0.01 //Meters/sec
 #define STOP_ANG_THRESHOLD 0.01 // Radians/sec
 #define UPDATE_RANGE_THRESHOLD 2.3 //meters
 

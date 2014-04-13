@@ -522,6 +522,7 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
  ***********************************************************************/
 void AprilTagProcessor::cb_odom(const nav_msgs::Odometry::ConstPtr &msg)
 {
+    // ROS_INFO_STREAM("Received Odom message");
     m_odom = *msg;
 }
 
