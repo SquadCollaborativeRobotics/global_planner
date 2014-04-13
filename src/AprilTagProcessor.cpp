@@ -351,7 +351,7 @@ bool AprilTagProcessor::FindGoals()
                 m_goalPub.publish(goal);
                 m_goalSendTime[tagID] = ros::Time::now();
 
-                ROS_INFO_STREAM("Sent goal pose with ID: "<<tagID);
+                ROS_INFO_STREAM("Sent goal pose ["<<goal.pose<<"] with ID: "<<tagID);
                 retVal = true;
             }
             else

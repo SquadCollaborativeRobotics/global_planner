@@ -256,11 +256,13 @@ bool TaskMaster::SendWaypoint(int wpID)
 bool TaskMaster::SendGoal(int goalID)
 {
     global_planner::GoalMsg gm = m_goalMap[goalID]->GetMessage();
-    if (gm.id != -1)
+
+    int robotID = gm.robotID;
+    if (goalID != -1 && robotID >= 0)
     {
         global_planner::GoalSrv s;
         s.request.msg = gm;
-        if (m_goalClients[gm.robotID].call(s))
+        if (m_goalClients[robotID].call(s))
         {
             if (s.response.result == 0)
             {
@@ -268,13 +270,19 @@ bool TaskMaster::SendGoal(int goalID)
             }
             else
             {
+                ROS_ERROR_STREAM("Sending goal. Bad response (resp = "<<s.response.result<<") from robot: "<<robotID);
                 return false;
             }
         }
         else
         {
+            ROS_ERROR_STREAM("Failed to connect to robot["<<robotID);
             return false;
         }
+    }
+    else
+    {
+        ROS_ERROR_STREAM("Sending goal. invalid id's: goalID = "<<goalID<<", robot = "<<robotID);
     }
     return false;
 }
@@ -383,7 +391,7 @@ void TaskMaster::cb_waypointFinished(const global_planner::WaypointFinished::Con
     m_waypointMap[msg->id]->SetStatus(Conversion::IntToTaskResult(status));
     if (status == TaskResult::SUCCESS)
     {
-        ROS_INFO_STREAM("Waypoint reached successfully");
+        ROS_INFO_STREAM("Waypoint["<<msg->id<<"] reached successfully");
     }
     else
     {
@@ -515,6 +523,7 @@ std::vector<Waypoint_Ptr> TaskMaster::GetAvailableWaypoints()
     }
     return v;
 }
+
 
 /***********************************************************************
  *  Method: TaskMaster::isFinished()

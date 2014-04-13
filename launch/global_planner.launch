@@ -3,12 +3,13 @@
 
   <!-- launch global planner -->
   <!-- machine="Master" -->
-  <node pkg="global_planner" type="global_planner_node" name="global_planner" output="screen" launch-prefix="terminator -x" >
+   <!-- launch-prefix="terminator -x"  -->
+  <node pkg="global_planner" type="global_planner_node" name="global_planner" output="screen" >
     <param name="waypoints_file" value="cubicle.points" />
     <!-- <param name="waypoints_file" value="falldemo.points" /> -->
     <!-- naive/closest_robot/closest_waypoint -->
-    <param name="planner" value="naive" />
-    <!-- <param name="planner" value="closest_waypoint" />  -->
+    <!-- <param name="planner" value="naive" /> -->
+    <param name="planner" value="closest_waypoint" />
     <!-- <param name="planner" value="closest_robot" />  -->
   </node>
 
