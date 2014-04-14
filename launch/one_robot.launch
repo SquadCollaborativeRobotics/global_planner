@@ -1,6 +1,6 @@
 <launch>
   <!-- first robot... --> <!--launch-prefix="xterm -e" -->
-  <node pkg="global_planner" type="robot_controller_node" name="controller" output="screen" launch-prefix="terminator -x">
+  <node pkg="global_planner" type="robot_controller_node" name="controller" output="screen" >
     <param name="robot_name" value="Cristoff" />
     <param name="base_frame" value="base_link" />
     <param name="tf_prefix" value="" />

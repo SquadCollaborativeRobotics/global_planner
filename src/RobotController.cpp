@@ -112,6 +112,8 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
         return;
     }
 
+    m_tagProcessor.reset( new AprilTagProcessor() );
+    m_tagProcessor->Init(nh, robotID);
 
     action_client_ptr.reset( new MoveBaseClient("move_base", true) );
     // Wait for the action server to come up
@@ -125,6 +127,7 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
     ROS_DEBUG_STREAM("Robot has setup the movebase client");
 
     Transition(RobotState::WAITING);
+    m_timeEnteringState = ros::Time::now();
 
     ROS_INFO_STREAM("Finished initializing");
 }
