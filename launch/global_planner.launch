@@ -14,6 +14,5 @@
   </node>
 
   <!-- human interface -->
-  <!-- <node pkg="global_planner" type="human_interface_node" name="human_interface_node">
-  </node> -->
+  <node pkg="global_planner" type="human_interface_node" name="human_interface_node"></node>
 </launch>
