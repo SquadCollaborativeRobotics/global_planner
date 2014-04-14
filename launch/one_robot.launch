@@ -1,6 +1,6 @@
 <launch>
   <!-- first robot... --> <!--launch-prefix="xterm -e" -->
-  <node pkg="global_planner" type="robot_controller_node" name="controller" output="screen" >
+  <node pkg="global_planner" type="robot_controller_node" name="controller" output="screen" launch-prefix="xterm -e" >
     <param name="robot_name" value="Cristoff" />
     <param name="base_frame" value="base_link" />
     <param name="tf_prefix" value="" />
@@ -12,4 +12,6 @@
 
   <include file="$(find april_tags)/launch/april_tags.launch">
   </include>
+
+  <include file="$(find april_tags)/launch/image_capture.launch" />
 </launch>
