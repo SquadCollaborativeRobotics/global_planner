@@ -49,4 +49,16 @@ public:
                 return"ERROR: UNKNOWN RESULT";
         }
     }
+
+    //Callback from robot's task converted to a TaskManager "status" enum
+    static const TaskResult::Status ToEnum(int num)
+    {
+        return static_cast<TaskResult::Status>(num);
+    }
+
+    // Conver from a TaskResult "status" enum to an integer
+    static const int ToInt(TaskResult::Status s)
+    {
+        return static_cast<int>(s);
+    }
 };

@@ -30,7 +30,7 @@ public:
     void SetTime(ros::Time time){ m_msg.time = time; };
     void SetPose(geometry_msgs::Pose pose){ m_msg.pose = pose; };
     void SetRobot(int robotID){ m_msg.robotID = robotID; };
-    void SetStatus(TaskResult::Status s){ m_msg.status = Conversion::TaskResultToInt(s); };
+    void SetStatus(TaskResult::Status s){ m_msg.status = TaskResult::ToInt(s); };
 
     std::string ToString()
     {

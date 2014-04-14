@@ -298,7 +298,7 @@ void RobotController::SendGoalFinished(TaskResult::Status status)
 {
     global_planner::GoalFinished goalMsg;
     goalMsg.id = m_status.GetTaskID();
-    goalMsg.status = Conversion::TaskResultToInt(status);
+    goalMsg.status = TaskResult::ToInt(status);
 
     m_goalFinishedPub.publish(goalMsg);
 }
@@ -314,7 +314,7 @@ void RobotController::SendWaypointFinished(TaskResult::Status status)
 {
     global_planner::WaypointFinished wpMsg;
     wpMsg.id = m_status.GetTaskID();
-    wpMsg.status = Conversion::TaskResultToInt(status);
+    wpMsg.status = TaskResult::ToInt(status);
 
     m_waypointFinishedPub.publish(wpMsg);
 }
@@ -330,7 +330,7 @@ void RobotController::SendDumpFinished(TaskResult::Status status)
 {
     global_planner::DumpFinished dumpMsg;
     dumpMsg.id = m_status.GetTaskID();
-    dumpMsg.status = Conversion::TaskResultToInt(status);
+    dumpMsg.status = TaskResult::ToInt(status);
 
     m_dumpFinishedPub.publish(dumpMsg);
 }

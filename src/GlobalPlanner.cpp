@@ -721,7 +721,7 @@ void GlobalPlanner::QueryRobots()
         }
         else
         {
-            ROS_ERROR_STREAM("Not connected to robot: "<<it->first<<"... retrying");
+            ROS_ERROR_STREAM_THROTTLE(10.0, "Not connected to robot: "<<it->first<<"... retrying");
             std::string serviceTopic = Conversion::RobotIDToServiceName(it->first);
             m_statusServices[it->first] = m_nh->serviceClient<global_planner::RobotStatusSrv>(serviceTopic, true);
         }

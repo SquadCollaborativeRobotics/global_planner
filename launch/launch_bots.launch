@@ -9,6 +9,7 @@
         <!-- start cubicle world -->
         <group if="$(arg cubicle)">
             <include file="$(find collectorbot_gazebo)/launch/shawn/cubicle_world.launch" />
+            <!-- Make sure the april tag model files are simlinked to the ~/.gazebo/models folder -->
             <include file="$(find collectorbot_gazebo)/launch/april_tags_gazebo.launch" />
         </group>
 

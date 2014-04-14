@@ -39,7 +39,7 @@ public:
                     if (i > 1){
                         sleep(1.0);
                     }
-                    ROS_INFO_STREAM("Playing sound: "<<path_to_sound);
+                    // ROS_INFO_STREAM("Playing sound: "<<path_to_sound);
                     is_playing = true;
                     system(path_to_sound.c_str());
                     is_playing = false;

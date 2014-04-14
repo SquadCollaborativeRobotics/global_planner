@@ -366,7 +366,7 @@ std::map<int, Dump_Ptr> TaskMaster::GetDumps()
 void TaskMaster::cb_goalFinished(const global_planner::GoalFinished::ConstPtr& msg)
 {
     int status = msg->status;
-    m_goalMap[msg->id]->SetStatus(Conversion::IntToTaskResult(status));
+    m_goalMap[msg->id]->SetStatus(TaskResult::ToEnum(status));
     if (status == TaskResult::SUCCESS)
     {
         ROS_INFO_STREAM("Goal finished successfully");
@@ -374,7 +374,7 @@ void TaskMaster::cb_goalFinished(const global_planner::GoalFinished::ConstPtr& m
     else
     {
         ROS_ERROR_STREAM("ERROR, Goal finished with status: " << msg->status
-                         << " : " << Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
+                         << " : " << TaskResult::ToString(TaskResult::ToEnum(msg->status)));
     }
 }
 
@@ -388,7 +388,7 @@ void TaskMaster::cb_goalFinished(const global_planner::GoalFinished::ConstPtr& m
 void TaskMaster::cb_waypointFinished(const global_planner::WaypointFinished::ConstPtr& msg)
 {
     int status = msg->status;
-    m_waypointMap[msg->id]->SetStatus(Conversion::IntToTaskResult(status));
+    m_waypointMap[msg->id]->SetStatus(TaskResult::ToEnum(status));
     if (status == TaskResult::SUCCESS)
     {
         ROS_INFO_STREAM("Waypoint["<<msg->id<<"] reached successfully");
@@ -396,7 +396,7 @@ void TaskMaster::cb_waypointFinished(const global_planner::WaypointFinished::Con
     else
     {
         ROS_ERROR_STREAM("ERROR, Waypoint finished with status: " << msg->status
-                         << " : " << Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
+                         << " : " << TaskResult::ToString(TaskResult::ToEnum(msg->status)));
         //FOR NOW, let's just say it's available after a failure
         m_waypointMap[msg->id]->SetStatus(TaskResult::AVAILABLE);
     }
@@ -412,7 +412,7 @@ void TaskMaster::cb_waypointFinished(const global_planner::WaypointFinished::Con
 void TaskMaster::cb_dumpFinished(const global_planner::DumpFinished::ConstPtr& msg)
 {
     int status = msg->status;
-    m_dumpMap[msg->id]->SetStatus(Conversion::IntToTaskResult(status));
+    m_dumpMap[msg->id]->SetStatus(TaskResult::ToEnum(status));
 
     if (status == TaskResult::SUCCESS)
     {
@@ -420,7 +420,7 @@ void TaskMaster::cb_dumpFinished(const global_planner::DumpFinished::ConstPtr& m
     }
     else
     {
-        ROS_ERROR_STREAM("ERROR, Dump finished with status: "<<msg->status<<" : "<<Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
+        ROS_ERROR_STREAM("ERROR, Dump finished with status: "<<msg->status<<" : "<<TaskResult::ToString(TaskResult::ToEnum(msg->status)));
     }
 }
 
