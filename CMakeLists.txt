@@ -15,6 +15,8 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib_msgs
 )
 
+find_package(april_tags)
+
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system thread)
 
@@ -62,11 +64,13 @@ add_message_files(
 )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+  FILES
+    RobotStatusSrv.srv
+    GoalSrv.srv
+    WaypointSrv.srv
+    DumpSrv.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -81,6 +85,7 @@ generate_messages(
     geometry_msgs
     actionlib_msgs
     std_msgs
+    april_tags
 )
 
 ###################################
@@ -120,6 +125,7 @@ add_dependencies(global_planner_lib ${PROJECT_NAME}_generate_messages_cpp)
 
 add_library(robot_controller_lib
   src/RobotController.cpp
+  src/AprilTagProcessor.cpp
 )
 target_link_libraries(robot_controller_lib ${catkin_LIBRARIES})
 add_dependencies(robot_controller_lib ${PROJECT_NAME}_generate_messages_cpp)

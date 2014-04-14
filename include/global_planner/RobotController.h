@@ -20,6 +20,12 @@
 #include <global_planner/GoalFinished.h>
 #include <global_planner/WaypointFinished.h>
 #include <global_planner/DumpFinished.h>
+#include <global_planner/AprilTagProcessor.h>
+#include <global_planner/RobotStatusSrv.h>
+
+#include <global_planner/WaypointSrv.h>
+#include <global_planner/GoalSrv.h>
+#include <global_planner/DumpSrv.h>
 
 #include "RobotStatusWrapper.h"
 #include "GoalWrapper.h"
@@ -35,22 +41,24 @@ public:
     RobotController();
     ~RobotController();
 
-    void cb_goalSub(const global_planner::GoalMsg::ConstPtr& msg);
-    void cb_waypointSub(const global_planner::WaypointMsg::ConstPtr& msg);
-    void cb_dumpSub(const global_planner::DumpMsg::ConstPtr& msg);
-    void cb_eStopSub(const std_msgs::Empty& msg);
-    void cb_odomSub(const nav_msgs::Odometry::ConstPtr& msg);
+    bool cb_goalSub(global_planner::GoalSrv::Request  &req,
+                    global_planner::GoalSrv::Response &res);
+    bool cb_waypointSub(global_planner::WaypointSrv::Request  &req,
+                        global_planner::WaypointSrv::Response &res);
+    bool cb_dumpSub(global_planner::DumpSrv::Request  &req,
+                    global_planner::DumpSrv::Response &res);
+
+    void cb_eStopSub(const std_msgs::Empty &msg);
+    void cb_odomSub(const nav_msgs::Odometry::ConstPtr &msg);
 
     // void cb_statusService(const std_msgs::Int32 id);
 
-    //Send the robot's status message
-    void SendRobotStatus();
 
     void SendGoalFinished(TaskResult::Status status);
     void SendWaypointFinished(TaskResult::Status status);
     void SendDumpFinished(TaskResult::Status status);
 
-    void Init(ros::NodeHandle* nh, 
+    void Init(ros::NodeHandle* nh,
               int robotID = -1,
               std::string robotName = "",
               int storage_cap = 3,
@@ -64,17 +72,24 @@ public:
 
 private:
     void SetupCallbacks();
-    void UpdatePose();
+    bool UpdatePose();
+    //Send the robot's status message
+    bool SendRobotStatus(global_planner::RobotStatusSrv::Request  &req,
+                         global_planner::RobotStatusSrv::Response &res);
 
+    /*********************************
+     * State stuff
+     ********************************/
     void Transition(RobotState::State newState,
                     void* args=0);
     void OnEntry(void* args=0);
     void StateExecute();
+    ros::Time m_timeEnteringState;
 
     // Subscribers to the global planner
-    ros::Subscriber m_goalSub;
-    ros::Subscriber m_waypointSub;
-    ros::Subscriber m_dumpSub;
+    ros::ServiceServer m_goalService;
+    ros::ServiceServer m_waypointService;
+    ros::ServiceServer m_dumpService;
     ros::Subscriber m_eStopSub;
     ros::Subscriber m_odomSub;
 
@@ -84,12 +99,12 @@ private:
     ros::Publisher m_waypointFinishedPub;
     ros::Publisher m_dumpFinishedPub;
 
-    // ros::ServiceServer m_statusService;
+    ros::ServiceServer m_statusService;
 
     RobotStatusWrapper m_status;
 
     ros::NodeHandle* m_nh;
-    tf::TransformListener* m_listener;
+    boost::shared_ptr<tf::TransformListener> m_listener;
 
     std::string base_frame;
     /**
@@ -105,4 +120,11 @@ private:
     // Mutex to make sure we are only getting commands when we should (mainly: not during transitions)
     boost::mutex m_statusMutex;
 
+    //The most recent long term goal passed in to the navigation stack
+    move_base_msgs::MoveBaseGoal m_moveBaseGoal;
+
+    //April Tag processor
+    boost::shared_ptr<AprilTagProcessor> m_tagProcessor;
+
+    ros::Time m_lastStatusUpdate;
 };

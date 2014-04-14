@@ -23,19 +23,104 @@ bool TaskMaster::Init(ros::NodeHandle* nh, std::map<int, Robot_Ptr> robots, std:
 
     Clear();
 
-    m_robots = robots;
+    UpdateRobotMap(robots);
 
     SetupTopics();
     RegisterServices();
 
-
+    // Load waypoint file
     std::string path_to_waypoints = ros::package::getPath("global_planner");
     path_to_waypoints += std::string("/resources/waypoint_lists/");
     path_to_waypoints += waypoint_filename;
-
     LoadWaypoints(path_to_waypoints);
 
     ros::spinOnce();
+}
+
+
+/***********************************************************************
+ *  Method: TaskMaster::updateRobotMap
+ *  Params: std::map<int, Robot_Ptr> new_robots
+ * Returns: void
+ * Effects:
+ ***********************************************************************/
+void TaskMaster::UpdateRobotMap(std::map<int, Robot_Ptr> new_robots)
+{
+    m_robots = new_robots;
+    RegisterServices();
+}
+
+
+/***********************************************************************
+ *  Method: TaskMaster::SetupCallbacks
+ *  Params:
+ * Returns: bool
+ * Effects: Setup topic subscribers and publishers
+ ***********************************************************************/
+bool TaskMaster::SetupTopics()
+{
+    ROS_INFO_STREAM("Setting up callback topics for Tasks");
+
+    ROS_INFO_STREAM("Setting up subscribers for tasks");
+    //Let's do something easier for now...
+    m_goalSub = m_nh->subscribe("goal_finished", 10, &TaskMaster::cb_goalFinished, this);
+    m_waypointSub = m_nh->subscribe("waypoint_finished", 10, &TaskMaster::cb_waypointFinished, this);
+    m_dumpSub = m_nh->subscribe("dump_finished", 10, &TaskMaster::cb_dumpFinished, this);
+
+    ROS_INFO_STREAM("Setting up subscriber for goals seen");
+    m_goalSeenSub = m_nh->subscribe("goal_seen", 10, &TaskMaster::cb_goalSeen, this);
+
+    ROS_INFO_STREAM("Finished Setting up subscribers");
+}
+
+
+/***********************************************************************
+ *  Method: TaskMaster::RegisterServices
+ *  Params:
+ * Returns: bool
+ * Effects: register any services (both setting up and for listening)
+ ***********************************************************************/
+bool TaskMaster::RegisterServices()
+{
+    for (std::map<int, Robot_Ptr>::iterator i = m_robots.begin(); i != m_robots.end(); ++i)
+    {
+        std::string waypointServiceTopic = Conversion::RobotIDToWaypointTopic(i->first);
+        std::string goalServiceTopic = Conversion::RobotIDToGoalTopic(i->first);
+        std::string dumpServiceTopic = Conversion::RobotIDToDumpTopic(i->first);
+
+        m_waypointClients[i->first] = m_nh->serviceClient<global_planner::WaypointSrv>(waypointServiceTopic, true);
+        m_dumpClients[i->first] = m_nh->serviceClient<global_planner::DumpSrv>(dumpServiceTopic, true);
+        m_goalClients[i->first] = m_nh->serviceClient<global_planner::GoalSrv>(goalServiceTopic, true);
+    }
+}
+
+/***********************************************************************
+ *  Method: TaskMaster::LoadWaypoints
+ *  Params: std::string filename
+ * Returns: void
+ * Effects: load waypoints from a file
+ ***********************************************************************/
+void TaskMaster::LoadWaypoints(std::string filename)
+{
+    ROS_INFO_STREAM("Loading waypoints from file: "<<filename);
+    std::ifstream fin(filename.c_str());
+    std::string s;
+    //read a line into 's' from 'fin' each time
+    for(int i=0; getline(fin,s); i++){
+        //use the string 's' as input stream, the usage of 'sin' is just like 'cin'
+        std::istringstream sin(s);
+        double x,y,rz,rw;
+        int id;
+        sin>>id;
+        sin>>x;
+        sin>>y;
+        sin>>rz;
+        sin>>rw;
+        Waypoint_Ptr wp(new WaypointWrapper(id, x, y, rz, rw));
+
+        ROS_INFO_STREAM("Loaded waypoint["<<i<<"]: "<<x<<", "<<y<<", "<<rz<<", "<<rw);
+        AddWaypoint(wp);
+    }
 }
 
 
@@ -115,6 +200,10 @@ bool TaskMaster::Clear()
     m_waypointMap.clear();
     m_goalMap.clear();
     m_robots.clear();
+
+    m_waypointClients.clear();
+    m_goalClients.clear();
+    m_dumpClients.clear();
 }
 
 
@@ -126,8 +215,35 @@ bool TaskMaster::Clear()
  ***********************************************************************/
 bool TaskMaster::SendWaypoint(int wpID)
 {
-    global_planner::WaypointMsg wpm = m_waypointMap[wpID]->GetMessage();
-    m_waypointPub.publish(wpm);
+    global_planner::WaypointMsg wpMsg = m_waypointMap[wpID]->GetMessage();
+    int robotID = wpMsg.robotID;
+    if (wpID != -1 && robotID >= 0)
+    {
+        global_planner::WaypointSrv s;
+        s.request.msg = wpMsg;
+        if (m_waypointClients[robotID].call(s))
+        {
+            if (s.response.result == 0)
+            {
+                return true;
+            }
+            else
+            {
+                ROS_ERROR_STREAM("Sending waypoint. Bad response (resp = "<<s.response.result<<") from robot: "<<robotID);
+                return false;
+            }
+        }
+        else
+        {
+            ROS_ERROR_STREAM("Failed to connect to robot["<<robotID);
+            return false;
+        }
+    }
+    else
+    {
+        ROS_ERROR_STREAM("Sending waypoint. invalid id's: wp = "<<wpID<<", robot = "<<robotID);
+    }
+    return false;
 }
 
 
@@ -140,8 +256,35 @@ bool TaskMaster::SendWaypoint(int wpID)
 bool TaskMaster::SendGoal(int goalID)
 {
     global_planner::GoalMsg gm = m_goalMap[goalID]->GetMessage();
-    if (gm.id != -1)
-        m_goalPub.publish(gm);
+
+    int robotID = gm.robotID;
+    if (goalID != -1 && robotID >= 0)
+    {
+        global_planner::GoalSrv s;
+        s.request.msg = gm;
+        if (m_goalClients[robotID].call(s))
+        {
+            if (s.response.result == 0)
+            {
+                return true;
+            }
+            else
+            {
+                ROS_ERROR_STREAM("Sending goal. Bad response (resp = "<<s.response.result<<") from robot: "<<robotID);
+                return false;
+            }
+        }
+        else
+        {
+            ROS_ERROR_STREAM("Failed to connect to robot["<<robotID);
+            return false;
+        }
+    }
+    else
+    {
+        ROS_ERROR_STREAM("Sending goal. invalid id's: goalID = "<<goalID<<", robot = "<<robotID);
+    }
+    return false;
 }
 
 
@@ -154,7 +297,27 @@ bool TaskMaster::SendGoal(int goalID)
 bool TaskMaster::SendDump(int dumpID)
 {
     global_planner::DumpMsg dm = m_dumpMap[dumpID]->GetMessage();
-    m_dumpPub.publish(dm);
+    if (dm.id != -1)
+    {
+        global_planner::DumpSrv s;
+        s.request.msg = dm;
+        if (m_goalClients[dm.id].call(s))
+        {
+            if (s.response.result == 0)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else
+        {
+            return false;
+        }
+    }
+    return false;
 }
 
 
@@ -210,7 +373,7 @@ void TaskMaster::cb_goalFinished(const global_planner::GoalFinished::ConstPtr& m
     }
     else
     {
-        ROS_ERROR_STREAM("ERROR, Goal finished with status: " << msg->status 
+        ROS_ERROR_STREAM("ERROR, Goal finished with status: " << msg->status
                          << " : " << Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
     }
 }
@@ -228,11 +391,11 @@ void TaskMaster::cb_waypointFinished(const global_planner::WaypointFinished::Con
     m_waypointMap[msg->id]->SetStatus(Conversion::IntToTaskResult(status));
     if (status == TaskResult::SUCCESS)
     {
-        ROS_INFO_STREAM("Waypoint reached successfully");
+        ROS_INFO_STREAM("Waypoint["<<msg->id<<"] reached successfully");
     }
     else
     {
-        ROS_ERROR_STREAM("ERROR, Waypoint finished with status: " << msg->status 
+        ROS_ERROR_STREAM("ERROR, Waypoint finished with status: " << msg->status
                          << " : " << Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
         //FOR NOW, let's just say it's available after a failure
         m_waypointMap[msg->id]->SetStatus(TaskResult::AVAILABLE);
@@ -275,6 +438,7 @@ void TaskMaster::cb_goalSeen(const global_planner::GoalSeen::ConstPtr &msg)
     ROS_INFO_STREAM("Goal Seen: "<<goalID);
 
     std::map<int,Goal_Ptr>::iterator it = m_goalMap.find(goalID);
+
     // it is already in the map... update?
     if(it != m_goalMap.end())
     {
@@ -303,8 +467,6 @@ void TaskMaster::cb_goalSeen(const global_planner::GoalSeen::ConstPtr &msg)
     }
     else //Not yet in the map
     {
-        ROS_INFO_STREAM("Creating new goal in map: "<<goalID);
-
         ros::Time time = msg->time;
         geometry_msgs::Pose pose = msg->pose;
 
@@ -313,102 +475,10 @@ void TaskMaster::cb_goalSeen(const global_planner::GoalSeen::ConstPtr &msg)
         ptr->SetID(goalID);
         ptr->SetTime(time);
         ptr->SetStatus(TaskResult::AVAILABLE);
+        ptr->SetRobot(-1);
+        ROS_INFO_STREAM("Creating new goal in map: "<<goalID<<" : "<<ptr->ToString());
         ROS_INFO_STREAM("Adding to map");
         m_goalMap[goalID] = ptr;
-    }
-}
-
-
-/***********************************************************************
- *  Method: TaskMaster::SetupCallbacks
- *  Params:
- * Returns: bool
- * Effects: Setup topic subscribers and publishers
- ***********************************************************************/
-bool TaskMaster::SetupTopics()
-{
-    ROS_INFO_STREAM("Setting up callback topics for Tasks");
-    /*
-    std::stringstream topicName;
-    for (std::map<int, Robot_Ptr>::iterator i = m_robots.begin(); i != m_robots.end(); ++i)
-    {
-        int id = i->first;
-        std::string baseName = "/";
-        baseName += m_robots[id]->GetName();
-        baseName += "/";
-
-        //create listener for finished statuses
-        std::string topic = baseName + std::string("goal_finished");
-        m_goalSubs[id] = m_nh->subscribe(topic, 10, &TaskMaster::cb_goalFinished, this);
-        topic = baseName + std::string("waypoint_finished");
-        m_waypointSubs[id] = m_nh->subscribe(topic, 10, &TaskMaster::cb_waypointFinished, this);
-        topic = baseName + std::string("dump_finished");
-        m_dumpSubs[id] = m_nh->subscribe(topic, 10, &TaskMaster::cb_dumpFinished, this);
-
-        //create publisher for finished statuses
-        topic = baseName + std::string("goal_finished");
-        m_goalPubs[id] = m_nh->advertise<global_planner::GoalMsg>(topic, 10);
-        topic = baseName + std::string("waypoint_finished");
-        m_waypointPubs[id] = m_nh->advertise<global_planner::WaypointMsg>(topic, 10);
-        topic = baseName + std::string("dump_finished");
-        m_dumpPubs[id] = m_nh->advertise<global_planner::DumpMsg>(topic, 10);
-    }
-    */
-
-    ROS_INFO_STREAM("Setting up subscribers for tasks");
-    //Let's do something easier for now...
-    m_goalSub = m_nh->subscribe("goal_finished", 10, &TaskMaster::cb_goalFinished, this);
-    m_waypointSub = m_nh->subscribe("waypoint_finished", 10, &TaskMaster::cb_waypointFinished, this);
-    m_dumpSub = m_nh->subscribe("dump_finished", 10, &TaskMaster::cb_dumpFinished, this);
-
-    ROS_INFO_STREAM("Setting up publishers for tasks");
-    m_goalPub = m_nh->advertise<global_planner::GoalMsg>("goal_pub", 100);
-    m_waypointPub = m_nh->advertise<global_planner::WaypointMsg>("waypoint_pub", 100);
-    m_dumpPub = m_nh->advertise<global_planner::DumpMsg>("dump_pub", 10);
-
-    ROS_INFO_STREAM("Setting up subscriber for goals seen");
-    m_goalSeenSub = m_nh->subscribe("goal_seen", 10, &TaskMaster::cb_goalSeen, this);
-
-    ROS_INFO_STREAM("Finished Setting up subscribers");
-}
-
-
-/***********************************************************************
- *  Method: TaskMaster::RegisterServices
- *  Params:
- * Returns: bool
- * Effects: register any services (both setting up and for listening)
- ***********************************************************************/
-bool TaskMaster::RegisterServices()
-{
-}
-
-/***********************************************************************
- *  Method: TaskMaster::LoadWaypoints
- *  Params: std::string filename
- * Returns: void
- * Effects: load waypoints from a file
- ***********************************************************************/
-void TaskMaster::LoadWaypoints(std::string filename)
-{
-    ROS_INFO_STREAM("Loading waypoints from file: "<<filename);
-    std::ifstream fin(filename.c_str());
-    std::string s;
-    //read a line into 's' from 'fin' each time
-    for(int i=0; getline(fin,s); i++){
-        //use the string 's' as input stream, the usage of 'sin' is just like 'cin'
-        std::istringstream sin(s);
-        double x,y,z,w;
-        int id;
-        sin>>id;
-        sin>>x;
-        sin>>y;
-        sin>>z;
-        sin>>w;
-        Waypoint_Ptr wp(new WaypointWrapper(id, x,y,z,w));
-
-        ROS_INFO_STREAM("Loaded waypoint["<<i<<"]: "<<x<<", "<<y<<", "<<z<<", "<<w);
-        AddWaypoint(wp);
     }
 }
 
@@ -454,6 +524,7 @@ std::vector<Waypoint_Ptr> TaskMaster::GetAvailableWaypoints()
     return v;
 }
 
+
 /***********************************************************************
  *  Method: TaskMaster::isFinished()
  *  Params:
@@ -493,3 +564,5 @@ std::vector<Dump_Ptr> TaskMaster::GetAvailableDumps()
     }
     return v;
 }
+
+

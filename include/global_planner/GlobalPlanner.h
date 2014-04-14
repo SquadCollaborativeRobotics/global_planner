@@ -20,11 +20,13 @@
 #include <geometry_msgs/Pose.h>
 #include <global_planner/RobotStatusWrapper.h>
 #include <global_planner/RobotState.h>
+#include <global_planner/RobotStatusSrv.h>
 #include <global_planner/SoundMsg.h>
 #include <boost/thread/mutex.hpp>
 
 #define NO_ROBOT_FOUND -1 // Robot ID -1 is no robot found
 #define NO_WAYPOINT_FOUND -1 // Waypoint ID -1 is no robot found
+#define NO_GOAL_FOUND -1 // Waypoint ID -1 is no robot found
 #define MAX_DIST 1000000 // Hardcoded for robot search routine for now, 1,000 km is a reasonable for this demo
 
 class GlobalPlanner
@@ -79,6 +81,7 @@ public:
 
     bool isFinished();
     bool AssignRobotWaypoint(int robot_id, int waypoint_id);
+    bool AssignRobotGoal(int robot_id, int goal_id);
     double TimeSinceStart();
 
     void SendSound(std::string filename, int num_times);
@@ -94,6 +97,8 @@ private:
     // Gets x/y 2D distance between two poses
     double Get2DPoseDistance(geometry_msgs::Pose a, geometry_msgs::Pose b);
 
+    void QueryRobots();
+
     // Pointer to a registered ros NodeHandle
     ros::NodeHandle *m_nh;
 
@@ -102,6 +107,7 @@ private:
 
     //Subscriber to robot status callbacks
     ros::Subscriber m_robotSub;
+    std::map<int, ros::ServiceClient > m_statusServices;
 
     // E-Stop Publisher
     ros::Publisher m_eStopPub;
@@ -121,8 +127,10 @@ private:
     // Statistics
     ros::Time m_start_time;
 
-    // Map or robot_id to 
+    // Map or robot_id to
     //                    map of waypoint id chosen and seconds since start it was chosen
     std::map<int, std::map<int, double> > robot_waypoint_times;
+    //                    map of goal id chosen and seconds since start it was chosen
+    std::map<int, std::map<int, double> > robot_goal_times;
     // map<robot_id, map<waypoint_id, double_seconds_since_start> >
 };

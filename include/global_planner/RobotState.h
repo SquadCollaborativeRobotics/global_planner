@@ -23,7 +23,7 @@ public:
     {
         return static_cast<int>(t);
     }
-    
+
     static const RobotState::Type IntToRobotType(int t)
     {
         return static_cast<RobotState::Type>(t);
@@ -32,13 +32,20 @@ public:
     enum State
     {
         WAITING = 0,
-        WAITING_FINISHED = 9,
+        // WAITING_FINISHED = 9,
         NAVIGATING = 10,
-        NAVIGATING_FINISHED = 19,
+        NAVIGATING_TAG_SPOTTED = 12,
+        NAVIGATING_TAG_FINISHED = 13,
+        // NAVIGATING_FINISHED = 19,
         DUMPING = 20,
-        DUMPING_FINISHED = 29,
+        // DUMPING_FINISHED = 29,
         COLLECTING = 30,
-        COLLECTING_FINISHED = 39,
+        COLLECTING_TAG_SPOTTED = 32,
+        COLLECTING_TAG_FINISHED = 33,
+        COLLECTING_FINISHED = 35,
+        // COLLECTING_FINISHED = 39,
+        UNINITIALIZED = 99,
+        ESTOP = 100
     };
 
     static const int RobotStateToInt(RobotState::State s)
@@ -59,12 +66,22 @@ public:
             return "WAITING";
             case RobotState::NAVIGATING:
             return "NAVIGATING";
+            case RobotState::NAVIGATING_TAG_SPOTTED:
+            return "NAVIGATING_TAG_SPOTTED";
+            case RobotState::NAVIGATING_TAG_FINISHED:
+            return "NAVIGATING_TAG_FINISHED";
             case RobotState::DUMPING:
             return "DUMPING";
             case RobotState::COLLECTING:
             return "COLLECTING";
+            case RobotState::COLLECTING_TAG_SPOTTED:
+            return "COLLECTING_TAG_SPOTTED";
+            case RobotState::COLLECTING_TAG_FINISHED:
+            return "COLLECTING_TAG_FINISHED";
+            case RobotState::ESTOP:
+            return "ESTOP";
             default:
-            return "UNKNOWN robot state";
+            return "UNKNOWN robot state (or not implemented in ToString func";
         }
     }
 };
