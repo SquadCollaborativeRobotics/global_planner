@@ -129,36 +129,29 @@ void GlobalPlanner::Execute()
     {
         Robot_Ptr robot = *it;
         // If robot has no space (TODO: Check if collector bot or bin bot for where to dump)
-        if (robot->GetStorageAvailable() <= 0)
+        if (robot->GetStorageAvailable() <= 0 &&
+            robot->GetType() == RobotState::COLLECTOR_BOT)
         {
+            ROS_INFO_STREAM_THROTTLE(5, "Robot " << robot->GetName() << 
+                            "(" << robot->GetID() << ")" <<
+                            " full, trying to find bin bot to dump to...");
             int collectorBot = robot->GetID();
-            // Get closest bin bot to collector bot
+            // Get closest bin bot to collector bot if it exists
             int bestBinBot = GetBestBinBot( collectorBot );
-
-            // Create new dump site
-            Dump_Ptr dp(new DumpWrapper());
-            m_tm.AddDump(dp);
-            // Assign collector robot to dump, Assign bin bot to dump
-            if (AssignRobotsDump(collectorBot, bestBinBot, dp->GetID()))
-            {
-                ROS_INFO_STREAM("Success Assigning Robots " << m_robots[collectorBot]->GetName() << 
-                                 "(" << collectorBot << ") & " << m_robots[bestBinBot]->GetName() << 
-                                 "(" << bestBinBot << ")" << " to dump(" << dp->GetID() << ")");
-                
-                m_tm.SendDump(dp->GetID());
-
-                // Set new robots' state
-                m_robots[collectorBot]->SetState(RobotState::DUMPING);
-                m_robots[bestBinBot]->SetState(RobotState::DUMPING);
-
-                dp->SetTime(ros::Time::now());
-                dp->SetStatus(TaskResult::INPROGRESS);
-            }
-            else
-            {
-                ROS_ERROR_STREAM("Error Assigning Robots " << m_robots[collectorBot]->GetName() << 
-                                 "(" << collectorBot << ") & " << m_robots[bestBinBot]->GetName() << 
-                                 "(" << bestBinBot << ")" << " to Dump(" << dp->GetID() << ")");
+            
+            if (bestBinBot != NO_ROBOT_FOUND) {
+                ROS_INFO_STREAM("Bin Bot " << robot->GetName() << 
+                                "(" << robot->GetID() << ") found.");
+                // Create new dump site
+                Dump_Ptr dp(new DumpWrapper());
+                m_tm.AddDump(dp);
+                // Assign collector robot to dump, Assign bin bot to dump
+                if (!AssignRobotsDump(collectorBot, bestBinBot, dp->GetID()))
+                {
+                    ROS_ERROR_STREAM("Error Assigning Robots " << m_robots[collectorBot]->GetName() << 
+                                     "(" << collectorBot << ") & " << m_robots[bestBinBot]->GetName() << 
+                                     "(" << bestBinBot << ")" << " to Dump(" << dp->GetID() << ")");
+                }
             }
         }
     }
@@ -344,8 +337,9 @@ bool GlobalPlanner::AssignRobotsDump(int collector_robot_id, int bin_robot_id, i
     // Assign dump to robot
     dump_ptr->SetRobot1(collector_robot_id);
     dump_ptr->SetRobot2(bin_robot_id);
-    dump_ptr->SetPose1(Conversion::SetPose(0,1,1,0)); // TODO : choose from list of locations
-    dump_ptr->SetPose2(Conversion::SetPose(1,0,0,1));
+    dump_ptr->SetPose1(Conversion::SetPose(2,-3,1,0)); // TODO : choose from list of locations
+    dump_ptr->SetPose2(Conversion::SetPose(2,-2,0,1));
+    dump_ptr->SetTime(ros::Time::now());
 
     // Assign robot to best dump
     if (m_tm.SendDump(dump_id))
@@ -365,6 +359,8 @@ bool GlobalPlanner::AssignRobotsDump(int collector_robot_id, int bin_robot_id, i
         ROS_ERROR_STREAM("Could not assign dump[" << dump_id<<"] to robots [" << collector_robot_id << "] & [" << bin_robot_id << "]");
         return false;
     }
+
+    
 
     return true;
 }

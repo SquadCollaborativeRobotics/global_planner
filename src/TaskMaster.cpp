@@ -299,48 +299,53 @@ bool TaskMaster::SendDump(int dumpID)
     global_planner::DumpMsg dm = m_dumpMap[dumpID]->GetMessage();
     if (dm.id != -1 && dm.robotID1 >= 0 && dm.robotID2 >= 0)
     {
-        global_planner::DumpSrv s1;
-        global_planner::DumpSrv s2;
-        s1.request.msg = dm;
-        s2.request.msg = dm;
-        bool call1 = m_dumpClients[dm.robotID1].call(s1);
-        bool call2 = m_dumpClients[dm.robotID2].call(s2);
+        global_planner::DumpSrv s;
+        s.request.msg = dm;
+        bool call1 = false;
+        bool call2 = false;
+        bool response1 = false;
+        bool response2 = false;
+
+        call1 = m_dumpClients[dm.robotID1].call(s);
         if (call1)
         {
-            if (s1.response.result != 0) 
+            response1 = s.response.result == 0;
+            if (!response1) 
             {
-                ROS_ERROR_STREAM("Service response failed for dump id: " << 
+                ROS_ERROR_STREAM("Service response 1 failed for dump id: " << 
                                  dm.id << ", Robot1(" << dm.robotID1 << 
                                  "), Robot2(" << dm.robotID2 << 
-                                 "), response: " << s1.response.result);
+                                 "), response: " << s.response.result);
             }
         }
         else
         {
-            ROS_ERROR_STREAM("Service call failed for dump id: " << dm.id << 
+            ROS_ERROR_STREAM("Service call 1 failed for dump id: " << dm.id << 
                              ", Robot1(" << dm.robotID1 << "), Robot2(" << 
                              dm.robotID2 << ")");
         }
         
+        call2 = m_dumpClients[dm.robotID2].call(s);
         if (call2)
         {
-            if (s2.response.result != 0) 
+            response2 = s.response.result == 0;
+            if (!response2) 
             {
-                ROS_ERROR_STREAM("Service response failed for dump id: " << 
+                ROS_ERROR_STREAM("Service response 2 failed for dump id: " << 
                                  dm.id << ", Robot1(" << dm.robotID1 << 
                                  "), Robot2(" << dm.robotID2 << 
-                                 "), response: " << s2.response.result);
+                                 "), response: " << s.response.result);
             }
         }
         else
         {
-            ROS_ERROR_STREAM("Service call failed for dump id: " << dm.id << 
+            ROS_ERROR_STREAM("Service call 2 failed for dump id: " << dm.id << 
                              ", Robot1(" << dm.robotID1 << "), Robot2(" << 
                              dm.robotID2 << ")");
         }
 
         // All passed
-        return call1 && call2 && s1.response.result == 0 && s2.response.result == 0;
+        return call1 && call2 && response1 && response2;
     }
     else {
         ROS_ERROR_STREAM("Invalid dump or robot ids: " << dm.id << ", Robot1(" << dm.robotID1 << "), Robot2(" << dm.robotID2 << ")");

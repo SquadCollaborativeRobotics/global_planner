@@ -72,6 +72,8 @@ public:
             return "NAVIGATING_TAG_FINISHED";
             case RobotState::DUMPING:
             return "DUMPING";
+            case RobotState::DUMPING_FINISHED:
+            return "DUMPING_FINISHED";
             case RobotState::COLLECTING:
             return "COLLECTING";
             case RobotState::COLLECTING_TAG_SPOTTED:

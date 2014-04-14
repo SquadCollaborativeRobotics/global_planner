@@ -563,6 +563,7 @@ void RobotController::OnEntry(void *args)
             action_client_ptr->cancelAllGoals();
             break;
         case RobotState::DUMPING:
+            ROS_INFO_STREAM("Starting navigation to dump site");
             action_client_ptr->sendGoal(m_moveBaseGoal);
             break;
         case RobotState::DUMPING_FINISHED:
