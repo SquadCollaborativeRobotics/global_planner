@@ -1,15 +1,14 @@
 <launch>
-    <arg name="sim" default="1" />
-    <arg name="two_bots" default="1" />
-    <arg name="two_bots_dump_test" default="1" />
-    <arg name="cubicle" default="1" />
+    <arg name="sim" default="true" />
+    <arg name="two_bots" default="true" />
+    <arg name="dump_test" default="false" /> <!-- Launch robot controllers collector/bin, collector is full -->
+    <arg name="cubicle" default="true" />
 
     <!-- run if using gazebo simulator -->
     <group if="$(arg sim)">
         <!-- start cubicle world -->
         <group if="$(arg cubicle)">
-            <include file="$(find collectorbot_gazebo)/launch/shawn/cubicle_world.launch" />
-            <include file="$(find collectorbot_gazebo)/launch/april_tags_gazebo.launch" />
+            <include file="$(find collectorbot_gazebo)/launch/cubicle_world_map.launch" />
         </group>
 
         <!-- Do one bot unless two_bots arg is true -->
@@ -22,12 +21,7 @@
         <!-- Do two bots if arg two_bots is true -->
         <group if="$(arg two_bots)">
             <!-- include our robots -->
-            <group if="$(arg two_bots_dump_test)">
-                <include file="$(find collectorbot_gazebo)/launch/TwoBots/Cubicle/twobots_cubicle_robots_dump.launch"/>
-            </group>
-            <group unless="$(arg two_bots_dump_test)">
-                <include file="$(find collectorbot_gazebo)/launch/TwoBots/Cubicle/twobots_cubicle_robots.launch"/>
-            </group>
+            <include file="$(find collectorbot_gazebo)/launch/TwoBots/Cubicle/twobots_cubicle_robots.launch"/>
 
             <!-- Run two robots amcl localization -->
             <include file="$(find collectorbot_gazebo)/launch/TwoBots/twobots_amcl.launch"/>
@@ -36,12 +30,12 @@
             <include file="$(find collectorbot_gazebo)/launch/TwoBots/twobots_move_base.launch"/>
 
             <!-- Run robot controllers -->
-            <group if="$(arg two_bots_dump_test)">
-                <include file="$(find global_planner)/launch/robots_dump_test.launch" />
-            </group>
-            <group unless="$(arg two_bots_dump_test)">
-                <include file="$(find global_planner)/launch/robots.launch" />
-            </group>
+            <!-- For some reason the one of choice needs to be launched seperately after -->
+            <!-- roslaunch global_planner robots_dump_test.launch -->
+            <!-- roslaunch global_planner robots.launch -->
+            
+            <!-- <include file="$(find global_planner)/launch/robots_dump_test.launch" if="$(arg dump_test)" /> -->
+            <!-- <include file="$(find global_planner)/launch/robots.launch" unless="$(arg dump_test)"/> -->
         </group>
     </group>
 

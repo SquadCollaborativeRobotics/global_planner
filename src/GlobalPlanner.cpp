@@ -157,7 +157,31 @@ void GlobalPlanner::Execute()
     }
 
     // Check each dump, see if each robot in the dump finished state
+    std::map<int, Dump_Ptr > dumps = m_tm.GetDumps();
+    for (std::map<int, Dump_Ptr>::iterator it = dumps.begin(); it != dumps.end(); ++it)
+    {
+        Dump_Ptr dump = it->second;
+        if (dump->GetReadyToTransfer()) {
+            ROS_INFO_STREAM("Dump(" << dump->GetID() << ") transfering trash.");
 
+            // Move trash over
+            int collectorBot = dump->GetRobot1();
+            int binBot = dump->GetRobot2();
+            int trash_to_transfer = m_robots[collectorBot]->GetStorageUsed();
+            // Add trash to bin bot
+            m_robots[binBot]->SetStorageUsed( m_robots[binBot]->GetStorageUsed() + trash_to_transfer );
+            // Remove trash from collector bot
+            m_robots[collectorBot]->SetStorageUsed(0);
+
+            // Set states to waiting in global planner
+            // Though the robots are in DUMP_FINISHED state, they're ready to transition to waypoints etc.
+            m_robots[collectorBot]->SetState(RobotState::WAITING);
+            m_robots[binBot]->SetState(RobotState::WAITING);
+
+            // Transition dump state to success
+            dump->SetStatus(TaskResult::SUCCESS);
+        }
+    }
 
 	// If there are currently goals still not finished
     std::vector<Goal_Ptr> availableGoals = m_tm.GetAvailableGoals();
@@ -337,8 +361,10 @@ bool GlobalPlanner::AssignRobotsDump(int collector_robot_id, int bin_robot_id, i
     // Assign dump to robot
     dump_ptr->SetRobot1(collector_robot_id);
     dump_ptr->SetRobot2(bin_robot_id);
-    dump_ptr->SetPose1(Conversion::SetPose(2,-3,1,0)); // TODO : choose from list of locations
-    dump_ptr->SetPose2(Conversion::SetPose(2,-2,0,1));
+    dump_ptr->SetPose1(Conversion::SetPose(2,0,1,0)); // TODO : choose from list of locations
+    dump_ptr->SetPose2(Conversion::SetPose(2,3,1,0));
+    // dump_ptr->SetPose1(Conversion::SetPose(2,-3,1,0)); // TODO : choose from list of locations
+    // dump_ptr->SetPose2(Conversion::SetPose(2,-2,0,1));
     dump_ptr->SetTime(ros::Time::now());
 
     // Assign robot to best dump

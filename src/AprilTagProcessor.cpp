@@ -453,12 +453,12 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
 
     if (numTags == 0)
     {
-        ROS_INFO_THROTTLE(4.0, "No tags seen in the robot's camera this time");
+        ROS_INFO_THROTTLE(20, "No tags seen in the robot's camera this time");
     }
     else
     {
         m_lastImageTime = msg->poses[0].header.stamp;
-        ROS_INFO_STREAM_THROTTLE(2.0, msg->poses.size()<<" tags seen in the robot's camera this time");
+        ROS_INFO_STREAM_THROTTLE(2, msg->poses.size()<<" tags seen in the robot's camera this time");
     }
 
     for (int i = 0; i < numTags; ++i)

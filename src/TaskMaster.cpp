@@ -445,15 +445,23 @@ void TaskMaster::cb_waypointFinished(const global_planner::WaypointFinished::Con
 void TaskMaster::cb_dumpFinished(const global_planner::DumpFinished::ConstPtr& msg)
 {
     int status = msg->status;
-    m_dumpMap[msg->id]->SetStatus(Conversion::IntToTaskResult(status));
-
+    int robotID = msg->robotID; // TODO: Track which robot has finished dump
     if (status == TaskResult::SUCCESS)
     {
-        ROS_INFO_STREAM("Dumping was successful");
+        if (m_dumpMap[msg->id]->GetStatus() == TaskResult::INPROGRESS)
+        {
+            m_dumpMap[msg->id]->SetStatus(TaskResult::DUMP_HALF_DONE);
+            ROS_INFO_STREAM("Dumping halfway done");
+        }
+        else if (m_dumpMap[msg->id]->GetStatus() == TaskResult::DUMP_HALF_DONE)
+        {
+            m_dumpMap[msg->id]->SetStatus(TaskResult::DUMP_FINISHED);
+            ROS_INFO_STREAM("Dumping was successful");
+        }
     }
     else
     {
-        ROS_ERROR_STREAM("ERROR, Dump finished with status: "<<msg->status<<" : "<<Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
+        ROS_ERROR_STREAM("Dump failed due to status: " << msg->status<<" : "<<Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
     }
 }
 

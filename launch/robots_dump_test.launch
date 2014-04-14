@@ -29,7 +29,7 @@
       <param name="robot_id" value="2" />
       <param name="type" value="bin" />
       <param name="storage_used" value="0" />
-      <param name="storage_capacity" value="3" />
+      <param name="storage_capacity" value="10" />
     </node>
 
     <include file="$(find april_tags)/launch/april_tags.launch">
