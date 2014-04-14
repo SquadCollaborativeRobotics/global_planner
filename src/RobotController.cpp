@@ -562,6 +562,12 @@ void RobotController::OnEntry(void *args)
             ROS_INFO_STREAM("Cancelling goals due to april tag processor");
             action_client_ptr->cancelAllGoals();
             break;
+        case RobotState::DUMPING:
+            action_client_ptr->sendGoal(m_moveBaseGoal);
+            break;
+        case RobotState::DUMPING_FINISHED:
+            ROS_INFO_STREAM("Reached Dump Site");
+            break;
         break;
     }
 }
