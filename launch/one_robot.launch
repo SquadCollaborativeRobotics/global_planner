@@ -10,7 +10,10 @@
     <param name="storage_capacity" value="3" />
   </node>
 
-  <include file="$(find april_tags)/launch/april_tags.launch">
+  <include file="$(find april_tags)/launch/april_tags.launch" >
+    <arg name="focalLength" value="790" />
+    <arg name="imageTopic" value="camera/image_raw" />
+    <arg name="imageFrame" value="camera_link" />
   </include>
 
   <include file="$(find april_tags)/launch/image_capture.launch" />
