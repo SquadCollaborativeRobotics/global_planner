@@ -129,7 +129,6 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
     Transition(RobotState::WAITING);
     m_timeEnteringState = ros::Time::now();
 
-
     ROS_INFO_STREAM("Finished initializing");
 }
 
