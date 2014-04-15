@@ -287,7 +287,7 @@ bool TaskMaster::SendGoal(int goalID)
     return false;
 }
 
-
+// TODO : Replace senddump with same stuff from sendgoal
 /***********************************************************************
  *  Method: TaskMaster::SendDump
  *  Params: int dumpID
@@ -297,25 +297,58 @@ bool TaskMaster::SendGoal(int goalID)
 bool TaskMaster::SendDump(int dumpID)
 {
     global_planner::DumpMsg dm = m_dumpMap[dumpID]->GetMessage();
-    if (dm.id != -1)
+    if (dm.id != -1 && dm.robotID1 >= 0 && dm.robotID2 >= 0)
     {
         global_planner::DumpSrv s;
         s.request.msg = dm;
-        if (m_goalClients[dm.id].call(s))
+        bool call1 = false;
+        bool call2 = false;
+        bool response1 = false;
+        bool response2 = false;
+
+        call1 = m_dumpClients[dm.robotID1].call(s);
+        if (call1)
         {
-            if (s.response.result == 0)
+            response1 = s.response.result == 0;
+            if (!response1) 
             {
-                return true;
-            }
-            else
-            {
-                return false;
+                ROS_ERROR_STREAM("Service response 1 failed for dump id: " << 
+                                 dm.id << ", Robot1(" << dm.robotID1 << 
+                                 "), Robot2(" << dm.robotID2 << 
+                                 "), response: " << s.response.result);
             }
         }
         else
         {
-            return false;
+            ROS_ERROR_STREAM("Service call 1 failed for dump id: " << dm.id << 
+                             ", Robot1(" << dm.robotID1 << "), Robot2(" << 
+                             dm.robotID2 << ")");
         }
+        
+        call2 = m_dumpClients[dm.robotID2].call(s);
+        if (call2)
+        {
+            response2 = s.response.result == 0;
+            if (!response2) 
+            {
+                ROS_ERROR_STREAM("Service response 2 failed for dump id: " << 
+                                 dm.id << ", Robot1(" << dm.robotID1 << 
+                                 "), Robot2(" << dm.robotID2 << 
+                                 "), response: " << s.response.result);
+            }
+        }
+        else
+        {
+            ROS_ERROR_STREAM("Service call 2 failed for dump id: " << dm.id << 
+                             ", Robot1(" << dm.robotID1 << "), Robot2(" << 
+                             dm.robotID2 << ")");
+        }
+
+        // All passed
+        return call1 && call2 && response1 && response2;
+    }
+    else {
+        ROS_ERROR_STREAM("Invalid dump or robot ids: " << dm.id << ", Robot1(" << dm.robotID1 << "), Robot2(" << dm.robotID2 << ")");
     }
     return false;
 }
@@ -412,15 +445,23 @@ void TaskMaster::cb_waypointFinished(const global_planner::WaypointFinished::Con
 void TaskMaster::cb_dumpFinished(const global_planner::DumpFinished::ConstPtr& msg)
 {
     int status = msg->status;
-    m_dumpMap[msg->id]->SetStatus(Conversion::IntToTaskResult(status));
-
+    int robotID = msg->robotID; // TODO: Track which robot has finished dump
     if (status == TaskResult::SUCCESS)
     {
-        ROS_INFO_STREAM("Dumping was successful");
+        if (m_dumpMap[msg->id]->GetStatus() == TaskResult::INPROGRESS)
+        {
+            m_dumpMap[msg->id]->SetStatus(TaskResult::DUMP_HALF_DONE);
+            ROS_INFO_STREAM("Dumping halfway done");
+        }
+        else if (m_dumpMap[msg->id]->GetStatus() == TaskResult::DUMP_HALF_DONE)
+        {
+            m_dumpMap[msg->id]->SetStatus(TaskResult::DUMP_FINISHED);
+            ROS_INFO_STREAM("Dumping was successful");
+        }
     }
     else
     {
-        ROS_ERROR_STREAM("ERROR, Dump finished with status: "<<msg->status<<" : "<<Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
+        ROS_ERROR_STREAM("Dump failed due to status: " << msg->status<<" : "<<Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
     }
 }
 

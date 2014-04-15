@@ -21,6 +21,7 @@
 #include <global_planner/RobotStatusWrapper.h>
 #include <global_planner/RobotState.h>
 #include <global_planner/RobotStatusSrv.h>
+#include <global_planner/SetRobotStatusSrv.h>
 #include <global_planner/SoundMsg.h>
 #include <boost/thread/mutex.hpp>
 
@@ -60,6 +61,7 @@ public:
     std::map<int, Dump_Ptr > GetDumps() { return m_tm.GetDumps(); };
 
     std::vector<Robot_Ptr> GetAvailableRobots();
+    std::vector<Robot_Ptr> GetAvailableRobots(int available_storage);
 
     int GetBestBinBot(int idOfRobotThatNeedsIt);
     int GetBestCollectorbot(int goalID);
@@ -74,6 +76,7 @@ public:
     int GetFirstAvailableBot();
     int GetFirstAvailableBot(RobotState::Type type);
 
+    int GetRobotClosestToRobot(int robotID, RobotState::Type type);
     int GetRobotClosestToWaypoint(int waypointID, RobotState::Type type);
     int GetRobotClosestToGoal(int goalID, RobotState::Type type);
     int GetRobotClosestToPose(geometry_msgs::Pose pose, RobotState::Type type);
@@ -81,6 +84,7 @@ public:
 
     bool isFinished();
     bool AssignRobotWaypoint(int robot_id, int waypoint_id);
+    bool AssignRobotsDump(int collector_robot_id, int bin_robot_id, int dump_id);
     bool AssignRobotGoal(int robot_id, int goal_id);
     double TimeSinceStart();
 

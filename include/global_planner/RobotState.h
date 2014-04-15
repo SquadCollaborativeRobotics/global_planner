@@ -38,7 +38,7 @@ public:
         NAVIGATING_TAG_FINISHED = 13,
         // NAVIGATING_FINISHED = 19,
         DUMPING = 20,
-        // DUMPING_FINISHED = 29,
+        DUMPING_FINISHED = 29,
         COLLECTING = 30,
         COLLECTING_TAG_SPOTTED = 32,
         COLLECTING_TAG_FINISHED = 33,
@@ -72,6 +72,8 @@ public:
             return "NAVIGATING_TAG_FINISHED";
             case RobotState::DUMPING:
             return "DUMPING";
+            case RobotState::DUMPING_FINISHED:
+            return "DUMPING_FINISHED";
             case RobotState::COLLECTING:
             return "COLLECTING";
             case RobotState::COLLECTING_TAG_SPOTTED:
@@ -80,6 +82,8 @@ public:
             return "COLLECTING_TAG_FINISHED";
             case RobotState::ESTOP:
             return "ESTOP";
+            case RobotState::UNINITIALIZED:
+            return "UNINITIALIZED";
             default:
             return "UNKNOWN robot state (or not implemented in ToString func";
         }

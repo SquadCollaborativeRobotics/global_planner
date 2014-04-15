@@ -60,6 +60,7 @@ public:
     int GetRobot1(){ return m_msg.robotID1; };
     int GetRobot2(){ return m_msg.robotID2; };
 
+    bool GetReadyToTransfer(){ return m_msg.status == TaskResult::DUMP_FINISHED; };
     bool GetCompleted(){ return m_msg.status == TaskResult::SUCCESS; };
     bool GetAvailable(){ return m_msg.status == TaskResult::AVAILABLE; };
     bool GetInProgress(){ return m_msg.status == TaskResult::INPROGRESS; };

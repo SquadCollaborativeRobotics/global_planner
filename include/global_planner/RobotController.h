@@ -22,6 +22,7 @@
 #include <global_planner/DumpFinished.h>
 #include <global_planner/AprilTagProcessor.h>
 #include <global_planner/RobotStatusSrv.h>
+#include <global_planner/SetRobotStatusSrv.h>
 
 #include <global_planner/WaypointSrv.h>
 #include <global_planner/GoalSrv.h>
@@ -47,6 +48,8 @@ public:
                         global_planner::WaypointSrv::Response &res);
     bool cb_dumpSub(global_planner::DumpSrv::Request  &req,
                     global_planner::DumpSrv::Response &res);
+    bool cb_SetRobotStatus(global_planner::SetRobotStatusSrv::Request  &req,
+                           global_planner::SetRobotStatusSrv::Response &res);
 
     void cb_eStopSub(const std_msgs::Empty &msg);
     void cb_odomSub(const nav_msgs::Odometry::ConstPtr &msg);

@@ -93,8 +93,6 @@ void GlobalPlanner::Display()
 // Executive function
 void GlobalPlanner::Execute()
 {
-    // ROS_INFO_THROTTLE(5,"Executing...");
-
     ros::spinOnce();
 
     if ((ros::Time::now() - m_lastDisplay) > ros::Duration(3))
@@ -124,6 +122,68 @@ void GlobalPlanner::Execute()
     //      pick best robot to get to waypoints (return an ID)
     //      OPTIONAL: IF need to cancel robot's current goal -> Send Cancel Message First AND update the task it was assigned to
     //      Send Waypoint Message
+
+    /*
+    // Check if a robot is full & find the best binbot for it
+    std::vector<Robot_Ptr> availableRobots = GetAvailableRobots();
+    for (std::vector<Robot_Ptr>::iterator it = availableRobots.begin(); it != availableRobots.end(); ++it)
+    {
+        Robot_Ptr robot = *it;
+        // If robot has no space (TODO: Check if collector bot or bin bot for where to dump)
+        if (robot->GetStorageAvailable() <= 0 &&
+            robot->GetType() == RobotState::COLLECTOR_BOT)
+        {
+            ROS_INFO_STREAM_THROTTLE(5, "Robot " << robot->GetName() <<
+                            "(" << robot->GetID() << ")" <<
+                            " full, trying to find bin bot to dump to...");
+            int collectorBot = robot->GetID();
+            // Get closest bin bot to collector bot if it exists
+            int bestBinBot = GetBestBinBot( collectorBot );
+
+            if (bestBinBot != NO_ROBOT_FOUND) {
+                ROS_INFO_STREAM("Bin Bot " << robot->GetName() <<
+                                "(" << robot->GetID() << ") found.");
+                // Create new dump site
+                Dump_Ptr dp(new DumpWrapper());
+                m_tm.AddDump(dp);
+                // Assign collector robot to dump, Assign bin bot to dump
+                if (!AssignRobotsDump(collectorBot, bestBinBot, dp->GetID()))
+                {
+                    ROS_ERROR_STREAM("Error Assigning Robots " << m_robots[collectorBot]->GetName() <<
+                                     "(" << collectorBot << ") & " << m_robots[bestBinBot]->GetName() <<
+                                     "(" << bestBinBot << ")" << " to Dump(" << dp->GetID() << ")");
+                }
+            }
+        }
+    }
+
+    // Check each dump, see if each robot in the dump finished state
+    std::map<int, Dump_Ptr > dumps = m_tm.GetDumps();
+    for (std::map<int, Dump_Ptr>::iterator it = dumps.begin(); it != dumps.end(); ++it)
+    {
+        Dump_Ptr dump = it->second;
+        if (dump->GetReadyToTransfer()) {
+            ROS_INFO_STREAM("Dump(" << dump->GetID() << ") transfering trash.");
+
+            // Move trash over
+            int collectorBot = dump->GetRobot1();
+            int binBot = dump->GetRobot2();
+            int trash_to_transfer = m_robots[collectorBot]->GetStorageUsed();
+            // Add trash to bin bot
+            m_robots[binBot]->SetStorageUsed( m_robots[binBot]->GetStorageUsed() + trash_to_transfer );
+            // Remove trash from collector bot
+            m_robots[collectorBot]->SetStorageUsed(0);
+
+            // Set states to waiting in global planner but not robot controllers
+            // the robot controllers are in DUMP_FINISHED state, but they're ready to transition to waypoints etc.
+            m_robots[collectorBot]->SetState(RobotState::WAITING);
+            m_robots[binBot]->SetState(RobotState::WAITING);
+
+            // Transition dump state to success
+            dump->SetStatus(TaskResult::SUCCESS);
+        }
+    }
+    */
 
 	// If there are currently goals still not finished
     std::vector<Goal_Ptr> availableGoals = m_tm.GetAvailableGoals();
@@ -202,7 +262,7 @@ void GlobalPlanner::Execute()
 
 /***********************************************************************
  *  Method: GlobalPlanner::PlanNNWaypoint
- *  Params: 
+ *  Params:
  * Returns:
  * Effects: Iterate over available robots and choose the nearest available waypoint
  ***********************************************************************/
@@ -261,7 +321,7 @@ bool GlobalPlanner::AssignRobotWaypoint(int robot_id, int waypoint_id)
 {
     Waypoint_Ptr wp = m_tm.GetWaypoints()[waypoint_id];
     ROS_INFO_STREAM("Assigning Robot " << m_robots[robot_id]->GetName() << "(" << robot_id << ") : Waypoint ("<< waypoint_id <<")" );
-    
+
     // Assign waypoint to robot
     wp->SetRobot(robot_id);
 
@@ -283,7 +343,53 @@ bool GlobalPlanner::AssignRobotWaypoint(int robot_id, int waypoint_id)
         wp->SetStatus(TaskResult::COMM_FAILURE);
         ROS_ERROR_STREAM("Could not assign waypoint["<<waypoint_id<<"] to robot ["<<robot_id<<"]");
     }
-	
+
+    return true;
+}
+
+/***********************************************************************
+ *  Method: GlobalPlanner::AssignRobotsDump
+ *  Params: int robot_id, int dump_id
+ * Returns: true if successful
+ * Effects: Assign two robots to a dump site to meet
+ ***********************************************************************/
+bool GlobalPlanner::AssignRobotsDump(int collector_robot_id, int bin_robot_id, int dump_id)
+{
+    Dump_Ptr dump_ptr = m_tm.GetDumps()[dump_id];
+    ROS_INFO_STREAM("Assigning Robots " <<
+        m_robots[collector_robot_id]->GetName() << "(" << collector_robot_id << ") & " <<
+        m_robots[bin_robot_id]->GetName() << "(" << bin_robot_id << ") to dump(" << dump_id << ")" );
+
+    // Assign dump to robot
+    dump_ptr->SetRobot1(collector_robot_id);
+    dump_ptr->SetRobot2(bin_robot_id);
+    dump_ptr->SetPose1(Conversion::SetPose(2,0,1,0)); // TODO : choose from list of locations
+    dump_ptr->SetPose2(Conversion::SetPose(2,3,1,0));
+    // dump_ptr->SetPose1(Conversion::SetPose(2,-3,1,0)); // TODO : choose from list of locations
+    // dump_ptr->SetPose2(Conversion::SetPose(2,-2,0,1));
+    dump_ptr->SetTime(ros::Time::now());
+
+    // Assign robot to best dump
+    if (m_tm.SendDump(dump_id))
+    {
+        // Update lists of dumps/robots
+        m_robots[collector_robot_id]->SetState(RobotState::DUMPING);
+        m_robots[bin_robot_id]->SetState(RobotState::DUMPING);
+        dump_ptr->SetStatus(TaskResult::INPROGRESS);
+
+        ROS_INFO_STREAM("Successfully sent dump (" << dump_id<<") to robots [" << collector_robot_id << "] & [" << bin_robot_id << "]");
+    }
+    else
+    {
+        dump_ptr->SetRobot1(NO_ROBOT_FOUND);
+        dump_ptr->SetRobot2(NO_ROBOT_FOUND);
+        dump_ptr->SetStatus(TaskResult::COMM_FAILURE);
+        ROS_ERROR_STREAM("Could not assign dump[" << dump_id<<"] to robots [" << collector_robot_id << "] & [" << bin_robot_id << "]");
+        return false;
+    }
+
+
+
     return true;
 }
 
@@ -326,14 +432,13 @@ bool GlobalPlanner::AssignRobotGoal(int robot_id, int goal_id)
 
 /***********************************************************************
  *  Method: GlobalPlanner::PlanNNRobot
- *  Params: 
+ *  Params:
  * Returns:
  * Effects: Iterate over waypoints and choose the nearest available robot
  ***********************************************************************/
 void GlobalPlanner::PlanNNRobot()
 {
     std::vector<Waypoint_Ptr> availableWaypoints = m_tm.GetAvailableWaypoints();
-    std::vector<Robot_Ptr> availableRobots = GetAvailableRobots();
 
     for (std::vector<Waypoint_Ptr>::iterator it = availableWaypoints.begin(); it != availableWaypoints.end(); ++it)
     {
@@ -342,7 +447,7 @@ void GlobalPlanner::PlanNNRobot()
         // int bestRobot = GetFirstAvailableBot(); // NAIVE SOLUTION
         if (bestRobot != NO_ROBOT_FOUND)
         {
-            // ROS_INFO_STREAM("Found a robot to explore waypoint ("<<wp->GetID()<<") : "<<bestRobot);            
+            // ROS_INFO_STREAM("Found a robot to explore waypoint ("<<wp->GetID()<<") : "<<bestRobot);
             // Assign Robot to Waypoint
             if ( !AssignRobotWaypoint(bestRobot , wp->GetID()) )
             {
@@ -359,14 +464,13 @@ void GlobalPlanner::PlanNNRobot()
 
 /***********************************************************************
  *  Method: GlobalPlanner::PlanNaive
- *  Params: 
+ *  Params:
  * Returns:
  * Effects: Naively iterates over waypoints in order and  assigns first available robot to each waypoint
  ***********************************************************************/
 void GlobalPlanner::PlanNaive()
 {
     std::vector<Waypoint_Ptr> availableWaypoints = m_tm.GetAvailableWaypoints();
-    std::vector<Robot_Ptr> availableRobots = GetAvailableRobots();
 
     for (std::vector<Waypoint_Ptr>::iterator it = availableWaypoints.begin(); it != availableWaypoints.end(); ++it)
     {
@@ -375,7 +479,7 @@ void GlobalPlanner::PlanNaive()
         int bestRobot = GetFirstAvailableBot(); // NAIVE SOLUTION
         if (bestRobot != NO_ROBOT_FOUND)
         {
-            // ROS_INFO_STREAM("Found a robot to explore waypoint ("<<wp->GetID()<<") : "<<bestRobot);            
+            // ROS_INFO_STREAM("Found a robot to explore waypoint ("<<wp->GetID()<<") : "<<bestRobot);
             // Assign Robot to Waypoint
             if ( !AssignRobotWaypoint(bestRobot , wp->GetID()) )
             {
@@ -392,17 +496,23 @@ void GlobalPlanner::PlanNaive()
 
 /***********************************************************************
  *  Method: GlobalPlanner::GetAvailableRobots
- *  Params: 
+ *  Params:
  * Returns: std::vector<Robot_Ptr> of all available robots
- * Effects: Returns all robots that are in the available state
+ * Effects: Returns all robots that are in the available state (even with no storage space)
  ***********************************************************************/
 std::vector<Robot_Ptr> GlobalPlanner::GetAvailableRobots()
+{
+    return GetAvailableRobots(0);
+}
+// Get Available robots with at least the number of available storage
+std::vector<Robot_Ptr> GlobalPlanner::GetAvailableRobots(int available_storage)
 {
     std::vector<Robot_Ptr> v;
     for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
     {
-        // If it's in the "waiting" state, it's avilable for task setting
-        if (it->second->GetState() == RobotState::WAITING)
+        // If it's in the "waiting" state and has the required storage, it's avilable for task setting
+        if (it->second->GetState() == RobotState::WAITING &&
+            it->second->GetStorageAvailable() >= available_storage)
         {
             v.push_back(it->second);
         }
@@ -418,8 +528,7 @@ std::vector<Robot_Ptr> GlobalPlanner::GetAvailableRobots()
  ***********************************************************************/
 int GlobalPlanner::GetBestBinBot(int idOfRobotThatNeedsIt)
 {
-    ROS_WARN("TODO: Getting FIRST instead of BEST");
-    return GetFirstAvailableBot(RobotState::BIN_BOT);
+    return GetRobotClosestToRobot(idOfRobotThatNeedsIt, RobotState::BIN_BOT);
 }
 
 /***********************************************************************
@@ -430,8 +539,7 @@ int GlobalPlanner::GetBestBinBot(int idOfRobotThatNeedsIt)
  ***********************************************************************/
 int GlobalPlanner::GetBestCollectorbot(int goalID)
 {
-    ROS_WARN("TODO: Getting FIRST instead of BEST");
-    return GetFirstAvailableBot(RobotState::COLLECTOR_BOT);
+    return GetRobotClosestToGoal(goalID, RobotState::COLLECTOR_BOT);
 }
 /***********************************************************************
  *  Method: GlobalPlanner::GetBestSearchBot
@@ -480,6 +588,17 @@ int GlobalPlanner::GetFirstAvailableBot(RobotState::Type type)
 }
 
 /***********************************************************************
+ *  Method: GlobalPlanner::GetRobotClosestToRobot
+ *  Params: int robotID, GlobalPlanner::ROBOT_TYPE type
+ * Returns: int id of robot
+ * Effects: Returns the physically closest robot of the right type that is available (waiting and has storage space)
+ ***********************************************************************/
+int GlobalPlanner::GetRobotClosestToRobot(int robotID, RobotState::Type type)
+{
+    return GetRobotClosestToPose(m_robots[robotID]->GetPose(), type);
+}
+
+/***********************************************************************
  *  Method: GlobalPlanner::GetRobotClosestToWaypoint
  *  Params: int waypointID, GlobalPlanner::ROBOT_TYPE type
  * Returns: int id of robot
@@ -488,8 +607,29 @@ int GlobalPlanner::GetFirstAvailableBot(RobotState::Type type)
 int GlobalPlanner::GetRobotClosestToWaypoint(int waypointID, RobotState::Type type)
 {
     std::map<int, Waypoint_Ptr> waypoints = m_tm.GetWaypoints();
-    geometry_msgs::Pose waypoint_pose = waypoints[waypointID]->GetPose();
+    return GetRobotClosestToPose(waypoints[waypointID]->GetPose(), type);
+}
 
+/***********************************************************************
+ *  Method: GlobalPlanner::GetRobotClosestToGoal
+ *  Params: int goalID, GlobalPlanner::ROBOT_TYPE type
+ * Returns: int id of robot
+ * Effects: Returns the physically closest robot of the right type that is available (waiting and has storage space)
+ ***********************************************************************/
+int GlobalPlanner::GetRobotClosestToGoal(int goalID, RobotState::Type type)
+{
+    std::map<int, Goal_Ptr> goals = m_tm.GetGoals();
+    return GetRobotClosestToPose(goals[goalID]->GetPose(), type);
+}
+
+/***********************************************************************
+ *  Method: GlobalPlanner::GetRobotClosestToPose
+ *  Params: geometry_msgs::Pose pose, GlobalPlanner::ROBOT_TYPE type
+ * Returns: int id of robot
+ * Effects: Returns the physically closest robot of the right type that is available (waiting and has storage space)
+ ***********************************************************************/
+int GlobalPlanner::GetRobotClosestToPose(geometry_msgs::Pose pose, RobotState::Type type)
+{
     int best_robot_id = NO_ROBOT_FOUND;
     double best_distance = MAX_DIST;
 
@@ -505,7 +645,7 @@ int GlobalPlanner::GetRobotClosestToWaypoint(int waypointID, RobotState::Type ty
             robot->GetStorageAvailable() > 0) // And robot has storage space
         {
             // Get robot distance to waypoint
-            double dist = Get2DPoseDistance(robot->GetPose(), waypoint_pose);
+            double dist = Get2DPoseDistance(robot->GetPose(), pose);
 
             // If closest robot so far, update
             if (dist < best_distance)
@@ -523,7 +663,7 @@ int GlobalPlanner::GetRobotClosestToWaypoint(int waypointID, RobotState::Type ty
 int GlobalPlanner::GetWaypointClosestToRobot(int robot_id) {
     // List of available waypoints
     std::vector<Waypoint_Ptr> availableWaypoints = m_tm.GetAvailableWaypoints();
-    
+
     // Break if all waypoints reached.
     if (availableWaypoints.size() == 0) { return NO_WAYPOINT_FOUND; }
 
@@ -531,7 +671,7 @@ int GlobalPlanner::GetWaypointClosestToRobot(int robot_id) {
 
     // Robot pose
     geometry_msgs::Pose robot_pose = m_robots[robot_id]->GetPose();
-    
+
     // idx of best waypoint so far
     int best_waypoint_id = NO_WAYPOINT_FOUND;
 
@@ -569,8 +709,8 @@ void GlobalPlanner::Finished()
 
     // Print out waypoint assignment table
     ROS_INFO_STREAM("Robots - Waypoint Assignment Table:");
-    for (std::map<int, std::map<int, double> >::iterator robot_it = robot_waypoint_times.begin(); 
-         robot_it != robot_waypoint_times.end(); 
+    for (std::map<int, std::map<int, double> >::iterator robot_it = robot_waypoint_times.begin();
+         robot_it != robot_waypoint_times.end();
          ++robot_it)
     {
         std::stringstream ss;
@@ -641,7 +781,7 @@ void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& 
 
         m_tm.UpdateRobotMap(m_robots);
 
-        ROS_INFO_STREAM("Added new robot: "<<ptr->ToString());
+        ROS_INFO_STREAM("Added new robot: " << ptr->ToString());
     }
 }
 
@@ -695,6 +835,8 @@ double GlobalPlanner::TimeSinceStart()
 {
     return (ros::Time::now() - m_start_time).toSec();
 }
+
+
 /***********************************************************************
  *  Method: GlobalPlanner::QueryRobots
  *  Params:

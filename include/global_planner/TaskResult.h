@@ -18,10 +18,12 @@ public:
         SUCCESS = 0,
         AVAILABLE = 1,
         INPROGRESS = 2,
-        FAILURE = 3,
         FORCE_STOP = 4,
+        FAILURE = 3,
         NAVSTACK_FAILURE = 5,
         COMM_FAILURE = 10,
+        DUMP_HALF_DONE = 50, 
+        DUMP_FINISHED = 51, // AVAILABLE > INPROGRESS > DUMP_HALF_DONE > DUMP_FINISHED > SUCCESS
         UNINITIALIZED = 99,
     };
 
