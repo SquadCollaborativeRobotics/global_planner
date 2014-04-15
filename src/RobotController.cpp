@@ -151,7 +151,6 @@ bool RobotController::cb_goalSub(global_planner::GoalSrv::Request  &req,
     if (goalWrapper.GetRobot() == m_status.GetID())
     {
         ROS_DEBUG_STREAM("Received goal for me:\n"<<goalWrapper.ToString());
-        // boost::mutex::scoped_lock lock(m_statusMutex);
 
         switch(m_status.GetState())
         {
@@ -195,7 +194,7 @@ bool RobotController::cb_goalSub(global_planner::GoalSrv::Request  &req,
 
 /***********************************************************************
  *  Method: RobotController::cb_waypointSub
- *  Params: const global_planner::WaypointMsg &msg
+ *  Params: global_planner::WaypointSrv::Request &req, global_planner::WaypointSrv::Response &res
  * Returns: void
  * Effects: callback for waypoint messages
  ***********************************************************************/
@@ -212,7 +211,6 @@ bool RobotController::cb_waypointSub(global_planner::WaypointSrv::Request  &req,
     if (wpWrapper.GetRobot() == m_status.GetID())
     {
         ROS_DEBUG_STREAM("Received waypoint for me:\n"<<wpWrapper.ToString());
-        // boost::mutex::scoped_lock lock(m_statusMutex);
 
         switch(m_status.GetState())
         {
@@ -226,6 +224,7 @@ bool RobotController::cb_waypointSub(global_planner::WaypointSrv::Request  &req,
             default:
                 ROS_ERROR_STREAM("ERROR: Robot is in state: "<<m_status.GetState()<<", which should not be sent a waypoint message");
             break;
+
             /*
             case RobotState::NAVIGATING:
             ROS_ERROR_STREAM("WARNING: In Navigation State, Ignoring Waypoint.");
@@ -253,6 +252,49 @@ bool RobotController::cb_waypointSub(global_planner::WaypointSrv::Request  &req,
 bool RobotController::cb_dumpSub(global_planner::DumpSrv::Request  &req,
                                  global_planner::DumpSrv::Response &res)
 {
+    ROS_INFO("::::::::::::::: Received dump");
+    DumpWrapper dumpWrapper;
+    global_planner::DumpMsg dumpMsg = req.msg;
+    dumpWrapper.SetData(dumpMsg);
+    res.result = -1;
+    // id = -1 if not a match, 1 if robot1 and 2 if robot 2
+    int id = dumpWrapper.GetRobot1() == m_status.GetID() ? 1 : dumpWrapper.GetRobot2() == m_status.GetID() ? 2 : 0;
+
+    //Check if this message is for you!
+    if (id)
+    {
+        ROS_DEBUG_STREAM("Received dump for me:\n"<<dumpWrapper.ToString());
+
+        switch(m_status.GetState())
+        {
+            case RobotState::NAVIGATING:
+                ROS_ERROR_STREAM("Currently navigating to waypoint, canceling waypoint.");
+                SendWaypointFinished(TaskResult::FORCE_STOP);
+                // continue on and do add new task also
+            case RobotState::WAITING:
+                m_moveBaseGoal = Conversion::PoseToMoveBaseGoal(id == 1 ? dumpWrapper.GetPose1() : dumpWrapper.GetPose2());
+                ROS_INFO_STREAM("Received command to go to dump ("<<dumpWrapper.GetID()<<")");
+                m_status.SetTaskID( dumpWrapper.GetID() );
+                Transition(RobotState::DUMPING);
+                res.result = 0;
+            break;
+            case RobotState::DUMPING:
+                ROS_ERROR_STREAM("Currently navigating to dump, ignoring given new dump.");
+                res.result = -1;
+                //TODO: Cancel
+            break;
+            case RobotState::COLLECTING:
+                ROS_ERROR_STREAM("Currently collecting, ignoring dump.");
+                res.result = -1;
+                //TODO: Cancel
+            break;
+            default:
+                ROS_ERROR_STREAM("Dump hit: Robot is in state: " << RobotState::ToString(m_status.GetState()) <<", which should not be sent a goal message");
+            break;
+
+        }
+    }
+    return true;
 }
 
 
@@ -477,8 +519,6 @@ void RobotController::SetupCallbacks()
  ***********************************************************************/
 void RobotController::Transition(RobotState::State newState, void* args)
 {
-    // boost::mutex::scoped_lock lock(m_statusMutex);
-
     //TODO: make sure the state we are entering is valid based on the current state of the robot
     if (m_status.GetState() != newState)
     {
@@ -682,6 +722,43 @@ void RobotController::StateExecute()
                 Transition(RobotState::COLLECTING);
             }
             break;
+<<<<<<< Updated upstream
+=======
+
+        case RobotState::DUMPING:
+        {
+            // Check if reached dump site yet
+            actionlib::SimpleClientGoalState::StateEnum result = action_client_ptr->getState().state_;
+            switch (result)
+            {
+                case actionlib::SimpleClientGoalState::SUCCEEDED:
+                    ROS_INFO_STREAM("Movebase reached target.");
+                    SendDumpFinished(TaskResult::SUCCESS);
+                    Transition(RobotState::DUMPING_FINISHED);
+                    break;
+                case actionlib::SimpleClientGoalState::ABORTED:
+                case actionlib::SimpleClientGoalState::REJECTED:
+                case actionlib::SimpleClientGoalState::LOST:
+                case actionlib::SimpleClientGoalState::RECALLED:
+                case actionlib::SimpleClientGoalState::PREEMPTED:
+                    ROS_ERROR_STREAM("Navigation Failed: " << action_client_ptr->getState().toString() );
+                    SendDumpFinished(TaskResult::FAILURE);
+                    Transition(RobotState::WAITING);
+                    break;
+
+                case actionlib::SimpleClientGoalState::ACTIVE:
+                case actionlib::SimpleClientGoalState::PENDING:
+                default:
+                    ROS_INFO_STREAM_THROTTLE(10, "Navigation state = " << action_client_ptr->getState().toString() );
+                    break;
+            }
+            break;
+        }
+
+        case RobotState::DUMPING_FINISHED:
+        break;
+
+>>>>>>> Stashed changes
         default:
             ROS_ERROR_STREAM_THROTTLE(5, "Unexpected State:" << RobotState::ToString(m_status.GetState()));
             break;
