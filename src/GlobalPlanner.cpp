@@ -123,7 +123,7 @@ void GlobalPlanner::Execute()
     //      OPTIONAL: IF need to cancel robot's current goal -> Send Cancel Message First AND update the task it was assigned to
     //      Send Waypoint Message
 
-    /*
+    
     // Check if a robot is full & find the best binbot for it
     std::vector<Robot_Ptr> availableRobots = GetAvailableRobots();
     for (std::vector<Robot_Ptr>::iterator it = availableRobots.begin(); it != availableRobots.end(); ++it)
@@ -195,7 +195,7 @@ void GlobalPlanner::Execute()
             dump->SetStatus(TaskResult::SUCCESS);
         }
     }
-    */
+    
 
 	// If there are currently goals still not finished
     std::vector<Goal_Ptr> availableGoals = m_tm.GetAvailableGoals();

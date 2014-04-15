@@ -52,10 +52,10 @@ bool AprilTagProcessor::Init(ros::NodeHandle *nh, int robotID)
     m_goalTypeMap[3] = AprilTagProcessor::LANDMARK;
     m_goalTypeMap[5] = AprilTagProcessor::LANDMARK;
 
-    m_goalTypeMap[4] = AprilTagProcessor::GOAL;
+    // m_goalTypeMap[4] = AprilTagProcessor::GOAL;
     m_goalTypeMap[6] = AprilTagProcessor::GOAL;
-    m_goalTypeMap[8] = AprilTagProcessor::GOAL;
-    m_goalTypeMap[0] = AprilTagProcessor::GOAL;
+    // m_goalTypeMap[8] = AprilTagProcessor::GOAL;
+    // m_goalTypeMap[0] = AprilTagProcessor::GOAL;
 
     //Setup publishers
     m_goalPub = m_nh->advertise<global_planner::GoalSeen>("goal_seen", 100);

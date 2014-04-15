@@ -27,7 +27,7 @@
             <include file="$(find collectorbot_gazebo)/launch/TwoBots/twobots_amcl.launch"/>
 
             <!-- Run two robots movebase  -->
-            <include file="$(find collectorbot_gazebo)/launch/TwoBots/twobots_move_base.launch" launch-prefix="terminator -x" />
+            <include file="$(find collectorbot_gazebo)/launch/TwoBots/twobots_move_base.launch" />
 
             <!-- Run robot controllers -->
             <!-- For some reason the one of choice needs to be launched seperately after -->

@@ -332,6 +332,30 @@ bool RobotController::SendRobotStatus(global_planner::RobotStatusSrv::Request  &
 
 
 /***********************************************************************
+ *  Method: RobotController::cb_SetTrash
+ *  Params: 
+ * Returns: void
+ * Effects: Called to set the amount of storage used by robot
+ ***********************************************************************/
+bool RobotController::cb_SetTrash(global_planner::SetTrashSrv::Request  &req,
+                                  global_planner::SetTrashSrv::Response &res)
+{
+    // If robot can hold requested trash, set it.
+    if (m_status.GetStorageCapacity() >= req.storage)
+    {
+        m_status.SetStorageUsed(req.storage); // Set storage to requested storage
+        res.result = 0; // Success
+    }
+    else
+    {
+        res.result = -1; // Failure
+        return false;
+    }
+    return true;
+}
+
+
+/***********************************************************************
  *  Method: RobotController::SendRobotStatus
  *  Params:
  * Returns: void
@@ -359,6 +383,11 @@ void RobotController::SendGoalFinished(TaskResult::Status status)
     global_planner::GoalFinished goalMsg;
     goalMsg.id = m_status.GetTaskID();
     goalMsg.status = Conversion::TaskResultToInt(status);
+
+    // Increment storage due to reaching a goal
+    int new_storage = m_status.GetStorageUsed() + 1;
+    m_status.SetStorageUsed(new_storage);
+    ROS_INFO_STREAM("Reached Goal, Storage incremented to " << new_storage << "/" << m_status.GetStorageCapacity());
 
     m_goalFinishedPub.publish(goalMsg);
 }

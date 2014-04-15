@@ -10,7 +10,7 @@
       <param name="tf_prefix" value="/robot1_tf" />
       <param name="robot_id" value="1" />
       <param name="type" value="collector" />
-      <param name="storage_used" value="3" />
+      <param name="storage_used" value="2" />
       <param name="storage_capacity" value="3" />
     </node>
 
