@@ -118,7 +118,7 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
     action_client_ptr.reset( new MoveBaseClient("move_base", true) );
     // Wait for the action server to come up
     while(ros::ok() && !action_client_ptr->waitForServer(ros::Duration(1.0))){
-        ROS_INFO("Waiting for the move_base action server to come up");
+        ROS_INFO_THROTTLE(3.0,"Waiting for the move_base action server to come up");
     }
 
 
@@ -625,14 +625,16 @@ void RobotController::StateExecute()
     switch(m_status.GetState())
     {
         case RobotState::WAITING:
+            /*
             if (m_tagProcessor->ShouldPause())
             {
                 Transition(RobotState::WAITING_TAG_SPOTTED);
-            }
+            }*/
         break;
 
         //In this state, the robot should now be stopping and getting a more accurate view of the tag
         case RobotState::WAITING_TAG_SPOTTED:
+        /*
             sleep(1.0);
             ros::spinOnce();
             execResult = m_tagProcessor->Execute();
@@ -648,13 +650,16 @@ void RobotController::StateExecute()
             {
                 ROS_INFO_STREAM_THROTTLE(1, "Waiting on the OK to resume from the tag processor");
             }
+            */
         break;
 
         case RobotState::WAITING_TAG_FINISHED:
+        /*
             if (ros::Time::now() - m_timeEnteringState > ros::Duration(2.0))
             {
                 Transition(RobotState::WAITING);
             }
+            */
             break;
 
         case RobotState::NAVIGATING:

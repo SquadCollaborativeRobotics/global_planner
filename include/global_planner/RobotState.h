@@ -66,6 +66,10 @@ public:
         {
             case RobotState::WAITING:
             return "WAITING";
+            case RobotState::WAITING_TAG_SPOTTED:
+            return "WAITING_TAG_SPOTTED";
+            case RobotState::WAITING_TAG_FINISHED:
+            return "WAITING_TAG_FINISHED";
             case RobotState::NAVIGATING:
             return "NAVIGATING";
             case RobotState::NAVIGATING_TAG_SPOTTED:
