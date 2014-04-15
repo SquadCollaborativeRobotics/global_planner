@@ -19,7 +19,6 @@ m_seesLandmark(false),
 m_lastImageTime(ros::Time(0)),
 m_lastLocalizeTime(ros::Time(0))
 {
-    m_cameraFrame = std::string("camera_link");
 }
 
 
@@ -62,15 +61,31 @@ bool AprilTagProcessor::Init(ros::NodeHandle *nh, int robotID)
     m_newPosePub = m_nh->advertise<geometry_msgs::PoseStamped>("new_pose", 100);
     m_newInitialPosePub = m_nh->advertise<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 100);
 
-    if (m_nh->getParam("controller/base_frame", m_robotBaseFrame))
+    // TF Prefix
+    if (m_nh->getParam("controller/tf_prefix", tf_prefix))
     {
-        ROS_INFO_STREAM("Read base frame: "<<m_robotBaseFrame);
+        ROS_INFO_STREAM("Read tf_prefix: " << tf_prefix);
     }
     else
     {
-        m_robotBaseFrame = std::string("base_link");
-        ROS_ERROR_STREAM("Did not read base_frame: default = "<<m_robotBaseFrame);
+        tf_prefix = std::string("");
+        ROS_ERROR_STREAM("Did not read tf_prefix: default = " << tf_prefix);
     }
+
+    // Controller base frame
+    if (m_nh->getParam("controller/base_frame", m_robotBaseFrame))
+    {
+        ROS_INFO_STREAM("Read base frame: " << m_robotBaseFrame);
+    }
+    else
+    {
+        m_robotBaseFrame = tf_prefix + "/" + std::string("base_link");
+        ROS_ERROR_STREAM("Did not read base_frame: default = " << m_robotBaseFrame);
+    }
+
+    // Camera frame
+    m_cameraFrame = tf_prefix + "/" + std::string("camera_link");
+    ROS_INFO_STREAM("Camera Frame: " << m_cameraFrame);
 
     ROS_INFO("Successfully setup the april tag processor");
 }
@@ -232,14 +247,14 @@ bool AprilTagProcessor::UpdatePose()
 
                 // Create a "stamped" message
                 geometry_msgs::PoseWithCovarianceStamped newRobotPoseMsg;
-                newRobotPoseMsg.header.frame_id = "map";
+                newRobotPoseMsg.header.frame_id = "/map";
                 newRobotPoseMsg.header.stamp = tagCameraTF.stamp_;
 
                 newRobotPoseMsg.pose = poseWithCovariance;
 
                 //Use for display purposes...
                 geometry_msgs::PoseStamped poseStamped;
-                poseStamped.header.frame_id = "map";
+                poseStamped.header.frame_id = "/map";
                 poseStamped.header.stamp = tagCameraTF.stamp_;
                 poseStamped.pose = poseWithCovariance.pose;
 

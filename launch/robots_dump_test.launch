@@ -16,6 +16,8 @@
 
     <include file="$(find april_tags)/launch/april_tags.launch">
       <!-- <arg name="machineName" value="Cristoff" /> -->
+      <arg name="imageFrame" value="/robot1_tf/camera_link" />
+      <arg name="tf_prefix" value="/robot1_tf" />
     </include>
   </group>
 
@@ -34,6 +36,8 @@
 
     <include file="$(find april_tags)/launch/april_tags.launch">
       <!-- <arg name="machineName" value="Pepe" /> -->
+      <arg name="imageFrame" value="/robot2_tf/camera_link" />
+      <arg name="tf_prefix" value="/robot2_tf" />
     </include>
   </group>
 </launch>

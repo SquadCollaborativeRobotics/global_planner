@@ -81,6 +81,7 @@ private:
 
     std::string m_cameraFrame;
     std::string m_robotBaseFrame;
+    std::string tf_prefix;
     ros::NodeHandle *m_nh;
 
     // A map that keeps track of all tags seen and the time it was last seen (using the pose stamped time)
