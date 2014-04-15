@@ -173,8 +173,8 @@ void GlobalPlanner::Execute()
             // Remove trash from collector bot
             m_robots[collectorBot]->SetStorageUsed(0);
 
-            // Set states to waiting in global planner
-            // Though the robots are in DUMP_FINISHED state, they're ready to transition to waypoints etc.
+            // Set states to waiting in global planner but not robot controllers
+            // the robot controllers are in DUMP_FINISHED state, but they're ready to transition to waypoints etc.
             m_robots[collectorBot]->SetState(RobotState::WAITING);
             m_robots[binBot]->SetState(RobotState::WAITING);
 
