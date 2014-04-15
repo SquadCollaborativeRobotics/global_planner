@@ -20,6 +20,7 @@ m_lastImageTime(ros::Time(0)),
 m_lastLocalizeTime(ros::Time(0))
 {
     m_cameraFrame = std::string("camera_link");
+    m_robotBaseFrame = std::string("base_link");
 }
 
 
@@ -62,15 +63,27 @@ bool AprilTagProcessor::Init(ros::NodeHandle *nh, int robotID)
     m_newPosePub = m_nh->advertise<geometry_msgs::PoseStamped>("new_pose", 100);
     m_newInitialPosePub = m_nh->advertise<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 100);
 
-    if (m_nh->getParam("controller/base_frame", m_robotBaseFrame))
-    {
-        ROS_INFO_STREAM("Read base frame: "<<m_robotBaseFrame);
-    }
+    std::string tf_prefix;
+    if (m_nh->getParam("controller/tf_prefix", tf_prefix))
+        ROS_INFO_STREAM("Read tf prefix: " << tf_prefix);
     else
-    {
-        m_robotBaseFrame = std::string("base_link");
-        ROS_ERROR_STREAM("Did not read base_frame: default = "<<m_robotBaseFrame);
-    }
+        ROS_ERROR_STREAM("Did not read tf_prefix: default = " << tf_prefix);
+
+    std::string base_frame = m_robotBaseFrame;
+    if (m_nh->getParam("controller/base_frame", base_frame))
+        ROS_INFO_STREAM("Read base frame: " << base_frame);
+    else
+        ROS_ERROR_STREAM("Did not read base_frame: default = " << base_frame);
+
+    m_robotBaseFrame = tf_prefix + "/"+base_frame;
+
+    std::string cam_frame = m_cameraFrame;
+    if (m_nh->getParam("controller/camera_frame", cam_frame))
+        ROS_INFO_STREAM("Read camera frame: " << cam_frame);
+    else
+        ROS_ERROR_STREAM("Did not read camera_frame: default = " << cam_frame);
+
+    m_cameraFrame = tf_prefix + "/"+cam_frame;
 
     ROS_INFO("Successfully setup the april tag processor");
 }
@@ -479,7 +492,7 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
                 if (type == AprilTagProcessor::LANDMARK)
                 {
                     // Only need to update if it's been a while since the robot localized
-                    if (m_pose[tagID].header.stamp - m_lastLocalizeTime > ros::Duration(9.0) ) {
+                    if (m_pose[tagID].header.stamp - m_lastLocalizeTime > ros::Duration(15.0) ) {
                         //Check if the tag is closer than the threshold distance
                         if (GetDistance(m_pose[tagID]) < UPDATE_RANGE_THRESHOLD)
                         {

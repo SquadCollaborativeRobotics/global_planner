@@ -310,37 +310,37 @@ bool TaskMaster::SendDump(int dumpID)
         if (call1)
         {
             response1 = s.response.result == 0;
-            if (!response1) 
+            if (!response1)
             {
-                ROS_ERROR_STREAM("Service response 1 failed for dump id: " << 
-                                 dm.id << ", Robot1(" << dm.robotID1 << 
-                                 "), Robot2(" << dm.robotID2 << 
+                ROS_ERROR_STREAM("Service response 1 failed for dump id: " <<
+                                 dm.id << ", Robot1(" << dm.robotID1 <<
+                                 "), Robot2(" << dm.robotID2 <<
                                  "), response: " << s.response.result);
             }
         }
         else
         {
-            ROS_ERROR_STREAM("Service call 1 failed for dump id: " << dm.id << 
-                             ", Robot1(" << dm.robotID1 << "), Robot2(" << 
+            ROS_ERROR_STREAM("Service call 1 failed for dump id: " << dm.id <<
+                             ", Robot1(" << dm.robotID1 << "), Robot2(" <<
                              dm.robotID2 << ")");
         }
-        
+
         call2 = m_dumpClients[dm.robotID2].call(s);
         if (call2)
         {
             response2 = s.response.result == 0;
-            if (!response2) 
+            if (!response2)
             {
-                ROS_ERROR_STREAM("Service response 2 failed for dump id: " << 
-                                 dm.id << ", Robot1(" << dm.robotID1 << 
-                                 "), Robot2(" << dm.robotID2 << 
+                ROS_ERROR_STREAM("Service response 2 failed for dump id: " <<
+                                 dm.id << ", Robot1(" << dm.robotID1 <<
+                                 "), Robot2(" << dm.robotID2 <<
                                  "), response: " << s.response.result);
             }
         }
         else
         {
-            ROS_ERROR_STREAM("Service call 2 failed for dump id: " << dm.id << 
-                             ", Robot1(" << dm.robotID1 << "), Robot2(" << 
+            ROS_ERROR_STREAM("Service call 2 failed for dump id: " << dm.id <<
+                             ", Robot1(" << dm.robotID1 << "), Robot2(" <<
                              dm.robotID2 << ")");
         }
 
@@ -502,7 +502,8 @@ void TaskMaster::cb_goalSeen(const global_planner::GoalSeen::ConstPtr &msg)
                 currentGoal->SetTime(time);
                 currentGoal->SetPose(pose);
 
-                SendGoal(goalID);
+                //TODO: resend goal
+                // SendGoal(goalID);
             }
         }
     }

@@ -89,6 +89,7 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
     else
         ROS_ERROR_STREAM("Did not read tf_prefix: default = " << tf_prefix);
 
+    base_frame = std::string("base_link");
     if (m_nh->getParam("controller/base_frame", base_frame))
         ROS_INFO_STREAM("Read base frame: " << base_frame);
     else
@@ -625,7 +626,6 @@ void RobotController::StateExecute()
     switch(m_status.GetState())
     {
         case RobotState::WAITING:
-
             if (m_tagProcessor->ShouldPause())
             {
                 Transition(RobotState::WAITING_TAG_SPOTTED);
