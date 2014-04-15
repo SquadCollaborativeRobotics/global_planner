@@ -260,11 +260,11 @@ bool RobotController::cb_dumpSub(global_planner::DumpSrv::Request  &req,
     global_planner::DumpMsg dumpMsg = req.msg;
     dumpWrapper.SetData(dumpMsg);
     res.result = -1;
-    // id = -1 if not a match, 1 if robot1 and 2 if robot 2
-    int id = dumpWrapper.GetRobot1() == m_status.GetID() ? 1 : dumpWrapper.GetRobot2() == m_status.GetID() ? 2 : -1;
+    // id = 0 if not a match, 1 if robot1 and 2 if robot 2
+    int id = dumpWrapper.GetRobot1() == m_status.GetID() ? 1 : dumpWrapper.GetRobot2() == m_status.GetID() ? 2 : 0;
 
     //Check if this message is for you!
-    if (id)
+    if (id > 0)
     {
         ROS_DEBUG_STREAM("Received dump for me:\n"<<dumpWrapper.ToString());
         // boost::mutex::scoped_lock lock(m_statusMutex);
@@ -300,6 +300,30 @@ bool RobotController::cb_dumpSub(global_planner::DumpSrv::Request  &req,
     }
     return true;
 }
+
+/***********************************************************************
+ *  Method: RobotController::cb_SetTrash
+ *  Params: 
+ * Returns: void
+ * Effects: Called to set the amount of storage used by robot
+ ***********************************************************************/
+bool RobotController::cb_SetTrash(global_planner::SetTrashSrv::Request  &req,
+                                  global_planner::SetTrashSrv::Response &res)
+{
+    // If robot can hold requested trash, set it.
+    if (m_status.GetStorageCapacity() >= req.storage)
+    {
+        m_status.SetStorageUsed(req.storage); // Set storage to requested storage
+        res.result = 0; // Success
+    }
+    else
+    {
+        res.result = -1; // Failure
+        return false;
+    }
+    return true;
+}
+
 
 
 /***********************************************************************
@@ -495,6 +519,9 @@ void RobotController::SetupCallbacks()
     m_goalFinishedPub = m_nh->advertise<global_planner::GoalFinished>("/goal_finished", 10);
     m_waypointFinishedPub = m_nh->advertise<global_planner::WaypointFinished>("/waypoint_finished", 10);
     m_dumpFinishedPub = m_nh->advertise<global_planner::DumpFinished>("/dump_finished", 10);
+
+    std::string setTrash = Conversion::RobotIDToSetTrash(m_status.GetID());
+    m_setTrashService = m_nh->advertiseService(setTrash, &RobotController::cb_SetTrash, this);
 
     std::string statusServiceTopic = Conversion::RobotIDToServiceName(m_status.GetID());
     m_statusService = m_nh->advertiseService(statusServiceTopic, &RobotController::SendRobotStatus, this);

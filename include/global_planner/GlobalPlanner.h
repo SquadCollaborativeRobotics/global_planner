@@ -21,6 +21,7 @@
 #include <global_planner/RobotStatusWrapper.h>
 #include <global_planner/RobotState.h>
 #include <global_planner/RobotStatusSrv.h>
+#include <global_planner/SetTrashSrv.h>
 #include <global_planner/SoundMsg.h>
 #include <boost/thread/mutex.hpp>
 
@@ -111,6 +112,9 @@ private:
     //Subscriber to robot status callbacks
     ros::Subscriber m_robotSub;
     std::map<int, ros::ServiceClient > m_statusServices;
+
+    // Set Trash robot service map
+    std::map<int, ros::ServiceClient > m_setTrashServices;
 
     // E-Stop Publisher
     ros::Publisher m_eStopPub;

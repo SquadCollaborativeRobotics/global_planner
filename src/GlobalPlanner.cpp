@@ -168,11 +168,23 @@ void GlobalPlanner::Execute()
             int collectorBot = dump->GetRobot1();
             int binBot = dump->GetRobot2();
             int trash_to_transfer = m_robots[collectorBot]->GetStorageUsed();
+
+            // Send trash updates to robot controllers
+            global_planner::SetTrashSrv s;
+            s.request.storage = 0;
+            if (m_setTrashServices[collectorBot].call(s) && s.response.result == 0) { ROS_INFO_STREAM("Set Trash for " << m_robots[collectorBot]->GetName()); }
+            else { ROS_ERROR_STREAM("Did not receive trash response from robot: " << collectorBot); }
+
+            s.request.storage = m_robots[binBot]->GetStorageUsed() + trash_to_transfer;
+            if (m_setTrashServices[binBot].call(s) && s.response.result == 0) { ROS_INFO_STREAM("Set Trash for " << m_robots[binBot]->GetName()); }
+            else { ROS_ERROR_STREAM("Did not receive trash response from robot: " << binBot); }
+
+            // In global planner, update storage values
             // Add trash to bin bot
             m_robots[binBot]->SetStorageUsed( m_robots[binBot]->GetStorageUsed() + trash_to_transfer );
             // Remove trash from collector bot
             m_robots[collectorBot]->SetStorageUsed(0);
-
+            
             // Set states to waiting in global planner but not robot controllers
             // the robot controllers are in DUMP_FINISHED state, but they're ready to transition to waypoints etc.
             m_robots[collectorBot]->SetState(RobotState::WAITING);
@@ -188,7 +200,7 @@ void GlobalPlanner::Execute()
     for (std::vector<Goal_Ptr>::iterator goal_it = availableGoals.begin(); goal_it != availableGoals.end(); ++goal_it)
     {
         geometry_msgs::Pose goalPose = (*goal_it)->GetPose();
-        int closestRobot = -1;
+        int closestRobot = NO_ROBOT_FOUND;
         double best_dist = MAX_DIST;
         for (std::map<int, Robot_Ptr>::iterator robot_it = m_robots.begin(); robot_it != m_robots.end(); ++robot_it)
         {
@@ -205,7 +217,7 @@ void GlobalPlanner::Execute()
                 }
             }
         }
-        if (closestRobot != -1)
+        if (closestRobot != NO_ROBOT_FOUND)
         {
             // Assign Robot to goal
             if (!AssignRobotGoal(closestRobot , (*goal_it)->GetID()))
@@ -419,7 +431,7 @@ bool GlobalPlanner::AssignRobotGoal(int robot_id, int goal_id)
     }
     else
     {
-        goal_ptr->SetRobot(-1);
+        goal_ptr->SetRobot(NO_ROBOT_FOUND);
         goal_ptr->SetStatus(TaskResult::COMM_FAILURE);
         ROS_ERROR_STREAM("Could not assign goal["<<goal_id<<"] to robot ["<<robot_id<<"]");
     }
@@ -776,6 +788,9 @@ void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& 
         std::string serviceTopic = Conversion::RobotIDToServiceName(id);
         //create a persistant service with this
         m_statusServices[id] = m_nh->serviceClient<global_planner::RobotStatusSrv>(serviceTopic, true);
+
+        std::string serviceTopic2 = Conversion::RobotIDToSetTrash(id);
+        m_setTrashServices[id] = m_nh->serviceClient<global_planner::SetTrashSrv>(serviceTopic2, true);
 
         m_tm.UpdateRobotMap(m_robots);
 

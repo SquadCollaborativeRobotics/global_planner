@@ -23,6 +23,7 @@
 #include <global_planner/AprilTagProcessor.h>
 #include <global_planner/RobotStatusSrv.h>
 
+#include <global_planner/SetTrashSrv.h>
 #include <global_planner/WaypointSrv.h>
 #include <global_planner/GoalSrv.h>
 #include <global_planner/DumpSrv.h>
@@ -57,6 +58,7 @@ public:
     void SendGoalFinished(TaskResult::Status status);
     void SendWaypointFinished(TaskResult::Status status);
     void SendDumpFinished(TaskResult::Status status);
+    
 
     void Init(ros::NodeHandle* nh,
               int robotID = -1,
@@ -76,6 +78,9 @@ private:
     //Send the robot's status message
     bool SendRobotStatus(global_planner::RobotStatusSrv::Request  &req,
                          global_planner::RobotStatusSrv::Response &res);
+    // Set the storage value
+    bool cb_SetTrash(global_planner::SetTrashSrv::Request  &req,
+                     global_planner::SetTrashSrv::Response &res);
 
     /*********************************
      * State stuff
@@ -90,6 +95,7 @@ private:
     ros::ServiceServer m_goalService;
     ros::ServiceServer m_waypointService;
     ros::ServiceServer m_dumpService;
+    ros::ServiceServer m_setTrashService;
     ros::Subscriber m_eStopSub;
     ros::Subscriber m_odomSub;
 
