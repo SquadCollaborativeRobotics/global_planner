@@ -32,6 +32,8 @@ public:
     enum State
     {
         WAITING = 0,
+        WAITING_TAG_SPOTTED = 2,
+        WAITING_TAG_FINISHED = 3,
         // WAITING_FINISHED = 9,
         NAVIGATING = 10,
         NAVIGATING_TAG_SPOTTED = 12,

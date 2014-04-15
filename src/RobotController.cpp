@@ -625,14 +625,37 @@ void RobotController::StateExecute()
     switch(m_status.GetState())
     {
         case RobotState::WAITING:
-            //ROS_INFO_STREAM_THROTTLE(2.0, "Waiting for next command...");
-            // if (m_tagProcessor->ShouldPause())
-            // {
-            //     Transition(RobotState::NAVIGATING_TAG_SPOTTED);
-            //     break;
-            // }
-            // ROS_INFO_STREAM_THROTTLE(3,"Waiting for next command...");
+            if (m_tagProcessor->ShouldPause())
+            {
+                Transition(RobotState::WAITING_TAG_SPOTTED);
+            }
         break;
+
+        //In this state, the robot should now be stopping and getting a more accurate view of the tag
+        case RobotState::WAITING_TAG_SPOTTED:
+            sleep(1.0);
+            ros::spinOnce();
+            execResult = m_tagProcessor->Execute();
+            // ROS_DEBUG_STREAM_THROTTLE(0.5, "Result from execute: "<<execResult);
+            if (m_tagProcessor->ShouldResume())
+            {
+                //Transition back to the navigating state, using the same goal as before
+                ROS_INFO("Resuming robot");
+                Transition(RobotState::WAITING_TAG_FINISHED);
+                break;
+            }
+            else
+            {
+                ROS_INFO_STREAM_THROTTLE(1, "Waiting on the OK to resume from the tag processor");
+            }
+        break;
+
+        case RobotState::WAITING_TAG_FINISHED:
+            if (ros::Time::now() - m_timeEnteringState > ros::Duration(2.0))
+            {
+                Transition(RobotState::WAITING);
+            }
+            break;
 
         case RobotState::NAVIGATING:
             if (m_tagProcessor->ShouldPause())
