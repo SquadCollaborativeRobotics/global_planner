@@ -21,6 +21,7 @@
 #include <global_planner/RobotStatusWrapper.h>
 #include <global_planner/RobotState.h>
 #include <global_planner/RobotStatusSrv.h>
+#include <global_planner/SetRobotStatusSrv.h>
 #include <global_planner/SetTrashSrv.h>
 #include <global_planner/SoundMsg.h>
 #include <boost/thread/mutex.hpp>

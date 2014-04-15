@@ -151,7 +151,6 @@ bool RobotController::cb_goalSub(global_planner::GoalSrv::Request  &req,
     if (goalWrapper.GetRobot() == m_status.GetID())
     {
         ROS_DEBUG_STREAM("Received goal for me:\n"<<goalWrapper.ToString());
-        // boost::mutex::scoped_lock lock(m_statusMutex);
 
         switch(m_status.GetState())
         {
@@ -195,7 +194,7 @@ bool RobotController::cb_goalSub(global_planner::GoalSrv::Request  &req,
 
 /***********************************************************************
  *  Method: RobotController::cb_waypointSub
- *  Params: const global_planner::WaypointMsg &msg
+ *  Params: global_planner::WaypointSrv::Request &req, global_planner::WaypointSrv::Response &res
  * Returns: void
  * Effects: callback for waypoint messages
  ***********************************************************************/
@@ -212,7 +211,6 @@ bool RobotController::cb_waypointSub(global_planner::WaypointSrv::Request  &req,
     if (wpWrapper.GetRobot() == m_status.GetID())
     {
         ROS_DEBUG_STREAM("Received waypoint for me:\n"<<wpWrapper.ToString());
-        // boost::mutex::scoped_lock lock(m_statusMutex);
 
         switch(m_status.GetState())
         {
@@ -267,7 +265,6 @@ bool RobotController::cb_dumpSub(global_planner::DumpSrv::Request  &req,
     if (id > 0)
     {
         ROS_DEBUG_STREAM("Received dump for me:\n"<<dumpWrapper.ToString());
-        // boost::mutex::scoped_lock lock(m_statusMutex);
 
         switch(m_status.GetState())
         {
@@ -301,30 +298,6 @@ bool RobotController::cb_dumpSub(global_planner::DumpSrv::Request  &req,
     return true;
 }
 
-/***********************************************************************
- *  Method: RobotController::cb_SetTrash
- *  Params: 
- * Returns: void
- * Effects: Called to set the amount of storage used by robot
- ***********************************************************************/
-bool RobotController::cb_SetTrash(global_planner::SetTrashSrv::Request  &req,
-                                  global_planner::SetTrashSrv::Response &res)
-{
-    // If robot can hold requested trash, set it.
-    if (m_status.GetStorageCapacity() >= req.storage)
-    {
-        m_status.SetStorageUsed(req.storage); // Set storage to requested storage
-        res.result = 0; // Success
-    }
-    else
-    {
-        res.result = -1; // Failure
-        return false;
-    }
-    return true;
-}
-
-
 
 /***********************************************************************
  *  Method: RobotController::cb_eStopSub
@@ -346,7 +319,7 @@ void RobotController::cb_eStopSub(const std_msgs::Empty &msg)
  *  Params:
  * Returns: void
  * Effects: Sends the current status over ROS to any listening
- * 	nodes
+ *  nodes
  ***********************************************************************/
 bool RobotController::SendRobotStatus(global_planner::RobotStatusSrv::Request  &req,
                                       global_planner::RobotStatusSrv::Response &res)
@@ -355,6 +328,23 @@ bool RobotController::SendRobotStatus(global_planner::RobotStatusSrv::Request  &
     res.status = m_status.GetMessage();
     m_lastStatusUpdate = ros::Time::now();
     return true;
+}
+
+
+/***********************************************************************
+ *  Method: RobotController::SendRobotStatus
+ *  Params:
+ * Returns: void
+ * Effects: Sends the current status over ROS to any listening
+ *  nodes
+ ***********************************************************************/
+bool RobotController::cb_SetRobotStatus(global_planner::SetRobotStatusSrv::Request  &req,
+                                      global_planner::SetRobotStatusSrv::Response &res)
+{
+    // res.status = m_status.GetMessage();
+    // m_lastStatusUpdate = ros::Time::now();
+    // TODO: this
+    return false;
 }
 
 
@@ -520,9 +510,6 @@ void RobotController::SetupCallbacks()
     m_waypointFinishedPub = m_nh->advertise<global_planner::WaypointFinished>("/waypoint_finished", 10);
     m_dumpFinishedPub = m_nh->advertise<global_planner::DumpFinished>("/dump_finished", 10);
 
-    std::string setTrash = Conversion::RobotIDToSetTrash(m_status.GetID());
-    m_setTrashService = m_nh->advertiseService(setTrash, &RobotController::cb_SetTrash, this);
-
     std::string statusServiceTopic = Conversion::RobotIDToServiceName(m_status.GetID());
     m_statusService = m_nh->advertiseService(statusServiceTopic, &RobotController::SendRobotStatus, this);
 
@@ -551,8 +538,6 @@ void RobotController::SetupCallbacks()
  ***********************************************************************/
 void RobotController::Transition(RobotState::State newState, void* args)
 {
-    // boost::mutex::scoped_lock lock(m_statusMutex);
-
     //TODO: make sure the state we are entering is valid based on the current state of the robot
     if (m_status.GetState() != newState)
     {
@@ -683,6 +668,8 @@ void RobotController::StateExecute()
 
         //In this state, the robot should now be stopping and getting a more accurate view of the tag
         case RobotState::NAVIGATING_TAG_SPOTTED:
+            sleep(1.0);
+            ros::spinOnce();
             execResult = m_tagProcessor->Execute();
             // ROS_DEBUG_STREAM_THROTTLE(0.5, "Result from execute: "<<execResult);
             if (m_tagProcessor->ShouldResume())
@@ -742,6 +729,8 @@ void RobotController::StateExecute()
 
         //In this state, the robot should now be stopping and getting a more accurate view of the tag
         case RobotState::COLLECTING_TAG_SPOTTED:
+            sleep(1.0);
+            ros::spinOnce();
             execResult = m_tagProcessor->Execute();
             // ROS_DEBUG_STREAM_THROTTLE(0.5, "Result from execute: "<<execResult);
             if (m_tagProcessor->ShouldResume())

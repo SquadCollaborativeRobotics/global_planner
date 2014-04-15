@@ -33,7 +33,7 @@
             <!-- For some reason the one of choice needs to be launched seperately after -->
             <!-- roslaunch global_planner robots_dump_test.launch -->
             <!-- roslaunch global_planner robots.launch -->
-            
+
             <!-- <include file="$(find global_planner)/launch/robots_dump_test.launch" if="$(arg dump_test)" /> -->
             <!-- <include file="$(find global_planner)/launch/robots.launch" unless="$(arg dump_test)"/> -->
         </group>
@@ -41,8 +41,25 @@
 
     <!-- Run if using real world environment -->
     <group unless="$(arg sim)">
-        <include file="$(find global_planner)/launch/robots.launch" />
-        <!-- need to include map -->
+
+        <group if="$(arg one_bot)">
+            <!-- need to include map -->
+            <include file="$(find global_planner)/launch/one_robot.launch"/>
+            <include file="$(find scr_proto)/launch/FallDemo/onebot_falldemo.launch"/>
+        </group>
+        <group if="$(arg two_bots)">
+            <!-- include our robots -->
+            <include file="$(find global_planner)/launch/robots.launch" />
+
+            <!-- Run two robots amcl localization -->
+            <include file="$(find collectorbot_gazebo)/launch/TwoBots/twobots_amcl.launch"/>
+
+            <!-- Run two robots movebase  -->
+            <include file="$(find collectorbot_gazebo)/launch/TwoBots/twobots_move_base.launch"/>
+
+            <!-- Run robot controllers -->
+            <include file="$(find global_planner)/launch/robots.launch" />
+        </group>
     </group>
 
     <include file="$(find global_planner)/launch/global_planner.launch" />

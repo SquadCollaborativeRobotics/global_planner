@@ -68,6 +68,7 @@ add_service_files(
   FILES
     SetTrashSrv.srv
     RobotStatusSrv.srv
+    SetRobotStatusSrv.srv
     GoalSrv.srv
     WaypointSrv.srv
     DumpSrv.srv

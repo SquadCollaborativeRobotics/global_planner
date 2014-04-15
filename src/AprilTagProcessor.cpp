@@ -51,8 +51,11 @@ bool AprilTagProcessor::Init(ros::NodeHandle *nh, int robotID)
     //Setup tag types
     m_goalTypeMap[3] = AprilTagProcessor::LANDMARK;
     m_goalTypeMap[5] = AprilTagProcessor::LANDMARK;
-    // m_goalTypeMap[8] = AprilTagProcessor::GOAL;
+
+    m_goalTypeMap[4] = AprilTagProcessor::GOAL;
     m_goalTypeMap[6] = AprilTagProcessor::GOAL;
+    m_goalTypeMap[8] = AprilTagProcessor::GOAL;
+    m_goalTypeMap[0] = AprilTagProcessor::GOAL;
 
     //Setup publishers
     m_goalPub = m_nh->advertise<global_planner::GoalSeen>("goal_seen", 100);
@@ -297,11 +300,7 @@ bool AprilTagProcessor::FindGoals()
 
     std::vector<int> goals;
     GetGoals(goals);
-    // double closestLandmark = 9999999;
-    //
     bool retVal = false;
-
-    // ROS_INFO_STREAM("There are : "<<goals.size()<<" goals to search through");
 
     //Pick best tag to use for localization (assuming there are several options)
     for (int i = 0; i < goals.size(); ++i)
@@ -480,7 +479,7 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
                 if (type == AprilTagProcessor::LANDMARK)
                 {
                     // Only need to update if it's been a while since the robot localized
-                    if (m_pose[tagID].header.stamp - m_lastLocalizeTime > ros::Duration(9.0) ) {
+                    if (m_pose[tagID].header.stamp - m_lastLocalizeTime > ros::Duration(15.0) ) {
                         //Check if the tag is closer than the threshold distance
                         if (GetDistance(m_pose[tagID]) < UPDATE_RANGE_THRESHOLD)
                         {

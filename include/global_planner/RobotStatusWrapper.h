@@ -35,6 +35,19 @@ public:
     void SetTwist(geometry_msgs::Twist twist){ m_status.twist = twist; };
     void SetStorageCapacity(int cap){ m_status.storage_capacity = cap; };
     void SetStorageUsed(int amountUsed){ m_status.storage_used = amountUsed; };
+
+    void IncrementStorageUsed(int amountToIncrement = 1)
+    {
+        if (GetStorageAvailable() > 0)
+        {
+            m_status.storage_used = m_status.storage_used + 1;
+        }
+        else
+        {
+            ROS_ERROR_STREAM("Cannot add any more stuff to this robot - storage available = " << GetStorageAvailable());
+        }
+    };
+
     void SetType(RobotState::Type type){ m_status.type = type; };
     void SetTaskID(int taskID){ m_status.taskID = taskID; };
 

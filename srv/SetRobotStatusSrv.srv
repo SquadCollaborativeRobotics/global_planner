@@ -1,0 +1,3 @@
+RobotStatus status
+---
+int32 res

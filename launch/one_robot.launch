@@ -1,6 +1,6 @@
 <launch>
   <!-- first robot... --> <!--launch-prefix="xterm -e" -->
-  <node pkg="global_planner" type="robot_controller_node" name="controller" output="screen" >
+  <node pkg="global_planner" type="robot_controller_node" name="controller" output="screen" launch-prefix="terminator -x" >
     <param name="robot_name" value="Cristoff" />
     <param name="base_frame" value="base_link" />
     <param name="tf_prefix" value="" />
@@ -10,6 +10,14 @@
     <param name="storage_capacity" value="3" />
   </node>
 
-  <include file="$(find april_tags)/launch/april_tags.launch">
+  <include file="$(find april_tags)/launch/april_tags.launch" >
+    <arg name="focalLength" value="790" />
+    <arg name="imageTopic" value="camera/image_raw" />
+    <arg name="imageFrame" value="camera_link" />
   </include>
+
+  <include file="$(find april_tags)/launch/image_capture.launch" />
+
+  <include file="$(find scr_proto)/launch/static_transforms.launch" />
+
 </launch>
