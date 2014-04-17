@@ -226,7 +226,7 @@ bool RobotController::cb_waypointSub(global_planner::WaypointSrv::Request  &req,
             default:
                 ROS_ERROR_STREAM("Waypoint hit: Robot is in state: "<<RobotState::ToString(m_status.GetState())<<", which should not be sent a waypoint message");
             break;
-
+            
             /*
             case RobotState::NAVIGATING:
             ROS_ERROR_STREAM("WARNING: In Navigation State, Ignoring Waypoint.");
@@ -259,11 +259,11 @@ bool RobotController::cb_dumpSub(global_planner::DumpSrv::Request  &req,
     global_planner::DumpMsg dumpMsg = req.msg;
     dumpWrapper.SetData(dumpMsg);
     res.result = -1;
-    // id = -1 if not a match, 1 if robot1 and 2 if robot 2
+    // id = 0 if not a match, 1 if robot1 and 2 if robot 2
     int id = dumpWrapper.GetRobot1() == m_status.GetID() ? 1 : dumpWrapper.GetRobot2() == m_status.GetID() ? 2 : 0;
 
     //Check if this message is for you!
-    if (id)
+    if (id > 0)
     {
         ROS_DEBUG_STREAM("Received dump for me:\n"<<dumpWrapper.ToString());
 
@@ -358,9 +358,6 @@ void RobotController::SendGoalFinished(TaskResult::Status status)
     global_planner::GoalFinished goalMsg;
     goalMsg.id = m_status.GetTaskID();
     goalMsg.status = Conversion::TaskResultToInt(status);
-
-    if (status == TaskResult::SUCCESS)
-        m_status.IncrementStorageUsed();
 
     m_goalFinishedPub.publish(goalMsg);
 }
@@ -814,7 +811,7 @@ void RobotController::StateExecute()
             }
             break;
         }
-
+        
         case RobotState::DUMPING_FINISHED:
         break;
 

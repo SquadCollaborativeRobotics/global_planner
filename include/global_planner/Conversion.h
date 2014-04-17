@@ -109,4 +109,10 @@ public:
         ss << "/dumps/"<<id;
         return ss.str();
     }
+    static const std::string RobotIDToSetTrash(int id)
+    {
+        std::stringstream ss;
+        ss << "/set_trash/"<<id;
+        return ss.str();
+    }
 };
