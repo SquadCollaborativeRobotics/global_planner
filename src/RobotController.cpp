@@ -547,6 +547,15 @@ void RobotController::Transition(RobotState::State newState, void* args)
     {
         m_timeEnteringState = ros::Time::now();
     }
+
+    switch(m_status.GetState())
+    {
+        case RobotState::WAITING_TAG_FINISHED:
+        case RobotState::COLLECTING_TAG_FINISHED:
+        case RobotState::NAVIGATING_TAG_FINISHED:
+            m_tagProcessor->SetShouldPause(false);
+    }
+
     m_status.SetState(newState);
     OnEntry(args);
     ROS_INFO_STREAM("Transitioned to " << RobotState::ToString(newState));
@@ -634,7 +643,6 @@ void RobotController::StateExecute()
 
         //In this state, the robot should now be stopping and getting a more accurate view of the tag
         case RobotState::WAITING_TAG_SPOTTED:
-            sleep(1.0);
             ros::spinOnce();
             execResult = m_tagProcessor->Execute();
             // ROS_DEBUG_STREAM_THROTTLE(0.5, "Result from execute: "<<execResult);
@@ -695,7 +703,6 @@ void RobotController::StateExecute()
 
         //In this state, the robot should now be stopping and getting a more accurate view of the tag
         case RobotState::NAVIGATING_TAG_SPOTTED:
-            sleep(1.0);
             ros::spinOnce();
             execResult = m_tagProcessor->Execute();
             // ROS_DEBUG_STREAM_THROTTLE(0.5, "Result from execute: "<<execResult);
@@ -756,7 +763,6 @@ void RobotController::StateExecute()
 
         //In this state, the robot should now be stopping and getting a more accurate view of the tag
         case RobotState::COLLECTING_TAG_SPOTTED:
-            sleep(1.0);
             ros::spinOnce();
             execResult = m_tagProcessor->Execute();
             // ROS_DEBUG_STREAM_THROTTLE(0.5, "Result from execute: "<<execResult);

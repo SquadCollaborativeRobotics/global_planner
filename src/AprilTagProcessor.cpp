@@ -19,8 +19,6 @@ m_seesLandmark(false),
 m_lastImageTime(ros::Time(0)),
 m_lastLocalizeTime(ros::Time(0))
 {
-    m_cameraFrame = std::string("camera_link");
-    m_robotBaseFrame = std::string("base_link");
 }
 
 
@@ -100,6 +98,13 @@ bool AprilTagProcessor::Execute()
     foundGoal = foundLandmark = false;
     if (IsStopped())
     {
+        ros::Time time = ros::Time::now();
+        while(ros::Time::now()-time < ros::Duration(1.0))
+        {
+            sleep(0.1);
+            ros::spinOnce();
+        }
+
         if (true)
         {
             ROS_INFO_STREAM_THROTTLE(0.5, "Searching for goals");
@@ -492,7 +497,7 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
                 if (type == AprilTagProcessor::LANDMARK)
                 {
                     // Only need to update if it's been a while since the robot localized
-                    if (m_pose[tagID].header.stamp - m_lastLocalizeTime > ros::Duration(15.0) ) {
+                    if (m_pose[tagID].header.stamp - m_lastLocalizeTime > ros::Duration(10.0) ) {
                         //Check if the tag is closer than the threshold distance
                         if (GetDistance(m_pose[tagID]) < UPDATE_RANGE_THRESHOLD)
                         {
