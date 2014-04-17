@@ -98,10 +98,12 @@ bool AprilTagProcessor::Execute()
     foundGoal = foundLandmark = false;
     if (IsStopped())
     {
+        //Stop for a second to get the newest april tag data
         ros::Time time = ros::Time::now();
         while(ros::Time::now()-time < ros::Duration(1.0))
         {
-            sleep(0.1);
+            ROS_INFO_STREAM_THROTTLE(1.0, "Waiting after being stopped to get the most up to date info from the tag reader");
+            usleep(100*1000);
             ros::spinOnce();
         }
 
@@ -121,6 +123,7 @@ bool AprilTagProcessor::Execute()
     {
         ROS_ERROR_STREAM_THROTTLE(0.5, "ERROR: Robot is not yet stopped");
     }
+
     bool retVal = foundGoal || foundLandmark;
     if (retVal == true)
         m_shouldPause = false;
@@ -169,7 +172,7 @@ bool AprilTagProcessor::UpdatePose()
 {
     if (IsStopped() == false)
     {
-        ROS_ERROR_STREAM_THROTTLE(0.5, "ERROR: Robot is not yet stopped");
+        ROS_ERROR_STREAM_THROTTLE(0.5, "ERROR in UpdatePose: Robot is not yet stopped");
         return false;
     }
 
@@ -183,6 +186,7 @@ bool AprilTagProcessor::UpdatePose()
     {
         int tagID = landmarks[i];
         ros::Time tagSeenTime = LastSeenTime(tagID);
+        //only choose from tags seen in the most recent frame
         if (tagSeenTime == m_lastImageTime)
         {
             // closestLandmark = dist;
@@ -239,8 +243,8 @@ bool AprilTagProcessor::UpdatePose()
                 // row order covariance.... first row (0-5) = covariance from x, (6-12) = cov. from y, etc.
                 // in this order: (x, y, z, rotation about X axis, rotation about Y axis, rotation about Z axis)
                 boost::array<float, 36> covariance = {
-                    0.03, 0.0, 0.0, 0.0, 0.0, 0.0, // there is some variance in x due to moving in x
-                    0.0, 0.03,0.0, 0.0, 0.0, 0.0,  // there is some variance in y due to moving in y
+                    0.05, 0.0, 0.0, 0.0, 0.0, 0.0, // there is some variance in x due to moving in x
+                    0.0, 0.05,0.0, 0.0, 0.0, 0.0,  // there is some variance in y due to moving in y
                     0.0, 0.0, 0.0, 0.0, 0.0, 0.0,  // No z motion occurs... no variance
                     0.0, 0.0, 0.0, 0.0, 0.0, 0.0,  // no x rotation occurs
                     0.0, 0.0, 0.0, 0.0, 0.0, 0.0,  // no y rotation ccurs
@@ -312,7 +316,7 @@ bool AprilTagProcessor::FindGoals()
 {
     if (IsStopped() == false)
     {
-        ROS_ERROR_STREAM_THROTTLE(0.5, "ERROR: Robot is not yet stopped");
+        ROS_ERROR_STREAM_THROTTLE(0.5, "ERROR in FindGoals: Robot is not yet stopped");
         return false;
     }
 
@@ -320,7 +324,7 @@ bool AprilTagProcessor::FindGoals()
     GetGoals(goals);
     bool retVal = false;
 
-    //Pick best tag to use for localization (assuming there are several options)
+    //Check to see if we should update any goals
     for (int i = 0; i < goals.size(); ++i)
     {
         int tagID = goals[i];

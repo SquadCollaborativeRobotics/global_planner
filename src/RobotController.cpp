@@ -342,8 +342,6 @@ bool RobotController::SendRobotStatus(global_planner::RobotStatusSrv::Request  &
 bool RobotController::cb_SetRobotStatus(global_planner::SetRobotStatusSrv::Request  &req,
                                       global_planner::SetRobotStatusSrv::Response &res)
 {
-    // res.status = m_status.GetMessage();
-    // m_lastStatusUpdate = ros::Time::now();
     // TODO: this
     return false;
 }
@@ -660,10 +658,11 @@ void RobotController::StateExecute()
         break;
 
         case RobotState::WAITING_TAG_FINISHED:
-            if (ros::Time::now() - m_timeEnteringState > ros::Duration(2.0))
+            if (ros::Time::now() - m_timeEnteringState > ros::Duration(1.0))
             {
                 Transition(RobotState::WAITING);
             }
+            Transition(RobotState::WAITING);
             break;
 
         case RobotState::NAVIGATING:
@@ -720,7 +719,7 @@ void RobotController::StateExecute()
         break;
 
         case RobotState::NAVIGATING_TAG_FINISHED:
-            if (ros::Time::now() - m_timeEnteringState > ros::Duration(2.0))
+            if (ros::Time::now() - m_timeEnteringState > ros::Duration(1.0))
             {
                 Transition(RobotState::NAVIGATING);
             }
@@ -780,7 +779,7 @@ void RobotController::StateExecute()
         break;
 
         case RobotState::COLLECTING_TAG_FINISHED:
-            if (ros::Time::now() - m_timeEnteringState > ros::Duration(2.0))
+            if (ros::Time::now() - m_timeEnteringState > ros::Duration(1.0))
             {
                 Transition(RobotState::COLLECTING);
             }
