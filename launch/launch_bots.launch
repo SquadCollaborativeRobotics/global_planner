@@ -23,11 +23,14 @@
             <!-- include our robots -->
             <include file="$(find collectorbot_gazebo)/launch/TwoBots/Cubicle/twobots_cubicle_robots.launch"/>
 
+            <!-- Launch robot controllers -->
+            <include file="$(find global_planner)/launch/robots.launch" />
+
             <!-- Run two robots amcl localization -->
             <include file="$(find collectorbot_gazebo)/launch/TwoBots/twobots_amcl.launch"/>
 
             <!-- Run two robots movebase  -->
-            <include file="$(find collectorbot_gazebo)/launch/TwoBots/twobots_move_base.launch" launch-prefix="terminator -x" />
+            <include file="$(find collectorbot_gazebo)/launch/TwoBots/twobots_move_base.launch" />
 
             <!-- Run robot controllers -->
             <!-- For some reason the one of choice needs to be launched seperately after -->

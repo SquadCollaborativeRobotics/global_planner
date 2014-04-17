@@ -12,6 +12,6 @@
         out the computation
 
         To specify which computer to run, add  'machine="machine_name"' to the node
-        ex: <node pkg="amcl" type="amcl" name="amcl" machine="sam"> -->
+        ex: <node pkg="amcl" type="amcl" name="amcl" machine="Pepe"> -->
 
 </launch>

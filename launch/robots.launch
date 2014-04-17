@@ -14,8 +14,12 @@
       <param name="storage_capacity" value="3" />
     </node>
 
-    <include file="$(find april_tags)/launch/april_tags.launch">
-      <!-- <arg name="machineName" value="Cristoff" /> -->
+    <include file="$(find april_tags)/launch/april_tags.launch" >
+      <arg name="focalLength" value="554" />
+      <arg name="imageTopic" value="camera/image_raw" />
+      <arg name="imageFrame" value="camera_link" />
+      <arg name="tf_prefix" value="robot1_tf" />
+      <arg name="draw" value="false" />
     </include>
   </group>
 
@@ -32,8 +36,12 @@
       <param name="storage_capacity" value="3" />
     </node>
 
-    <include file="$(find april_tags)/launch/april_tags.launch">
-      <!-- <arg name="machineName" value="Pepe" /> -->
+    <include file="$(find april_tags)/launch/april_tags.launch" >
+      <arg name="focalLength" value="554" />
+      <arg name="imageTopic" value="camera/image_raw" />
+      <arg name="imageFrame" value="camera_link" />
+      <arg name="tf_prefix" value="robot2_tf" />
+      <arg name="draw" value="false" />
     </include>
   </group>
 </launch>

@@ -76,10 +76,10 @@ bool AprilTagProcessor::Init(ros::NodeHandle *nh, int robotID)
     m_robotBaseFrame = tf_prefix + "/"+base_frame;
 
     std::string cam_frame = m_cameraFrame;
-    if (m_nh->getParam("controller/camera_frame", cam_frame))
+    if (m_nh->getParam("april_tags/imageFrame", cam_frame))
         ROS_INFO_STREAM("Read camera frame: " << cam_frame);
     else
-        ROS_ERROR_STREAM("Did not read camera_frame: default = " << cam_frame);
+        ROS_ERROR_STREAM("Did not read imageFrame: default = " << cam_frame);
 
     m_cameraFrame = tf_prefix + "/"+cam_frame;
 
