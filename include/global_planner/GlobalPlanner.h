@@ -23,7 +23,7 @@
 #include <global_planner/RobotStatusSrv.h>
 #include <global_planner/SetRobotStatusSrv.h>
 #include <global_planner/SetTrashSrv.h>
-#include <global_planner/SoundMsg.h>
+#include <std_msgs/String.h>
 #include <boost/thread/mutex.hpp>
 
 #define NO_ROBOT_FOUND -1 // Robot ID -1 is no robot found
@@ -89,7 +89,7 @@ public:
     bool AssignRobotGoal(int robot_id, int goal_id);
     double TimeSinceStart();
 
-    void SendSound(std::string filename, int num_times);
+    void SendText(std::string text);
     void SendSound(std::string filename);
 
 private:
@@ -120,8 +120,11 @@ private:
     // E-Stop Publisher
     ros::Publisher m_eStopPub;
 
-    // E-Stop Publisher
+    // Sound message publisher
     ros::Publisher m_soundPub;
+
+    // Sound message publisher
+    ros::Publisher m_textPub;
 
     // Task Master
     TaskMaster m_tm;

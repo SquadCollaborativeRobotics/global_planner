@@ -185,7 +185,7 @@ void GlobalPlanner::Execute()
             m_robots[binBot]->SetStorageUsed( m_robots[binBot]->GetStorageUsed() + trash_to_transfer );
             // Remove trash from collector bot
             m_robots[collectorBot]->SetStorageUsed(0);
-            
+
             // Set states to waiting in global planner but not robot controllers
             // the robot controllers are in DUMP_FINISHED state, but they're ready to transition to waypoints etc.
             m_robots[collectorBot]->SetState(RobotState::WAITING);
@@ -201,6 +201,11 @@ void GlobalPlanner::Execute()
     std::vector<Goal_Ptr> availableGoals = m_tm.GetAvailableGoals();
     for (std::vector<Goal_Ptr>::iterator goal_it = availableGoals.begin(); goal_it != availableGoals.end(); ++goal_it)
     {
+        if (ros::Time::now() - (*goal_it)->GetTime() < ros::Duration(2.0))
+        {
+            ROS_INFO_THROTTLE(1.0, "Waiting for the sending robot to be ready to accept this goal");
+            continue;
+        }
         geometry_msgs::Pose goalPose = (*goal_it)->GetPose();
         int closestRobot = NO_ROBOT_FOUND;
         double best_dist = MAX_DIST;
@@ -715,7 +720,7 @@ void GlobalPlanner::Start()
 // System finished
 void GlobalPlanner::Finished()
 {
-    SendSound("mario_1_up.wav");
+    SendSound("mario_world_clear.wav");
     // TODO: Wrap up statistics here.
     ROS_INFO("Global Planner finished in : %g seconds", TimeSinceStart() );
 
@@ -760,8 +765,9 @@ bool GlobalPlanner::SetupCallbacks()
     m_robotSub = m_nh->subscribe("robot_status", 10, &GlobalPlanner::cb_robotStatus, this);
     m_eStopPub = m_nh->advertise<std_msgs::Empty>("e_stop_pub", 100);
 
-    // Publisher to send current state to the rest of the world when transition happens
-    m_soundPub = m_nh->advertise<global_planner::SoundMsg>("play_sound", 100);
+    // Publishers to send human interface output
+    m_soundPub = m_nh->advertise<std_msgs::String>("/interface_sound", 100);
+    m_textPub = m_nh->advertise<std_msgs::String>("/interface_text", 100);
 
     ros::spinOnce();
 }
@@ -803,19 +809,16 @@ void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& 
 
 /***********************************************************************
  *  Method: GlobalPlanner::SendSound
- *  Params: std::string filename, int num_times
+ *  Params: std::string filename
  * Returns: void
- * Effects:	play the sound specified in the filename
- *  (relative to the 'resources/sounds' folder)
- *  for the number of timess specified
+ * Effects: play the sound specified in the filename
+ *  (relaative to the 'resources/sounds' folder)
  ***********************************************************************/
-void GlobalPlanner::SendSound(std::string filename, int num_times)
+void GlobalPlanner::SendSound(std::string filename)
 {
-  global_planner::SoundMsg s;
-  s.filename = filename;
-  s.num_times = num_times;
-  s.text_output = std::string();
-  m_soundPub.publish(s);
+    std_msgs::String s;
+    s.data = filename;
+    m_soundPub.publish(s);
 }
 
 
@@ -823,12 +826,13 @@ void GlobalPlanner::SendSound(std::string filename, int num_times)
  *  Method: GlobalPlanner::SendSound
  *  Params: std::string filename
  * Returns: void
- * Effects:	play the sound specified in the filename
- *  (relaative to the 'resources/sounds' folder)
+ * Effects: send text to the human interface node
  ***********************************************************************/
-void GlobalPlanner::SendSound(std::string filename)
+void GlobalPlanner::SendText(std::string text)
 {
-    SendSound(filename, 1);
+    std_msgs::String s;
+    s.data = text;
+    m_textPub.publish(s);
 }
 
 

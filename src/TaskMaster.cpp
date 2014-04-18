@@ -63,14 +63,18 @@ bool TaskMaster::SetupTopics()
 
     ROS_INFO_STREAM("Setting up subscribers for tasks");
     //Let's do something easier for now...
-    m_goalSub = m_nh->subscribe("goal_finished", 10, &TaskMaster::cb_goalFinished, this);
-    m_waypointSub = m_nh->subscribe("waypoint_finished", 10, &TaskMaster::cb_waypointFinished, this);
-    m_dumpSub = m_nh->subscribe("dump_finished", 10, &TaskMaster::cb_dumpFinished, this);
+    m_goalSub = m_nh->subscribe("/goal_finished", 10, &TaskMaster::cb_goalFinished, this);
+    m_waypointSub = m_nh->subscribe("/waypoint_finished", 10, &TaskMaster::cb_waypointFinished, this);
+    m_dumpSub = m_nh->subscribe("/dump_finished", 10, &TaskMaster::cb_dumpFinished, this);
 
     ROS_INFO_STREAM("Setting up subscriber for goals seen");
-    m_goalSeenSub = m_nh->subscribe("goal_seen", 10, &TaskMaster::cb_goalSeen, this);
+    m_goalSeenSub = m_nh->subscribe("/goal_seen", 10, &TaskMaster::cb_goalSeen, this);
 
     ROS_INFO_STREAM("Finished Setting up subscribers");
+
+    // Publishers to send human interface output
+    m_soundPub = m_nh->advertise<std_msgs::String>("/interface_sound", 100);
+    m_textPub = m_nh->advertise<std_msgs::String>("/interface_text", 100);
 }
 
 
@@ -409,6 +413,8 @@ void TaskMaster::cb_goalFinished(const global_planner::GoalFinished::ConstPtr& m
         ROS_ERROR_STREAM("ERROR, Goal finished with status: " << msg->status
                          << " : " << Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
     }
+
+    SendSound("mario_coin.wav");
 }
 
 
@@ -425,6 +431,7 @@ void TaskMaster::cb_waypointFinished(const global_planner::WaypointFinished::Con
     if (status == TaskResult::SUCCESS)
     {
         ROS_INFO_STREAM("Waypoint["<<msg->id<<"] reached successfully");
+        SendSound("beep.wav");
     }
     else
     {
@@ -457,6 +464,7 @@ void TaskMaster::cb_dumpFinished(const global_planner::DumpFinished::ConstPtr& m
         {
             m_dumpMap[msg->id]->SetStatus(TaskResult::DUMP_FINISHED);
             ROS_INFO_STREAM("Dumping was successful");
+            SendSound("mario_i_got_it.wav");
         }
     }
     else
@@ -608,3 +616,30 @@ std::vector<Dump_Ptr> TaskMaster::GetAvailableDumps()
 }
 
 
+/***********************************************************************
+ *  Method: TaskMaster::SendSound
+ *  Params: std::string filename
+ * Returns: void
+ * Effects: play the sound specified in the filename
+ *  (relaative to the 'resources/sounds' folder)
+ ***********************************************************************/
+void TaskMaster::SendSound(std::string filename)
+{
+    std_msgs::String s;
+    s.data = filename;
+    m_soundPub.publish(s);
+}
+
+
+/***********************************************************************
+ *  Method: TaskMaster::SendSound
+ *  Params: std::string filename
+ * Returns: void
+ * Effects: send text to the human interface node
+ ***********************************************************************/
+void TaskMaster::SendText(std::string text)
+{
+    std_msgs::String s;
+    s.data = text;
+    m_textPub.publish(s);
+}

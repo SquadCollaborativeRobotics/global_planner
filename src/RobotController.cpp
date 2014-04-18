@@ -226,7 +226,7 @@ bool RobotController::cb_waypointSub(global_planner::WaypointSrv::Request  &req,
             default:
                 ROS_ERROR_STREAM("Waypoint hit: Robot is in state: "<<RobotState::ToString(m_status.GetState())<<", which should not be sent a waypoint message");
             break;
-            
+
             /*
             case RobotState::NAVIGATING:
             ROS_ERROR_STREAM("WARNING: In Navigation State, Ignoring Waypoint.");
@@ -525,6 +525,10 @@ void RobotController::SetupCallbacks()
     UpdatePose();
     m_statusPub.publish(m_status.GetMessage());
 
+    // Publishers to send human interface output
+    m_soundPub = m_nh->advertise<std_msgs::String>("/interface_sound", 100);
+    m_textPub = m_nh->advertise<std_msgs::String>("/interface_text", 100);
+
     ROS_INFO_STREAM("Finished setting up topics");
 }
 
@@ -811,7 +815,7 @@ void RobotController::StateExecute()
             }
             break;
         }
-        
+
         case RobotState::DUMPING_FINISHED:
         break;
 

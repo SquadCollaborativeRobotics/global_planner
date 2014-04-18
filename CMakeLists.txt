@@ -52,7 +52,6 @@ find_package(Boost REQUIRED COMPONENTS system thread)
 ## Generate messages in the 'msg' folder
 add_message_files(
   FILES
-    SoundMsg.msg
     RobotStatus.msg
     GoalMsg.msg
     GoalFinished.msg

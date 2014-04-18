@@ -39,6 +39,8 @@
 #include <global_planner/GoalSrv.h>
 #include <global_planner/GoalSrv.h>
 
+#include <std_msgs/String.h>
+
 
 class TaskMaster
 {
@@ -125,4 +127,12 @@ private:
 
     // List of robots in the system
     std::map< int, Robot_Ptr > m_robots;
+
+
+    void SendSound(std::string filename);
+    void SendText(std::string text);
+    // Sound message publisher
+    ros::Publisher m_soundPub;
+    // Sound message publisher
+    ros::Publisher m_textPub;
 };

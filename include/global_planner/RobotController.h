@@ -61,7 +61,7 @@ public:
     void SendGoalFinished(TaskResult::Status status);
     void SendWaypointFinished(TaskResult::Status status);
     void SendDumpFinished(TaskResult::Status status);
-    
+
 
     void Init(ros::NodeHandle* nh,
               int robotID = -1,
@@ -136,4 +136,12 @@ private:
     boost::shared_ptr<AprilTagProcessor> m_tagProcessor;
 
     ros::Time m_lastStatusUpdate;
+
+
+    void SendSound(std::string filename);
+    void SendText(std::string text);
+    // Sound message publisher
+    ros::Publisher m_soundPub;
+    // Sound message publisher
+    ros::Publisher m_textPub;
 };

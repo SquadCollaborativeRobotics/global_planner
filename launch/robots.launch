@@ -19,7 +19,6 @@
       <arg name="imageTopic" value="camera/image_raw" />
       <arg name="imageFrame" value="camera_link" />
       <arg name="tf_prefix" value="robot1_tf" />
-      <arg name="draw" value="false" />
     </include>
   </group>
 
@@ -41,7 +40,6 @@
       <arg name="imageTopic" value="camera/image_raw" />
       <arg name="imageFrame" value="camera_link" />
       <arg name="tf_prefix" value="robot2_tf" />
-      <arg name="draw" value="false" />
     </include>
   </group>
 </launch>

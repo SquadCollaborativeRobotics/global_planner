@@ -794,5 +794,3 @@ ros::Time AprilTagProcessor::LastGoalSendTime(int tagID)
     }
     return ros::Time(0);
 }
-
-
