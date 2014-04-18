@@ -48,13 +48,17 @@ bool AprilTagProcessor::Init(ros::NodeHandle *nh, int robotID)
     m_tfListener.reset( new tf::TransformListener(*m_nh) );
 
     //Setup tag types
-    m_goalTypeMap[3] = AprilTagProcessor::LANDMARK;
-    m_goalTypeMap[5] = AprilTagProcessor::LANDMARK;
-
-    m_goalTypeMap[4] = AprilTagProcessor::GOAL;
-    m_goalTypeMap[6] = AprilTagProcessor::GOAL;
-    m_goalTypeMap[8] = AprilTagProcessor::GOAL;
-    m_goalTypeMap[0] = AprilTagProcessor::GOAL;
+    for (int i=0; i<=10; i++)
+    {
+        if (i%2 == 0)
+        {
+            m_goalTypeMap[i] = AprilTagProcessor::GOAL;
+        }
+        else
+        {
+            m_goalTypeMap[i] = AprilTagProcessor::LANDMARK;
+        }
+    }
 
     //Setup publishers
     m_goalPub = m_nh->advertise<global_planner::GoalSeen>("goal_seen", 100);
@@ -254,14 +258,14 @@ bool AprilTagProcessor::UpdatePose()
 
                 // Create a "stamped" message
                 geometry_msgs::PoseWithCovarianceStamped newRobotPoseMsg;
-                newRobotPoseMsg.header.frame_id = "map";
+                newRobotPoseMsg.header.frame_id = "/map";
                 newRobotPoseMsg.header.stamp = tagCameraTF.stamp_;
 
                 newRobotPoseMsg.pose = poseWithCovariance;
 
                 //Use for display purposes...
                 geometry_msgs::PoseStamped poseStamped;
-                poseStamped.header.frame_id = "map";
+                poseStamped.header.frame_id = "/map";
                 poseStamped.header.stamp = tagCameraTF.stamp_;
                 poseStamped.pose = poseWithCovariance.pose;
 
@@ -339,7 +343,7 @@ bool AprilTagProcessor::FindGoals()
             // ROS_INFO_STREAM("Tag ["<<tagID<< "] has a frame name of: "<<goal_frame);
 
             tf::StampedTransform transform;
-            if (GetTransform("map", goal_frame, transform))
+            if (GetTransform("/map", goal_frame, transform))
             {
                 ROS_INFO_STREAM("We can transform the goal into the map frame");
                 global_planner::GoalSeen goal;
@@ -349,7 +353,7 @@ bool AprilTagProcessor::FindGoals()
                 quat = transform.getRotation();
 
                 // Get pose in map frame
-                ps.header.frame_id = "map";
+                ps.header.frame_id = "/map";
 
                 //Set garbage pose based on the transform
                 ps.pose.position.x = transform.getOrigin().x();
@@ -727,7 +731,7 @@ int AprilTagProcessor::GetIDFromFrameName(std::string frame_name)
  ***********************************************************************/
 bool AprilTagProcessor::GetMapTransform(std::string frame_name, tf::StampedTransform &tf, ros::Time time)
 {
-    if (GetTransform("map", frame_name.c_str(), tf))
+    if (GetTransform("/map", frame_name.c_str(), tf))
         return true;
     else
         return false;
