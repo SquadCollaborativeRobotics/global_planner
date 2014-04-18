@@ -1,0 +1,10 @@
+<launch>
+
+  <arg name="planner" default="closest_waypoint" />
+  <arg name="waypoint_file" default="falldemo.points" />
+
+  <node pkg="global_planner" type="global_planner_node" name="global_planner" output="screen">
+    <param name="waypoints_file" value="$(arg falldemo.points)" />
+    <param name="planner" value="$(arg planner)" />
+  </node>
+</launch>
