@@ -12,11 +12,11 @@
     <node pkg="global_planner" type="robot_controller_node" name="controller" output="screen" >
       <param name="robot_name" value="$(arg robot)" />
       <param name="base_frame" value="$(arg base_frame)" />
-      <param name="tf_prefix" value=`"$(arg tf_prefix)" />
-      <param name="robot_id" value=`"$(arg robot_id)" />
-      <param name="type" value=`"$(arg type)" />
-      <param name="storage_used" value=`"$(arg storage_used)" />
-      <param name="storage_capacity" value=`"$(arg storage_capacity)" />
+      <param name="tf_prefix" value="$(arg tf_prefix)" />
+      <param name="robot_id" value="$(arg robot_id)" />
+      <param name="type" value="$(arg type)" />
+      <param name="storage_used" value="$(arg storage_used)" />
+      <param name="storage_capacity" value="$(arg storage_capacity)" />
     </node>
   </group>
 </launch>

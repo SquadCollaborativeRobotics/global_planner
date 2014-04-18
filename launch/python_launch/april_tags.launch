@@ -1,24 +1,28 @@
 <launch>
-  <arg name="mode" default="false"/>
-  <arg name-"robot" default="robot1" />
-  <arg name-"tf_prefix" default="$(arg robot)_tf" />
+  <arg name="mode" default="0"/>
+  <arg name="robot" default="robot1" />
+  <arg name="tf_prefix" default="$(arg robot)_tf" />
 
-  <group if="$(arg mode)">
-  	<include file="$(find april_tags)/launch/image_capture.launch">
-  	  <arg name="tf_prefix" value="$(arg tf_prefix)" />
-  	</include>
-  	<include file="$(find april_tags)/launch/april_tags.launch" >
-	  <arg name="focalLength" value="790" />
-	  <arg name="imageTopic" value="camera/image_raw" />
-	  <arg name="imageFrame" value="camera_link" />
-	  <arg name="tf_prefix" value="$(arg tf_prefix)" />
+  <group ns="$(arg robot)">
+    <group if="$(arg mode)">
+    	<include file="$(find april_tags)/launch/image_capture.launch">
+    	  <arg name="tf_prefix" value="$(arg tf_prefix)" />
+    	</include>
+    	<include file="$(find april_tags)/launch/april_tags.launch" >
+    	  <arg name="focalLength" value="790" />
+    	  <arg name="imageTopic" value="camera/image_raw" />
+    	  <arg name="imageFrame" value="camera_link" />
+    	  <arg name="tf_prefix" value="$(arg tf_prefix)" />
+      </include>
+    </group>
+
+    <group unless="$(arg mode)">
+      <include file="$(find april_tags)/launch/april_tags.launch" >
+        <arg name="focalLength" value="554" />
+        <arg name="imageTopic" value="camera/image_raw" />
+        <arg name="imageFrame" value="camera_link" />
+        <arg name="tf_prefix" value="$(arg tf_prefix)" />
+      </include>
+    </group>
   </group>
-
-  <group unless="$(arg mode)">
-    <include file="$(find april_tags)/launch/april_tags.launch" >
-      <arg name="focalLength" value="554" />
-      <arg name="imageTopic" value="camera/image_raw" />
-      <arg name="imageFrame" value="camera_link" />
-      <arg name="tf_prefix" value="$(arg tf_prefix)" />
-    </include>
-</group>
+</launch>
