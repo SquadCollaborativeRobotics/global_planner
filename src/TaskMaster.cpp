@@ -406,15 +406,20 @@ void TaskMaster::cb_goalFinished(const global_planner::GoalFinished::ConstPtr& m
     m_goalMap[msg->id]->SetStatus(Conversion::IntToTaskResult(status));
     if (status == TaskResult::SUCCESS)
     {
+        SendSound("mario_coin.wav");
+        std::stringstream ss;
+        ss<<"SUCCESS: Goal ("<<msg->id<<") finished successfully";
+        SendText(ss.str());
         ROS_INFO_STREAM("Goal finished successfully");
     }
     else
     {
         ROS_ERROR_STREAM("ERROR, Goal finished with status: " << msg->status
                          << " : " << Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
+        std::stringstream ss;
+        ss << "ERROR: Goal ("<<msg->id<<") not finished successfully " << Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status));
+        SendText(ss.str());
     }
-
-    SendSound("mario_coin.wav");
 }
 
 
@@ -432,6 +437,10 @@ void TaskMaster::cb_waypointFinished(const global_planner::WaypointFinished::Con
     {
         ROS_INFO_STREAM("Waypoint["<<msg->id<<"] reached successfully");
         SendSound("beep.wav");
+
+        std::stringstream ss;
+        ss << "SUCCESS: Waypoint ("<<msg->id<<") finished successfully";
+        SendText(ss.str());
     }
     else
     {
@@ -439,6 +448,10 @@ void TaskMaster::cb_waypointFinished(const global_planner::WaypointFinished::Con
                          << " : " << Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
         //FOR NOW, let's just say it's available after a failure
         m_waypointMap[msg->id]->SetStatus(TaskResult::AVAILABLE);
+        SendSound("mario_die.wav");
+        std::stringstream ss;
+        ss << "ERROR: Waypoint ("<<msg->id<<") not reached successfully";
+        SendText(ss.str());
     }
 }
 
@@ -459,17 +472,26 @@ void TaskMaster::cb_dumpFinished(const global_planner::DumpFinished::ConstPtr& m
         {
             m_dumpMap[msg->id]->SetStatus(TaskResult::DUMP_HALF_DONE);
             ROS_INFO_STREAM("Dumping halfway done");
+            std::stringstream ss;
+            ss << "SUCCESS: Dump ("<<msg->id<<") half way done";
+            SendText(ss.str());
         }
         else if (m_dumpMap[msg->id]->GetStatus() == TaskResult::DUMP_HALF_DONE)
         {
             m_dumpMap[msg->id]->SetStatus(TaskResult::DUMP_FINISHED);
             ROS_INFO_STREAM("Dumping was successful");
             SendSound("mario_i_got_it.wav");
+            std::stringstream ss;
+            ss << "ERROR: Dump ("<<msg->id<<") reached by both robots successfully";
+            SendText(ss.str());
         }
     }
     else
     {
         ROS_ERROR_STREAM("Dump failed due to status: " << msg->status<<" : "<<Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
+            std::stringstream ss;
+            ss << "Dump failed due to status: " << msg->status<<" : "<<Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status));
+            SendText(ss.str());
     }
 }
 

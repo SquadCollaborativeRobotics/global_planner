@@ -16,6 +16,7 @@
 #include <nav_msgs/Odometry.h>
 #include <actionlib/client/simple_action_client.h>
 #include <std_msgs/Empty.h>
+#include <std_msgs/String.h>
 
 #include <global_planner/GoalFinished.h>
 #include <global_planner/WaypointFinished.h>

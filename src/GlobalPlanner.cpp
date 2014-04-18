@@ -713,7 +713,10 @@ int GlobalPlanner::GetWaypointClosestToRobot(int robot_id) {
 void GlobalPlanner::Start()
 {
     m_start_time = ros::Time::now();
-    SendSound("mario_coin.wav");
+    SendSound("mario_lets_go.wav");
+    std::stringstream ss;
+    ss << "Starting global planner";
+    SendText(ss.str());
 }
 
 
@@ -721,6 +724,10 @@ void GlobalPlanner::Start()
 void GlobalPlanner::Finished()
 {
     SendSound("mario_world_clear.wav");
+    std::stringstream ss;
+    ss << "Global Planner finished";
+    SendText(ss.str());
+
     // TODO: Wrap up statistics here.
     ROS_INFO("Global Planner finished in : %g seconds", TimeSinceStart() );
 
