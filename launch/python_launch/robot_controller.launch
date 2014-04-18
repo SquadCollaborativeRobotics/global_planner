@@ -1,0 +1,22 @@
+<launch>
+
+  <arg name="robot" default="robot1" />
+  <arg name="base_frame" default="robot_center" />
+  <arg name="tf_prefix" default="$(arg robot)_tf" />
+  <arg name="robot_id" default="1" />
+  <arg name="type" default="collector" />
+  <arg name="storage_used" default="0" />
+  <arg name="storage_capacity" default="3" />  
+
+  <group ns="$(arg robot)">
+    <node pkg="global_planner" type="robot_controller_node" name="controller" output="screen" >
+      <param name="robot_name" value="$(arg robot)" />
+      <param name="base_frame" value="$(arg base_frame)" />
+      <param name="tf_prefix" value="$(arg tf_prefix)" />
+      <param name="robot_id" value="$(arg robot_id)" />
+      <param name="type" value="$(arg type)" />
+      <param name="storage_used" value="$(arg storage_used)" />
+      <param name="storage_capacity" value="$(arg storage_capacity)" />
+    </node>
+  </group>
+</launch>
