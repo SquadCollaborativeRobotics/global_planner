@@ -18,6 +18,7 @@
 #include "Conversion.h"
 #include <std_msgs/Empty.h>
 #include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PoseArray.h>
 #include <global_planner/RobotStatusWrapper.h>
 #include <global_planner/RobotState.h>
 #include <global_planner/RobotStatusSrv.h>
@@ -51,6 +52,9 @@ public:
     // Called when starting (for statistics)
     void Start();
 
+    // Check if all tasks are done
+    bool isFinished();
+
     // Executive function
     void Execute();
 
@@ -73,17 +77,20 @@ public:
     void PlanNNWaypoint();
     void PlanNaive();
 
+    //Goal Processor
+    void ProcessGoals();
+
     // Search algorithms
     int GetFirstAvailableBot();
     int GetFirstAvailableBot(RobotState::Type type);
 
+    // Helper functions for finding the best robots, goals, and waypoints
     int GetRobotClosestToRobot(int robotID, RobotState::Type type);
     int GetRobotClosestToWaypoint(int waypointID, RobotState::Type type);
     int GetRobotClosestToGoal(int goalID, RobotState::Type type);
     int GetRobotClosestToPose(geometry_msgs::Pose pose, RobotState::Type type);
     int GetWaypointClosestToRobot(int robot_id);
 
-    bool isFinished();
     bool AssignRobotWaypoint(int robot_id, int waypoint_id);
     bool AssignRobotsDump(int collector_robot_id, int bin_robot_id, int dump_id);
     bool AssignRobotGoal(int robot_id, int goal_id);
@@ -125,6 +132,14 @@ private:
 
     // Sound message publisher
     ros::Publisher m_textPub;
+
+    // Pose array publishers
+    ros::Publisher m_waypointPoseArrayAvailPub;
+    ros::Publisher m_goalPoseArrayAvailPub;
+    ros::Publisher m_dumpPoseArrayAvailPub;
+    ros::Publisher m_waypointPoseArrayFinPub;
+    ros::Publisher m_goalPoseArrayFinPub;
+    ros::Publisher m_dumpPoseArrayFinPub;
 
     // Task Master
     TaskMaster m_tm;

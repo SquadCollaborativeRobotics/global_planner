@@ -29,6 +29,8 @@ int main(int argc, char** argv){
     ROS_INFO("Node Starting Global Planner...");
     gp.Start();
 
+    ros::Time lastDisplay = ros::Time::now();
+
     ros::Rate r(5);
     while(ros::ok() && !gp.isFinished())
     {
@@ -39,6 +41,11 @@ int main(int argc, char** argv){
         else
         {
             ROS_INFO_THROTTLE(20, "Global Planner is paused");
+            if ((ros::Time::now() - lastDisplay) > ros::Duration(15))
+            {
+                gp.Display();
+                lastDisplay = ros::Time::now();
+            }
         }
         r.sleep();
         ros::spinOnce();

@@ -58,6 +58,13 @@ void GlobalPlanner::Display()
         ROS_INFO_STREAM(it->second->ToString());
     }
 
+    geometry_msgs::PoseArray availPoseArray;
+    geometry_msgs::PoseArray finPoseArray;
+    availPoseArray.header.stamp = ros::Time::now();
+    availPoseArray.header.frame_id = "/map";
+    finPoseArray.header = availPoseArray.header;
+
+
     std::map<int, Waypoint_Ptr> wps = m_tm.GetWaypoints();
     if (wps.size() > 0)
     {
@@ -66,7 +73,16 @@ void GlobalPlanner::Display()
     for (std::map<int, Waypoint_Ptr>::iterator it = wps.begin(); it != wps.end(); ++it)
     {
         ROS_INFO_STREAM(it->second->ToString());
+        if (it->second->GetStatus() == TaskResult::SUCCESS)
+            finPoseArray.poses.push_back(it->second->GetPose());
+        else
+            availPoseArray.poses.push_back(it->second->GetPose());
     }
+    m_waypointPoseArrayAvailPub.publish(availPoseArray);
+    m_waypointPoseArrayFinPub.publish(finPoseArray);
+
+    finPoseArray.poses.clear();
+    availPoseArray.poses.clear();
 
     std::map<int, Goal_Ptr> goals = m_tm.GetGoals();
     if (goals.size() > 0)
@@ -76,7 +92,17 @@ void GlobalPlanner::Display()
     for (std::map<int, Goal_Ptr>::iterator it = goals.begin(); it != goals.end(); ++it)
     {
         ROS_INFO_STREAM(it->second->ToString());
+        if (it->second->GetStatus() == TaskResult::SUCCESS)
+            finPoseArray.poses.push_back(it->second->GetPose());
+        else
+            availPoseArray.poses.push_back(it->second->GetPose());
     }
+
+    m_goalPoseArrayAvailPub.publish(availPoseArray);
+    m_goalPoseArrayFinPub.publish(finPoseArray);
+
+    finPoseArray.poses.clear();
+    availPoseArray.poses.clear();
 
 
     std::map<int, Dump_Ptr> dumps = m_tm.GetDumps();
@@ -87,7 +113,19 @@ void GlobalPlanner::Display()
     for (std::map<int, Dump_Ptr>::iterator it = dumps.begin(); it != dumps.end(); ++it)
     {
         ROS_INFO_STREAM(it->second->ToString());
+        if (it->second->GetStatus() == TaskResult::SUCCESS)
+        {
+            finPoseArray.poses.push_back(it->second->GetPose1());
+            finPoseArray.poses.push_back(it->second->GetPose2());
+        }
+        else
+        {
+            availPoseArray.poses.push_back(it->second->GetPose1());
+            availPoseArray.poses.push_back(it->second->GetPose2());
+        }
     }
+    m_dumpPoseArrayAvailPub.publish(availPoseArray);
+    m_dumpPoseArrayFinPub.publish(finPoseArray);
 }
 
 // Executive function
@@ -199,6 +237,7 @@ void GlobalPlanner::Execute()
 
     ProcessGoals();
 
+    /*
     // If no available waypoints, do nothing
     if (m_tm.GetAvailableWaypoints().size() == 0) {
         ROS_WARN_STREAM_THROTTLE(10, "No Available Waypoints! ("
@@ -215,6 +254,7 @@ void GlobalPlanner::Execute()
         ROS_INFO_STREAM_THROTTLE(10, ss.str() );
         return;
     }
+    */
 
     switch (m_planner)
     {
@@ -783,8 +823,15 @@ bool GlobalPlanner::isFinished() {
 // setup callbacks, regiser services, load waypoints...
 bool GlobalPlanner::SetupCallbacks()
 {
-    m_robotSub = m_nh->subscribe("robot_status", 10, &GlobalPlanner::cb_robotStatus, this);
-    m_eStopPub = m_nh->advertise<std_msgs::Empty>("e_stop_pub", 100);
+    m_robotSub = m_nh->subscribe("/robot_status", 10, &GlobalPlanner::cb_robotStatus, this);
+    m_eStopPub = m_nh->advertise<std_msgs::Empty>("/e_stop_pub", 10);
+
+    m_waypointPoseArrayAvailPub = m_nh->advertise<geometry_msgs::PoseArray>("/waypoints_available", 5);
+    m_waypointPoseArrayFinPub = m_nh->advertise<geometry_msgs::PoseArray>("/waypoints_finished", 5);
+    m_goalPoseArrayAvailPub = m_nh->advertise<geometry_msgs::PoseArray>("/goals_available", 5);
+    m_goalPoseArrayFinPub = m_nh->advertise<geometry_msgs::PoseArray>("/goals_finished", 5);
+    m_dumpPoseArrayAvailPub = m_nh->advertise<geometry_msgs::PoseArray>("/dumps_available", 5);
+    m_dumpPoseArrayFinPub = m_nh->advertise<geometry_msgs::PoseArray>("/dumps_finished", 5);
 
     // Publishers to send human interface output
     m_soundPub = m_nh->advertise<std_msgs::String>("/interface_sound", 100);
