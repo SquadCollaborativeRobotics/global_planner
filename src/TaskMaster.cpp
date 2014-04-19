@@ -110,19 +110,17 @@ void TaskMaster::LoadWaypoints(std::string filename)
     std::ifstream fin(filename.c_str());
     std::string s;
     //read a line into 's' from 'fin' each time
-    for(int i=0; getline(fin,s); i++){
+    for(int id=0; getline(fin,s); id++){
         //use the string 's' as input stream, the usage of 'sin' is just like 'cin'
         std::istringstream sin(s);
         double x,y,rz,rw;
-        int id;
-        sin>>id;
         sin>>x;
         sin>>y;
         sin>>rz;
         sin>>rw;
         Waypoint_Ptr wp(new WaypointWrapper(id, x, y, rz, rw));
 
-        ROS_INFO_STREAM("Loaded waypoint["<<i<<"]: "<<x<<", "<<y<<", "<<rz<<", "<<rw);
+        ROS_INFO_STREAM("Loaded waypoint["<<id<<"]: "<<x<<", "<<y<<", "<<rz<<", "<<rw);
         AddWaypoint(wp);
     }
 }
@@ -606,6 +604,15 @@ std::vector<Waypoint_Ptr> TaskMaster::GetAvailableWaypoints()
 bool TaskMaster::isFinished()
 {
     for (std::map<int, Waypoint_Ptr>::iterator it = m_waypointMap.begin(); it != m_waypointMap.end(); ++it)
+    {
+        // If it's avilable for task setting
+        if (it->second->GetStatus() == TaskResult::AVAILABLE || it->second->GetStatus() == TaskResult::INPROGRESS)
+        {
+            return false;
+        }
+    }
+
+    for (std::map<int, Goal_Ptr>::iterator it = m_goalMap.begin(); it != m_goalMap.end(); ++it)
     {
         // If it's avilable for task setting
         if (it->second->GetStatus() == TaskResult::AVAILABLE || it->second->GetStatus() == TaskResult::INPROGRESS)

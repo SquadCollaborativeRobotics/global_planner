@@ -197,11 +197,57 @@ void GlobalPlanner::Execute()
     }
     */
 
-	// If there are currently goals still not finished
+    ProcessGoals();
+
+    // If no available waypoints, do nothing
+    if (m_tm.GetAvailableWaypoints().size() == 0) {
+        ROS_WARN_STREAM_THROTTLE(10, "No Available Waypoints! ("
+                                     << m_tm.GetAvailableWaypoints().size() << ") "
+                                     << (isFinished() ? "FIN" : "GP Waiting") );
+
+        // Print out status of all waypoints
+        std::map<int, Waypoint_Ptr> allWaypoints = m_tm.GetWaypoints();
+        std::stringstream ss;
+        for (std::map<int, Waypoint_Ptr>::iterator it = allWaypoints.begin(); it != allWaypoints.end(); ++it)
+        {
+            ss << it->second->GetID() << "-" << it->second->GetStatusMessage() << " ";
+        }
+        ROS_INFO_STREAM_THROTTLE(10, ss.str() );
+        return;
+    }
+
+    switch (m_planner)
+    {
+        case PLANNER_CLOSEST_ROBOT:
+        PlanNNRobot();
+        break;
+
+        case PLANNER_CLOSEST_WAYPOINT:
+        PlanNNWaypoint();
+        break;
+
+        case PLANNER_NAIVE:
+        default:
+        PlanNaive();
+        break;
+    }
+}
+
+
+/***********************************************************************
+ *  Method: GlobalPlanner::ProcessGoals
+ *  Params:
+ * Returns:
+ * Effects: Iterate over available goals and choose the best robot to
+ *          get the goal
+ ***********************************************************************/
+void GlobalPlanner::ProcessGoals()
+{
+    // If there are currently goals still not finished
     std::vector<Goal_Ptr> availableGoals = m_tm.GetAvailableGoals();
     for (std::vector<Goal_Ptr>::iterator goal_it = availableGoals.begin(); goal_it != availableGoals.end(); ++goal_it)
     {
-        if (ros::Time::now() - (*goal_it)->GetTime() < ros::Duration(2.0))
+        if (ros::Time::now() - (*goal_it)->GetTime() < ros::Duration(2.5))
         {
             ROS_INFO_THROTTLE(1.0, "Waiting for the sending robot to be ready to accept this goal");
             continue;
@@ -242,40 +288,8 @@ void GlobalPlanner::Execute()
             ROS_INFO_STREAM_THROTTLE(1.0, "No robots available to get goal["<<(*goal_it)->GetID()<<"]");
         }
     }
-
-    // If no available waypoints, do nothing
-    if (m_tm.GetAvailableWaypoints().size() == 0) {
-        ROS_WARN_STREAM_THROTTLE(10, "No Available Waypoints! ("
-                                     << m_tm.GetAvailableWaypoints().size() << ") "
-                                     << (isFinished() ? "FIN" : "GP Waiting") );
-
-        // Print out status of all waypoints
-        std::map<int, Waypoint_Ptr> allWaypoints = m_tm.GetWaypoints();
-        std::stringstream ss;
-        for (std::map<int, Waypoint_Ptr>::iterator it = allWaypoints.begin(); it != allWaypoints.end(); ++it)
-        {
-            ss << it->second->GetID() << "-" << it->second->GetStatusMessage() << " ";
-        }
-        ROS_INFO_STREAM_THROTTLE(10, ss.str() );
-        return;
-    }
-
-    switch (m_planner)
-    {
-        case PLANNER_CLOSEST_ROBOT:
-        PlanNNRobot();
-        break;
-
-        case PLANNER_CLOSEST_WAYPOINT:
-        PlanNNWaypoint();
-        break;
-
-        case PLANNER_NAIVE:
-        default:
-        PlanNaive();
-        break;
-    }
 }
+
 
 /***********************************************************************
  *  Method: GlobalPlanner::PlanNNWaypoint

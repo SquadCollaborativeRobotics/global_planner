@@ -61,7 +61,7 @@ bool AprilTagProcessor::Init(ros::NodeHandle *nh, int robotID)
     }
 
     //Setup publishers
-    m_goalPub = m_nh->advertise<global_planner::GoalSeen>("goal_seen", 100);
+    m_goalPub = m_nh->advertise<global_planner::GoalSeen>("/goal_seen", 100);
     m_newPosePub = m_nh->advertise<geometry_msgs::PoseStamped>("new_pose", 100);
     m_newInitialPosePub = m_nh->advertise<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 100);
 
