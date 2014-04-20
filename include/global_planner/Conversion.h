@@ -109,6 +109,24 @@ public:
         ss << "/dumps/"<<id;
         return ss.str();
     }
+    static const std::string RobotIDToWaypointFinishedTopic(int id)
+    {
+        std::stringstream ss;
+        ss << "/waypoint_finished/"<<id;
+        return ss.str();
+    }
+    static const std::string RobotIDToGoalFinishedTopic(int id)
+    {
+        std::stringstream ss;
+        ss << "/goal_finished/"<<id;
+        return ss.str();
+    }
+    static const std::string RobotIDToDumpFinishedTopic(int id)
+    {
+        std::stringstream ss;
+        ss << "/dump_finished/"<<id;
+        return ss.str();
+    }
     static const std::string RobotIDToSetTrash(int id)
     {
         std::stringstream ss;

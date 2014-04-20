@@ -104,12 +104,11 @@ private:
     ros::Subscriber m_odomSub;
 
     ros::Publisher m_statusPub;
-
-    ros::Publisher m_goalFinishedPub;
-    ros::Publisher m_waypointFinishedPub;
-    ros::Publisher m_dumpFinishedPub;
-
     ros::ServiceServer m_statusService;
+
+    ros::ServiceClient m_goalFinishedPub;
+    ros::ServiceClient m_waypointFinishedPub;
+    ros::ServiceClient m_dumpFinishedPub;
 
     RobotStatusWrapper m_status;
 

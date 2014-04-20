@@ -355,11 +355,14 @@ bool RobotController::cb_SetRobotStatus(global_planner::SetRobotStatusSrv::Reque
  ***********************************************************************/
 void RobotController::SendGoalFinished(TaskResult::Status status)
 {
-    global_planner::GoalFinished goalMsg;
-    goalMsg.id = m_status.GetTaskID();
-    goalMsg.status = Conversion::TaskResultToInt(status);
+    if (m_status.GetTaskID() < 0)
+        return ;
 
-    m_goalFinishedPub.publish(goalMsg);
+    global_planner::GoalFinished goalMsg;
+    goalMsg.request.id = m_status.GetTaskID();
+    goalMsg.request.status = Conversion::TaskResultToInt(status);
+
+    m_goalFinishedPub.call(goalMsg);
 }
 
 
@@ -371,11 +374,14 @@ void RobotController::SendGoalFinished(TaskResult::Status status)
  ***********************************************************************/
 void RobotController::SendWaypointFinished(TaskResult::Status status)
 {
-    global_planner::WaypointFinished wpMsg;
-    wpMsg.id = m_status.GetTaskID();
-    wpMsg.status = Conversion::TaskResultToInt(status);
+    if (m_status.GetTaskID() < 0)
+        return ;
 
-    m_waypointFinishedPub.publish(wpMsg);
+    global_planner::WaypointFinished wpMsg;
+    wpMsg.request.id = m_status.GetTaskID();
+    wpMsg.request.status = Conversion::TaskResultToInt(status);
+
+    m_waypointFinishedPub.call(wpMsg);
 }
 
 
@@ -387,12 +393,15 @@ void RobotController::SendWaypointFinished(TaskResult::Status status)
  ***********************************************************************/
 void RobotController::SendDumpFinished(TaskResult::Status status)
 {
-    global_planner::DumpFinished dumpMsg;
-    dumpMsg.id = m_status.GetTaskID();
-    dumpMsg.robotID = m_status.GetID();
-    dumpMsg.status = Conversion::TaskResultToInt(status);
+    if (m_status.GetTaskID() < 0)
+        return ;
 
-    m_dumpFinishedPub.publish(dumpMsg);
+    global_planner::DumpFinished dumpMsg;
+    dumpMsg.request.id = m_status.GetTaskID();
+    dumpMsg.request.robotID = m_status.GetID();
+    dumpMsg.request.status = Conversion::TaskResultToInt(status);
+
+    m_dumpFinishedPub.call(dumpMsg);
 }
 
 
@@ -506,9 +515,10 @@ void RobotController::SetupCallbacks()
 
     m_statusPub = m_nh->advertise<global_planner::RobotStatus>("/robot_status", 100);
 
-    m_goalFinishedPub = m_nh->advertise<global_planner::GoalFinished>("/goal_finished", 10);
-    m_waypointFinishedPub = m_nh->advertise<global_planner::WaypointFinished>("/waypoint_finished", 10);
-    m_dumpFinishedPub = m_nh->advertise<global_planner::DumpFinished>("/dump_finished", 10);
+    //Task Finished services
+    m_goalFinishedPub = m_nh->serviceClient<global_planner::RobotStatusSrv>(Conversion::RobotIDToGoalFinishedTopic(m_status.GetID()), true);
+    m_waypointFinishedPub = m_nh->serviceClient<global_planner::RobotStatusSrv>(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), true);
+    m_dumpFinishedPub = m_nh->serviceClient<global_planner::RobotStatusSrv>(Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()), true);
 
     std::string statusServiceTopic = Conversion::RobotIDToServiceName(m_status.GetID());
     m_statusService = m_nh->advertiseService(statusServiceTopic, &RobotController::SendRobotStatus, this);

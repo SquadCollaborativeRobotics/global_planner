@@ -54,12 +54,9 @@ add_message_files(
   FILES
     RobotStatus.msg
     GoalMsg.msg
-    GoalFinished.msg
     GoalSeen.msg
     WaypointMsg.msg
-    WaypointFinished.msg
     DumpMsg.msg
-    DumpFinished.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -71,6 +68,10 @@ add_service_files(
     GoalSrv.srv
     WaypointSrv.srv
     DumpSrv.srv
+    #task finshed messages
+    GoalFinished.srv
+    WaypointFinished.srv
+    DumpFinished.srv
 )
 
 ## Generate actions in the 'action' folder

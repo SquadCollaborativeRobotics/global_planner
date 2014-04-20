@@ -80,9 +80,12 @@ public:
     // *******************************
     // ROS Callbacks
     // *******************************
-    void cb_goalFinished(const global_planner::GoalFinished::ConstPtr& msg);
-    void cb_waypointFinished(const global_planner::WaypointFinished::ConstPtr& msg);
-    void cb_dumpFinished(const global_planner::DumpFinished::ConstPtr& msg);
+    bool cb_goalFinished(global_planner::GoalFinished::Request  &req,
+                         global_planner::GoalFinished::Response &res);
+    bool cb_waypointFinished(global_planner::WaypointFinished::Request  &req,
+                             global_planner::WaypointFinished::Response &res);
+    bool cb_dumpFinished(global_planner::DumpFinished::Request  &req,
+                         global_planner::DumpFinished::Response &res);
     void cb_goalSeen(const global_planner::GoalSeen::ConstPtr& msg);
 
     void LoadWaypoints(std::string filename);
@@ -109,10 +112,6 @@ private:
 
     //For now, we'll just listen to one topic for goals, waypoints, and dump results,
     //  since everything is being published with an ID anyways
-    ros::Subscriber m_goalSub;
-    ros::Subscriber m_waypointSub;
-    ros::Subscriber m_dumpSub;
-
     ros::Subscriber m_goalSeenSub;
     ros::Subscriber m_dumpNeededSub;
 
@@ -124,6 +123,9 @@ private:
     std::map<int, ros::ServiceClient > m_waypointClients;
     std::map<int, ros::ServiceClient > m_goalClients;
     std::map<int, ros::ServiceClient > m_dumpClients;
+    std::map<int, ros::ServiceServer > m_wpFinishedService;
+    std::map<int, ros::ServiceServer > m_dumpFinishedService;
+    std::map<int, ros::ServiceServer > m_goalFinishedService;
 
     // List of robots in the system
     std::map< int, Robot_Ptr > m_robots;

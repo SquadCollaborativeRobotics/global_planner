@@ -59,14 +59,6 @@ void TaskMaster::UpdateRobotMap(std::map<int, Robot_Ptr> new_robots)
  ***********************************************************************/
 bool TaskMaster::SetupTopics()
 {
-    ROS_INFO_STREAM("Setting up callback topics for Tasks");
-
-    ROS_INFO_STREAM("Setting up subscribers for tasks");
-    //Let's do something easier for now...
-    m_goalSub = m_nh->subscribe("/goal_finished", 10, &TaskMaster::cb_goalFinished, this);
-    m_waypointSub = m_nh->subscribe("/waypoint_finished", 10, &TaskMaster::cb_waypointFinished, this);
-    m_dumpSub = m_nh->subscribe("/dump_finished", 10, &TaskMaster::cb_dumpFinished, this);
-
     ROS_INFO_STREAM("Setting up subscriber for goals seen");
     m_goalSeenSub = m_nh->subscribe("/goal_seen", 10, &TaskMaster::cb_goalSeen, this);
 
@@ -86,6 +78,17 @@ bool TaskMaster::SetupTopics()
  ***********************************************************************/
 bool TaskMaster::RegisterServices()
 {
+    m_waypointClients.clear();
+    m_goalClients.clear();
+    m_dumpClients.clear();
+
+    m_wpFinishedService.clear();
+    m_goalFinishedService.clear();
+    m_dumpFinishedService.clear();
+
+    sleep(0.5);
+    ros::spinOnce();
+
     for (std::map<int, Robot_Ptr>::iterator i = m_robots.begin(); i != m_robots.end(); ++i)
     {
         std::string waypointServiceTopic = Conversion::RobotIDToWaypointTopic(i->first);
@@ -95,6 +98,14 @@ bool TaskMaster::RegisterServices()
         m_waypointClients[i->first] = m_nh->serviceClient<global_planner::WaypointSrv>(waypointServiceTopic, true);
         m_dumpClients[i->first] = m_nh->serviceClient<global_planner::DumpSrv>(dumpServiceTopic, true);
         m_goalClients[i->first] = m_nh->serviceClient<global_planner::GoalSrv>(goalServiceTopic, true);
+
+        std::string waypointFinServiceTopic = Conversion::RobotIDToWaypointFinishedTopic(i->first);
+        std::string goalFinServiceTopic = Conversion::RobotIDToGoalFinishedTopic(i->first);
+        std::string dumpFinServiceTopic = Conversion::RobotIDToDumpFinishedTopic(i->first);
+
+        m_wpFinishedService[i->first] = m_nh->advertiseService(waypointFinServiceTopic, &TaskMaster::cb_waypointFinished, this);
+        m_goalFinishedService[i->first] = m_nh->advertiseService(goalFinServiceTopic, &TaskMaster::cb_goalFinished, this);
+        m_dumpFinishedService[i->first] = m_nh->advertiseService(dumpFinServiceTopic, &TaskMaster::cb_dumpFinished, this);
     }
 }
 
@@ -398,24 +409,25 @@ std::map<int, Dump_Ptr> TaskMaster::GetDumps()
  * Returns: void
  * Effects: Callback for when a goal is finished
  ***********************************************************************/
-void TaskMaster::cb_goalFinished(const global_planner::GoalFinished::ConstPtr& msg)
+bool TaskMaster::cb_goalFinished(global_planner::GoalFinished::Request  &req,
+                                 global_planner::GoalFinished::Response &res)
 {
-    int status = msg->status;
-    m_goalMap[msg->id]->SetStatus(Conversion::IntToTaskResult(status));
+    int status = req.status;
+    m_goalMap[req.id]->SetStatus(Conversion::IntToTaskResult(status));
     if (status == TaskResult::SUCCESS)
     {
         SendSound("mario_coin.wav");
         std::stringstream ss;
-        ss<<"SUCCESS: Goal ("<<msg->id<<") finished successfully";
+        ss<<"SUCCESS: Goal ("<<req.id<<") finished successfully";
         SendText(ss.str());
         ROS_INFO_STREAM("Goal finished successfully");
     }
     else
     {
-        ROS_ERROR_STREAM("ERROR, Goal finished with status: " << msg->status
-                         << " : " << Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
+        ROS_ERROR_STREAM("ERROR, Goal finished with status: " << req.status
+                         << " : " << Conversion::TaskResultToString(Conversion::IntToTaskResult(req.status)));
         std::stringstream ss;
-        ss << "ERROR: Goal ("<<msg->id<<") not finished successfully " << Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status));
+        ss << "ERROR: Goal ("<<req.id<<") not finished successfully " << Conversion::TaskResultToString(Conversion::IntToTaskResult(req.status));
         SendText(ss.str());
     }
 }
@@ -427,28 +439,29 @@ void TaskMaster::cb_goalFinished(const global_planner::GoalFinished::ConstPtr& m
  * Returns: void
  * Effects: callback for when a waypoint is finished
  ***********************************************************************/
-void TaskMaster::cb_waypointFinished(const global_planner::WaypointFinished::ConstPtr& msg)
+bool TaskMaster::cb_waypointFinished(global_planner::WaypointFinished::Request  &req,
+                                     global_planner::WaypointFinished::Response &res)
 {
-    int status = msg->status;
-    m_waypointMap[msg->id]->SetStatus(Conversion::IntToTaskResult(status));
+    int status = req.status;
+    m_waypointMap[req.id]->SetStatus(Conversion::IntToTaskResult(status));
     if (status == TaskResult::SUCCESS)
     {
-        ROS_INFO_STREAM("Waypoint["<<msg->id<<"] reached successfully");
+        ROS_INFO_STREAM("Waypoint["<<req.id<<"] reached successfully");
         SendSound("beep.wav");
 
         std::stringstream ss;
-        ss << "SUCCESS: Waypoint ("<<msg->id<<") finished successfully";
+        ss << "SUCCESS: Waypoint ("<<req.id<<") finished successfully";
         SendText(ss.str());
     }
     else
     {
-        ROS_ERROR_STREAM("ERROR, Waypoint finished with status: " << msg->status
-                         << " : " << Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
+        ROS_ERROR_STREAM("ERROR, Waypoint finished with status: " << req.status
+                         << " : " << Conversion::TaskResultToString(Conversion::IntToTaskResult(req.status)));
         //FOR NOW, let's just say it's available after a failure
-        m_waypointMap[msg->id]->SetStatus(TaskResult::AVAILABLE);
+        m_waypointMap[req.id]->SetStatus(TaskResult::AVAILABLE);
         SendSound("mario_die.wav");
         std::stringstream ss;
-        ss << "ERROR: Waypoint ("<<msg->id<<") not reached successfully";
+        ss << "ERROR: Waypoint ("<<req.id<<") not reached successfully";
         SendText(ss.str());
     }
 }
@@ -460,35 +473,36 @@ void TaskMaster::cb_waypointFinished(const global_planner::WaypointFinished::Con
  * Returns: void
  * Effects: callback for when a dump is finished
  ***********************************************************************/
-void TaskMaster::cb_dumpFinished(const global_planner::DumpFinished::ConstPtr& msg)
+bool TaskMaster::cb_dumpFinished(global_planner::DumpFinished::Request  &req,
+                                 global_planner::DumpFinished::Response &res)
 {
-    int status = msg->status;
-    int robotID = msg->robotID; // TODO: Track which robot has finished dump
+    int status = req.status;
+    int robotID = req.robotID; // TODO: Track which robot has finished dump
     if (status == TaskResult::SUCCESS)
     {
-        if (m_dumpMap[msg->id]->GetStatus() == TaskResult::INPROGRESS)
+        if (m_dumpMap[req.id]->GetStatus() == TaskResult::INPROGRESS)
         {
-            m_dumpMap[msg->id]->SetStatus(TaskResult::DUMP_HALF_DONE);
+            m_dumpMap[req.id]->SetStatus(TaskResult::DUMP_HALF_DONE);
             ROS_INFO_STREAM("Dumping halfway done");
             std::stringstream ss;
-            ss << "SUCCESS: Dump ("<<msg->id<<") half way done";
+            ss << "SUCCESS: Dump ("<<req.id<<") half way done";
             SendText(ss.str());
         }
-        else if (m_dumpMap[msg->id]->GetStatus() == TaskResult::DUMP_HALF_DONE)
+        else if (m_dumpMap[req.id]->GetStatus() == TaskResult::DUMP_HALF_DONE)
         {
-            m_dumpMap[msg->id]->SetStatus(TaskResult::DUMP_FINISHED);
+            m_dumpMap[req.id]->SetStatus(TaskResult::DUMP_FINISHED);
             ROS_INFO_STREAM("Dumping was successful");
             SendSound("mario_i_got_it.wav");
             std::stringstream ss;
-            ss << "ERROR: Dump ("<<msg->id<<") reached by both robots successfully";
+            ss << "ERROR: Dump ("<<req.id<<") reached by both robots successfully";
             SendText(ss.str());
         }
     }
     else
     {
-        ROS_ERROR_STREAM("Dump failed due to status: " << msg->status<<" : "<<Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status)));
+        ROS_ERROR_STREAM("Dump failed due to status: " << req.status<<" : "<<Conversion::TaskResultToString(Conversion::IntToTaskResult(req.status)));
             std::stringstream ss;
-            ss << "Dump failed due to status: " << msg->status<<" : "<<Conversion::TaskResultToString(Conversion::IntToTaskResult(msg->status));
+            ss << "Dump failed due to status: " << req.status<<" : "<<Conversion::TaskResultToString(Conversion::IntToTaskResult(req.status));
             SendText(ss.str());
     }
 }

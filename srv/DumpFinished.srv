@@ -1,4 +1,7 @@
 #id of the Dump that finished
 int32 id
+#id of robot sending status
+int32 robotID
 #status (success/failure) of the Dump
 int32 status
+---
