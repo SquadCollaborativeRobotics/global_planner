@@ -99,6 +99,8 @@ public:
     void SendText(std::string text);
     void SendSound(std::string filename);
 
+    void QueryRobots();
+
 private:
     // setup callbacks, regiser services, load waypoints...
     bool SetupCallbacks();
@@ -108,8 +110,6 @@ private:
 
     // Gets x/y 2D distance between two poses
     double Get2DPoseDistance(geometry_msgs::Pose a, geometry_msgs::Pose b);
-
-    void QueryRobots();
 
     // Pointer to a registered ros NodeHandle
     ros::NodeHandle *m_nh;

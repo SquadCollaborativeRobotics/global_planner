@@ -40,6 +40,7 @@ int main(int argc, char** argv){
         }
         else
         {
+            gp.QueryRobots();
             ROS_INFO_THROTTLE(20, "Global Planner is paused");
             if ((ros::Time::now() - lastDisplay) > ros::Duration(15))
             {

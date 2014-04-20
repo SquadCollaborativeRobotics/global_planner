@@ -418,6 +418,7 @@ void RobotController::Execute()
         ROS_WARN_STREAM_THROTTLE(10, "Robot has not been in communication for "<<(ros::Time::now() - m_lastStatusUpdate) << " seconds");
         UpdatePose();
         m_statusPub.publish(m_status.GetMessage());
+        m_lastStatusUpdate = ros::Time::now();
     }
 }
 
