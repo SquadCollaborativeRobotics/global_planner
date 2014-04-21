@@ -84,12 +84,13 @@ void GlobalPlanner::Display()
     finPoseArray.poses.clear();
     availPoseArray.poses.clear();
 
-    std::map<int, Goal_Ptr> goals = m_tm.GetGoals();
+
+    std::map<int, Waypoint_Ptr> goals = m_tm.GetGoals();
     if (goals.size() > 0)
     {
         ROS_INFO_STREAM("Goal Status");
     }
-    for (std::map<int, Goal_Ptr>::iterator it = goals.begin(); it != goals.end(); ++it)
+    for (std::map<int, Waypoint_Ptr>::iterator it = goals.begin(); it != goals.end(); ++it)
     {
         ROS_INFO_STREAM(it->second->ToString());
         if (it->second->GetStatus() == TaskResult::SUCCESS)
@@ -100,6 +101,7 @@ void GlobalPlanner::Display()
 
     m_goalPoseArrayAvailPub.publish(availPoseArray);
     m_goalPoseArrayFinPub.publish(finPoseArray);
+
 
     finPoseArray.poses.clear();
     availPoseArray.poses.clear();
@@ -235,7 +237,7 @@ void GlobalPlanner::Execute()
     }
     */
 
-    ProcessGoals();
+    // ProcessGoals();
 
     /*
     // If no available waypoints, do nothing
@@ -281,6 +283,7 @@ void GlobalPlanner::Execute()
  * Effects: Iterate over available goals and choose the best robot to
  *          get the goal
  ***********************************************************************/
+ /*
 void GlobalPlanner::ProcessGoals()
 {
     // If there are currently goals still not finished
@@ -298,8 +301,7 @@ void GlobalPlanner::ProcessGoals()
         for (std::map<int, Robot_Ptr>::iterator robot_it = m_robots.begin(); robot_it != m_robots.end(); ++robot_it)
         {
             //See if the robot is available
-            if (robot_it->second->GetState() == RobotState::WAITING ||
-                robot_it->second->GetState() == RobotState::NAVIGATING)
+            if (IsRobotAvailable(robot_it->first))
             {
                 geometry_msgs::Pose robotPose = robot_it->second->GetPose();
                 double dist = Get2DPoseDistance(robotPose, goalPose);
@@ -329,7 +331,7 @@ void GlobalPlanner::ProcessGoals()
         }
     }
 }
-
+*/
 
 /***********************************************************************
  *  Method: GlobalPlanner::PlanNNWaypoint
@@ -344,7 +346,6 @@ void GlobalPlanner::PlanNNWaypoint()
     std::vector<Waypoint_Ptr> availableWaypoints = m_tm.GetAvailableWaypoints();
     // Break if all waypoints reached.
     if (availableWaypoints.size() == 0) { return; }
-
 
     for (std::vector<Robot_Ptr>::iterator i = availableRobots.begin(); i != availableRobots.end(); ++i)
     {
@@ -418,6 +419,7 @@ bool GlobalPlanner::AssignRobotWaypoint(int robot_id, int waypoint_id)
     return true;
 }
 
+
 /***********************************************************************
  *  Method: GlobalPlanner::AssignRobotsDump
  *  Params: int robot_id, int dump_id
@@ -464,12 +466,14 @@ bool GlobalPlanner::AssignRobotsDump(int collector_robot_id, int bin_robot_id, i
     return true;
 }
 
+
 /***********************************************************************
  *  Method: GlobalPlanner::AssignRobotGoal
  *  Params: int robot_id, int goal_id
  * Returns: true if successful
  * Effects: Sets robot to collecting state and sends goal. Sets goal robot and status to in progress
  ***********************************************************************/
+ /*
 bool GlobalPlanner::AssignRobotGoal(int robot_id, int goal_id)
 {
     Goal_Ptr goal_ptr = m_tm.GetGoals()[goal_id];
@@ -499,7 +503,7 @@ bool GlobalPlanner::AssignRobotGoal(int robot_id, int goal_id)
 
     return true;
 }
-
+*/
 
 /***********************************************************************
  *  Method: GlobalPlanner::PlanNNRobot
@@ -565,6 +569,7 @@ void GlobalPlanner::PlanNaive()
     }
 }
 
+
 /***********************************************************************
  *  Method: GlobalPlanner::GetAvailableRobots
  *  Params:
@@ -575,6 +580,8 @@ std::vector<Robot_Ptr> GlobalPlanner::GetAvailableRobots()
 {
     return GetAvailableRobots(0);
 }
+
+
 // Get Available robots with at least the number of available storage
 std::vector<Robot_Ptr> GlobalPlanner::GetAvailableRobots(int available_storage)
 {
@@ -582,7 +589,7 @@ std::vector<Robot_Ptr> GlobalPlanner::GetAvailableRobots(int available_storage)
     for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
     {
         // If it's in the "waiting" state and has the required storage, it's avilable for task setting
-        if (it->second->GetState() == RobotState::WAITING &&
+        if (IsRobotAvailable(it->first) &&
             it->second->GetStorageAvailable() >= available_storage)
         {
             v.push_back(it->second);
@@ -590,6 +597,7 @@ std::vector<Robot_Ptr> GlobalPlanner::GetAvailableRobots(int available_storage)
     }
     return v;
 }
+
 
 /***********************************************************************
  *  Method: GlobalPlanner::GetBestBinBot
@@ -602,6 +610,7 @@ int GlobalPlanner::GetBestBinBot(int idOfRobotThatNeedsIt)
     return GetRobotClosestToRobot(idOfRobotThatNeedsIt, RobotState::BIN_BOT);
 }
 
+
 /***********************************************************************
  *  Method: GlobalPlanner::GetBestCollectorbot
  *  Params: (int goalID)
@@ -610,8 +619,10 @@ int GlobalPlanner::GetBestBinBot(int idOfRobotThatNeedsIt)
  ***********************************************************************/
 int GlobalPlanner::GetBestCollectorbot(int goalID)
 {
-    return GetRobotClosestToGoal(goalID, RobotState::COLLECTOR_BOT);
+    return GetRobotClosestToWaypoint(goalID, RobotState::COLLECTOR_BOT);
 }
+
+
 /***********************************************************************
  *  Method: GlobalPlanner::GetBestSearchBot
  *  Params: int waypointID
@@ -624,6 +635,7 @@ int GlobalPlanner::GetBestSearchBot(int waypointID)
     return GetRobotClosestToWaypoint(waypointID, RobotState::ANY);
 }
 
+
 /***********************************************************************
  *  Method: GlobalPlanner::GetFirstAvailableBot
  *  Params: int waypointID
@@ -634,6 +646,7 @@ int GlobalPlanner::GetFirstAvailableBot()
 {
     return GetFirstAvailableBot(RobotState::ANY);
 }
+
 
 /***********************************************************************
  *  Method: GlobalPlanner::GetFirstAvailableBot
@@ -647,7 +660,7 @@ int GlobalPlanner::GetFirstAvailableBot(RobotState::Type type)
     for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
     {
         // If robot is waiting, is right kind, and has storage space
-        if (it->second->GetState() == RobotState::WAITING &&  // Robot is available
+        if (IsRobotAvailable(it->first) &&  // Robot is available
             (type == RobotState::ANY || it->second->GetType() == type) && // And robot is right kind (any or collector or bin)
             it->second->GetStorageAvailable() > 0) // And robot has storage space
         {
@@ -657,6 +670,7 @@ int GlobalPlanner::GetFirstAvailableBot(RobotState::Type type)
     }
     return NO_ROBOT_FOUND;
 }
+
 
 /***********************************************************************
  *  Method: GlobalPlanner::GetRobotClosestToRobot
@@ -668,6 +682,7 @@ int GlobalPlanner::GetRobotClosestToRobot(int robotID, RobotState::Type type)
 {
     return GetRobotClosestToPose(m_robots[robotID]->GetPose(), type);
 }
+
 
 /***********************************************************************
  *  Method: GlobalPlanner::GetRobotClosestToWaypoint
@@ -681,17 +696,6 @@ int GlobalPlanner::GetRobotClosestToWaypoint(int waypointID, RobotState::Type ty
     return GetRobotClosestToPose(waypoints[waypointID]->GetPose(), type);
 }
 
-/***********************************************************************
- *  Method: GlobalPlanner::GetRobotClosestToGoal
- *  Params: int goalID, GlobalPlanner::ROBOT_TYPE type
- * Returns: int id of robot
- * Effects: Returns the physically closest robot of the right type that is available (waiting and has storage space)
- ***********************************************************************/
-int GlobalPlanner::GetRobotClosestToGoal(int goalID, RobotState::Type type)
-{
-    std::map<int, Goal_Ptr> goals = m_tm.GetGoals();
-    return GetRobotClosestToPose(goals[goalID]->GetPose(), type);
-}
 
 /***********************************************************************
  *  Method: GlobalPlanner::GetRobotClosestToPose
@@ -711,7 +715,7 @@ int GlobalPlanner::GetRobotClosestToPose(geometry_msgs::Pose pose, RobotState::T
         Robot_Ptr robot = it->second;
 
         // If robot is waiting, is right kind, and has storage space
-        if (robot->GetState() == RobotState::WAITING &&  // Robot is available
+        if (IsRobotAvailable(robot_id) && robot->GetState() &&  // Robot is available
             (type == RobotState::ANY || robot->GetType() == type) && // And robot is right kind (any or collector or bin)
             robot->GetStorageAvailable() > 0) // And robot has storage space
         {
@@ -799,6 +803,7 @@ void GlobalPlanner::Finished()
         ROS_INFO_STREAM(m_robots[robot_it->first]->GetName() << "(" << robot_it->first << ") : " << ss.str());
     }
 
+/*
     // Print out goal assignment table
     ROS_INFO_STREAM("Robots - Goal Assignment Table:");
     for (std::map<int, std::map<int, double> >::iterator robot_it = robot_goal_times.begin();
@@ -812,6 +817,7 @@ void GlobalPlanner::Finished()
         }
         ROS_INFO_STREAM(m_robots[robot_it->first]->GetName() << "(" << robot_it->first << ") : " << ss.str());
     }
+    */
 }
 
 // True if all waypoints chomped (success/failure/abort of any kind), false if any are still available or in progress
@@ -957,4 +963,16 @@ void GlobalPlanner::QueryRobots()
     }
 }
 
+
+bool GlobalPlanner::IsRobotAvailable(int robotID)
+{
+    Robot_Ptr robot = m_robots[robotID];
+    if (robot->GetState() == RobotState::WAITING ||
+        robot->GetState() == RobotState::NAVIGATING ||
+        robot->GetState() == RobotState::NAVIGATING_TAG_FINISHED)
+    {
+        return true;
+    }
+    return false;
+}
 

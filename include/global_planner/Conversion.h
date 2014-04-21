@@ -97,12 +97,6 @@ public:
         ss << "/waypoints/"<<id;
         return ss.str();
     }
-    static const std::string RobotIDToGoalTopic(int id)
-    {
-        std::stringstream ss;
-        ss << "/goals/"<<id;
-        return ss.str();
-    }
     static const std::string RobotIDToDumpTopic(int id)
     {
         std::stringstream ss;
@@ -113,12 +107,6 @@ public:
     {
         std::stringstream ss;
         ss << "/waypoint_finished/"<<id;
-        return ss.str();
-    }
-    static const std::string RobotIDToGoalFinishedTopic(int id)
-    {
-        std::stringstream ss;
-        ss << "/goal_finished/"<<id;
         return ss.str();
     }
     static const std::string RobotIDToDumpFinishedTopic(int id)

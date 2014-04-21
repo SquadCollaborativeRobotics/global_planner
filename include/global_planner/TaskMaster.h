@@ -25,22 +25,19 @@
 #include "TaskResult.h"
 
 #include "RobotStatusWrapper.h"
-#include "GoalWrapper.h"
 #include "WaypointWrapper.h"
 #include "DumpWrapper.h"
 
 #include <global_planner/GoalSeen.h>
-#include <global_planner/GoalFinished.h>
 #include <global_planner/WaypointFinished.h>
 #include <global_planner/DumpFinished.h>
 
 #include <global_planner/WaypointSrv.h>
 #include <global_planner/DumpSrv.h>
-#include <global_planner/GoalSrv.h>
-#include <global_planner/GoalSrv.h>
 
 #include <std_msgs/String.h>
 
+#define WAYPOINT_START_ID 1000 // Start id for waypoints read from file
 
 class TaskMaster
 {
@@ -52,16 +49,18 @@ public:
     // Pass in the NodeHandle, as well as the list of robots on the network (for setting up callbacks/publishers)
     bool Init(ros::NodeHandle* nh, std::map<int, Robot_Ptr > robots, std::string waypoint_filename);
 
-    // Add goal to the goal list
-    bool AddGoal(Goal_Ptr goal);
-    // Add goal to the waypoint list
+    // Add waypoint to the waypoint list
     bool AddWaypoint(Waypoint_Ptr waypoint);
-    // Add goal to the dump list
+    // Add dump to the dump list
     bool AddDump(Dump_Ptr dump);
 
-    std::vector<Goal_Ptr> GetAvailableGoals();
     std::vector<Waypoint_Ptr> GetAvailableWaypoints();
+    std::vector<Waypoint_Ptr> GetAvailableGoals();
     std::vector<Dump_Ptr> GetAvailableDumps();
+
+    bool IsWaypoint(int taskID);
+    bool IsGoal(int taskID);
+    bool IsAvailable(int taskID);
 
     bool isFinished();
 
@@ -70,18 +69,15 @@ public:
 
     // Send messages over ROS
     bool SendWaypoint(int wpID);
-    bool SendGoal(int goalID);
     bool SendDump(int dumpID);
 
-    std::map<int, Goal_Ptr > GetGoals();
     std::map<int, Waypoint_Ptr > GetWaypoints();
+    std::map<int, Waypoint_Ptr > GetGoals();
     std::map<int, Dump_Ptr > GetDumps();
 
     // *******************************
     // ROS Callbacks
     // *******************************
-    bool cb_goalFinished(global_planner::GoalFinished::Request  &req,
-                         global_planner::GoalFinished::Response &res);
     bool cb_waypointFinished(global_planner::WaypointFinished::Request  &req,
                              global_planner::WaypointFinished::Response &res);
     bool cb_dumpFinished(global_planner::DumpFinished::Request  &req,
@@ -102,8 +98,6 @@ private:
     /**
      * Lists of goals, waypoints, & dumps
      */
-    // List of goals that need to be accomplished
-    std::map<int, Goal_Ptr > m_goalMap;
     // List of waypoints that need to be accomplished
     std::map<int, Waypoint_Ptr > m_waypointMap;
     // List of dumps that need to be accomplished
@@ -119,13 +113,11 @@ private:
     /**
      * List of services that will communicate with the robots
      */
-    // ServiceClients for the waypoints, goals, and dumps
+    // ServiceClients for the waypoints and dumps
     std::map<int, ros::ServiceClient > m_waypointClients;
-    std::map<int, ros::ServiceClient > m_goalClients;
     std::map<int, ros::ServiceClient > m_dumpClients;
     std::map<int, ros::ServiceServer > m_wpFinishedService;
     std::map<int, ros::ServiceServer > m_dumpFinishedService;
-    std::map<int, ros::ServiceServer > m_goalFinishedService;
 
     // List of robots in the system
     std::map< int, Robot_Ptr > m_robots;

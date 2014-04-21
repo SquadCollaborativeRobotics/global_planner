@@ -29,7 +29,6 @@
 
 #define NO_ROBOT_FOUND -1 // Robot ID -1 is no robot found
 #define NO_WAYPOINT_FOUND -1 // Waypoint ID -1 is no robot found
-#define NO_GOAL_FOUND -1 // Waypoint ID -1 is no robot found
 #define MAX_DIST 1000000 // Hardcoded for robot search routine for now, 1,000 km is a reasonable for this demo
 
 class GlobalPlanner
@@ -61,7 +60,6 @@ public:
     // System finished
     void Finished();
 
-    std::map<int, Goal_Ptr > GetGoals() { return m_tm.GetGoals(); };
     std::map<int, Waypoint_Ptr > GetWaypoints() { return m_tm.GetWaypoints(); };
     std::map<int, Dump_Ptr > GetDumps() { return m_tm.GetDumps(); };
 
@@ -78,7 +76,7 @@ public:
     void PlanNaive();
 
     //Goal Processor
-    void ProcessGoals();
+    // void ProcessGoals();
 
     // Search algorithms
     int GetFirstAvailableBot();
@@ -87,19 +85,18 @@ public:
     // Helper functions for finding the best robots, goals, and waypoints
     int GetRobotClosestToRobot(int robotID, RobotState::Type type);
     int GetRobotClosestToWaypoint(int waypointID, RobotState::Type type);
-    int GetRobotClosestToGoal(int goalID, RobotState::Type type);
     int GetRobotClosestToPose(geometry_msgs::Pose pose, RobotState::Type type);
     int GetWaypointClosestToRobot(int robot_id);
 
     bool AssignRobotWaypoint(int robot_id, int waypoint_id);
     bool AssignRobotsDump(int collector_robot_id, int bin_robot_id, int dump_id);
-    bool AssignRobotGoal(int robot_id, int goal_id);
     double TimeSinceStart();
 
     void SendText(std::string text);
     void SendSound(std::string filename);
 
     void QueryRobots();
+    bool IsRobotAvailable(int robot_id);
 
 private:
     // setup callbacks, regiser services, load waypoints...

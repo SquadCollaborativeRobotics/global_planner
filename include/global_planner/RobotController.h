@@ -18,7 +18,6 @@
 #include <std_msgs/Empty.h>
 #include <std_msgs/String.h>
 
-#include <global_planner/GoalFinished.h>
 #include <global_planner/WaypointFinished.h>
 #include <global_planner/DumpFinished.h>
 #include <global_planner/AprilTagProcessor.h>
@@ -27,11 +26,9 @@
 
 #include <global_planner/SetTrashSrv.h>
 #include <global_planner/WaypointSrv.h>
-#include <global_planner/GoalSrv.h>
 #include <global_planner/DumpSrv.h>
 
 #include "RobotStatusWrapper.h"
-#include "GoalWrapper.h"
 #include "WaypointWrapper.h"
 #include "DumpWrapper.h"
 #include "RobotController.h"
@@ -44,8 +41,6 @@ public:
     RobotController();
     ~RobotController();
 
-    bool cb_goalSub(global_planner::GoalSrv::Request  &req,
-                    global_planner::GoalSrv::Response &res);
     bool cb_waypointSub(global_planner::WaypointSrv::Request  &req,
                         global_planner::WaypointSrv::Response &res);
     bool cb_dumpSub(global_planner::DumpSrv::Request  &req,
@@ -58,8 +53,6 @@ public:
 
     // void cb_statusService(const std_msgs::Int32 id);
 
-
-    bool SendGoalFinished(TaskResult::Status status);
     bool SendWaypointFinished(TaskResult::Status status);
     bool SendDumpFinished(TaskResult::Status status);
 
@@ -96,7 +89,6 @@ private:
     ros::Time m_timeEnteringState;
 
     // Subscribers to the global planner
-    ros::ServiceServer m_goalService;
     ros::ServiceServer m_waypointService;
     ros::ServiceServer m_dumpService;
     ros::ServiceServer m_setTrashService;
@@ -106,7 +98,6 @@ private:
     ros::Publisher m_statusPub;
     ros::ServiceServer m_statusService;
 
-    ros::ServiceClient m_goalFinishedPub;
     ros::ServiceClient m_waypointFinishedPub;
     ros::ServiceClient m_dumpFinishedPub;
 

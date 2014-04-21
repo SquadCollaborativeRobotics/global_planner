@@ -118,7 +118,7 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
 
     action_client_ptr.reset( new MoveBaseClient("move_base", true) );
     // Wait for the action server to come up
-    while(ros::ok() && !action_client_ptr->waitForServer(ros::Duration(1.0))){
+    while(ros::ok() && !action_client_ptr->waitForServer(ros::Duration(2.0))){
         ROS_INFO_THROTTLE(3.0,"Waiting for the move_base action server to come up");
     }
 
@@ -131,65 +131,6 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
     m_timeEnteringState = ros::Time::now();
 
     ROS_INFO_STREAM("Finished initializing");
-}
-
-
-/***********************************************************************
- *  Method: RobotController::cb_goalSub
- *  Params: const global_planner::GoalMsg &msg
- * Returns: void
- * Effects: callback for goal messages
- ***********************************************************************/
-bool RobotController::cb_goalSub(global_planner::GoalSrv::Request  &req,
-                                 global_planner::GoalSrv::Response &res)
-{
-    GoalWrapper goalWrapper;
-    global_planner::GoalMsg goalMsg = req.msg;
-    goalWrapper.SetData(goalMsg);
-    res.result = -1;
-
-    //Check if this message is for you!
-    if (goalWrapper.GetRobot() == m_status.GetID())
-    {
-        ROS_DEBUG_STREAM("Received goal for me:\n"<<goalWrapper.ToString());
-
-        switch(m_status.GetState())
-        {
-            case RobotState::WAITING:
-                m_moveBaseGoal = Conversion::PoseToMoveBaseGoal(goalWrapper.GetPose());
-                ROS_INFO_STREAM("Received command to go to goal ("<<goalWrapper.GetID()<<")");
-                m_status.SetTaskID( goalWrapper.GetID() );
-                Transition(RobotState::COLLECTING);
-                res.result = 0;
-            break;
-            case RobotState::NAVIGATING:
-                ROS_ERROR_STREAM("Currently navigating to waypoint, canceling waypoint.");
-                SendWaypointFinished(TaskResult::FORCE_STOP);
-
-                m_moveBaseGoal = Conversion::PoseToMoveBaseGoal(goalWrapper.GetPose());
-                ROS_INFO_STREAM("Received command to go to goal ("<<goalWrapper.GetID()<<")");
-                m_status.SetTaskID( goalWrapper.GetID() );
-                Transition(RobotState::COLLECTING);
-                res.result = 0;
-                ROS_INFO_STREAM("Now that we've canceled that, let's reassign the robot to move to the goal.");
-            break;
-            case RobotState::DUMPING:
-                ROS_ERROR_STREAM("Currently navigating to dump, ignoring goal.");
-                res.result = -1;
-                //TODO: Cancel
-            break;
-            case RobotState::COLLECTING:
-                ROS_ERROR_STREAM("Currently collecting, ignoring goal.");
-                res.result = -1;
-                //TODO: Cancel
-            break;
-            default:
-                ROS_ERROR_STREAM("Goal hit: Robot is in state: " << RobotState::ToString(m_status.GetState()) << ", which should not be sent a goal message");
-            break;
-
-        }
-    }
-    return true;
 }
 
 
@@ -236,9 +177,6 @@ bool RobotController::cb_waypointSub(global_planner::WaypointSrv::Request  &req,
             ROS_ERROR_STREAM("WARNING: In Dumping State, Ignoring Waypoint.");
             break;
 
-            case RobotState::COLLECTING:
-            ROS_ERROR_STREAM("WARNING: In Collecting State, Ignoring Waypoint.");
-            break;
             */
         }
     }
@@ -285,13 +223,9 @@ bool RobotController::cb_dumpSub(global_planner::DumpSrv::Request  &req,
                 res.result = -1;
                 //TODO: Cancel
             break;
-            case RobotState::COLLECTING:
-                ROS_ERROR_STREAM("Currently collecting, ignoring dump.");
-                res.result = -1;
-                //TODO: Cancel
             break;
             default:
-                ROS_ERROR_STREAM("Dump hit: Robot is in state: " << RobotState::ToString(m_status.GetState()) <<", which should not be sent a goal message");
+                ROS_ERROR_STREAM("Dump hit: Robot is in state: " << RobotState::ToString(m_status.GetState()) <<", which should not be sent a dump message");
             break;
 
         }
@@ -343,52 +277,6 @@ bool RobotController::cb_SetRobotStatus(global_planner::SetRobotStatusSrv::Reque
                                       global_planner::SetRobotStatusSrv::Response &res)
 {
     // TODO: this
-    return false;
-}
-
-
-/***********************************************************************
- *  Method: RobotController::SendGoalFinished
- *  Params: TaskResult::Status status
- * Returns: void
- * Effects: Called when a goal task is finished.  Publish the result
- ***********************************************************************/
-bool RobotController::SendGoalFinished(TaskResult::Status status)
-{
-    if (m_status.GetTaskID() < 0)
-    {
-        ROS_INFO_STREAM("m_status task id invalid: "<<m_status.GetTaskID());
-        return false;
-    }
-
-    global_planner::GoalFinished goalMsg;
-    goalMsg.request.id = m_status.GetTaskID();
-    goalMsg.request.status = Conversion::TaskResultToInt(status);
-
-    if (!m_goalFinishedPub)
-    {
-        m_goalFinishedPub = m_nh->serviceClient<global_planner::GoalFinished>(Conversion::RobotIDToGoalFinishedTopic(m_status.GetID()), true);
-    }
-
-    if (m_goalFinishedPub)
-    {
-        if (m_goalFinishedPub.call(goalMsg))
-        {
-            ROS_INFO_STREAM("Sending goal finished success");
-            return true;
-        }
-        else
-        {
-            ROS_ERROR_STREAM("Failed to call goal finished service");
-            return false;
-        }
-    }
-    else
-    {
-        ROS_ERROR_STREAM("Goal finished service not setup properly");
-        return false;
-    }
-
     return false;
 }
 
@@ -582,22 +470,22 @@ void RobotController::SetupCallbacks()
 
     ROS_INFO_STREAM("Connecting to service: "<<Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()));
     //Task Finished services
-    m_goalFinishedPub = m_nh->serviceClient<global_planner::GoalFinished>(Conversion::RobotIDToGoalFinishedTopic(m_status.GetID()), true);
     m_waypointFinishedPub = m_nh->serviceClient<global_planner::WaypointFinished>(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), true);
     if (m_waypointFinishedPub)
     {
         ROS_INFO_STREAM("Successfully connected to wp finished service");
     }
     m_dumpFinishedPub = m_nh->serviceClient<global_planner::DumpFinished>(Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()), true);
+    if (m_dumpFinishedPub)
+    {
+        ROS_INFO_STREAM("Successfully connected to dump finished service");
+    }
 
     std::string statusServiceTopic = Conversion::RobotIDToServiceName(m_status.GetID());
     m_statusService = m_nh->advertiseService(statusServiceTopic, &RobotController::SendRobotStatus, this);
 
     std::string waypointServiceTopic = Conversion::RobotIDToWaypointTopic(m_status.GetID());
     m_waypointService = m_nh->advertiseService(waypointServiceTopic, &RobotController::cb_waypointSub, this);
-
-    std::string goalServiceTopic = Conversion::RobotIDToGoalTopic(m_status.GetID());
-    m_goalService = m_nh->advertiseService(goalServiceTopic, &RobotController::cb_goalSub, this);
 
     std::string dumpServiceTopic = Conversion::RobotIDToDumpTopic(m_status.GetID());
     m_dumpService = m_nh->advertiseService(dumpServiceTopic, &RobotController::cb_dumpSub, this);
@@ -631,7 +519,6 @@ void RobotController::Transition(RobotState::State newState, void* args)
     switch(m_status.GetState())
     {
         case RobotState::WAITING_TAG_FINISHED:
-        case RobotState::COLLECTING_TAG_FINISHED:
         case RobotState::NAVIGATING_TAG_FINISHED:
             m_tagProcessor->SetShouldPause(false);
     }
@@ -662,13 +549,6 @@ void RobotController::OnEntry(void *args)
             ROS_INFO_STREAM("Cancelling goals due to april tag processor");
             action_client_ptr->cancelAllGoals();
             break;
-        case RobotState::COLLECTING:
-            action_client_ptr->sendGoal(m_moveBaseGoal);
-            break;
-        case RobotState::COLLECTING_TAG_SPOTTED:
-            ROS_INFO_STREAM("Cancelling goals due to april tag processor");
-            action_client_ptr->cancelAllGoals();
-            break;
         case RobotState::DUMPING:
             ROS_INFO_STREAM("Starting navigation to dump site.");
             action_client_ptr->sendGoal(m_moveBaseGoal);
@@ -692,13 +572,7 @@ void RobotController::StateExecute()
 {
     // WHILE in WAITING:
     //      IF received a waypoint: transition(NAVIGATING)
-    //      IF received a goal message (trash can): transition(COLLECTING)
     //      IF received a dump message: transition(DUMPING)
-    // WHILE in COLLECTING (goal collecting):
-    //      IF received a waypoint: transition(NAVIGATING)
-    //      IF received a dump message: transition(DUMPING)
-    //      IF received a stop/cancel/estop: transition(WAITING)
-    //      IF reached final pose of the goal, send goal finished message, transition(WAITING)
     // WHILE in NAVIGATING (waypoint navigation):
     //      IF received a (different) waypoint: change the pose to the new one
     //      IF received a dump message: transition(DUMPING)
@@ -804,66 +678,6 @@ void RobotController::StateExecute()
             if (ros::Time::now() - m_timeEnteringState > ros::Duration(1.0))
             {
                 Transition(RobotState::NAVIGATING);
-            }
-            break;
-
-        case RobotState::COLLECTING:
-            if (m_tagProcessor->ShouldPause())
-            {
-                Transition(RobotState::COLLECTING_TAG_SPOTTED);
-                break;
-            }
-            else
-            {
-                actionlib::SimpleClientGoalState::StateEnum result = action_client_ptr->getState().state_;
-                switch (result)
-                {
-                    case actionlib::SimpleClientGoalState::SUCCEEDED:
-                        ROS_INFO_STREAM("Movebase reached target.");
-                        SendGoalFinished(TaskResult::SUCCESS);
-                        Transition(RobotState::WAITING);
-                        break;
-                    case actionlib::SimpleClientGoalState::ABORTED:
-                    case actionlib::SimpleClientGoalState::REJECTED:
-                    case actionlib::SimpleClientGoalState::LOST:
-                    case actionlib::SimpleClientGoalState::RECALLED:
-                    case actionlib::SimpleClientGoalState::PREEMPTED:
-                        ROS_ERROR_STREAM("Collecting Failed: " << action_client_ptr->getState().toString() );
-                        SendGoalFinished(TaskResult::FAILURE);
-                        Transition(RobotState::WAITING);
-                        break;
-
-                    case actionlib::SimpleClientGoalState::ACTIVE:
-                    case actionlib::SimpleClientGoalState::PENDING:
-                    default:
-                        ROS_INFO_STREAM_THROTTLE(10, "Collection state = " << action_client_ptr->getState().toString() );
-                        break;
-                }
-            }
-        break;
-
-        //In this state, the robot should now be stopping and getting a more accurate view of the tag
-        case RobotState::COLLECTING_TAG_SPOTTED:
-            ros::spinOnce();
-            execResult = m_tagProcessor->Execute();
-            // ROS_DEBUG_STREAM_THROTTLE(0.5, "Result from execute: "<<execResult);
-            if (m_tagProcessor->ShouldResume())
-            {
-                //Transition back to the COLLECTING state, using the same goal as before
-                ROS_INFO("Resuming robot");
-                Transition(RobotState::COLLECTING_TAG_FINISHED);
-                break;
-            }
-            else
-            {
-                ROS_INFO_STREAM_THROTTLE(0.5, "Waiting on the OK to resume from the tag processor");
-            }
-        break;
-
-        case RobotState::COLLECTING_TAG_FINISHED:
-            if (ros::Time::now() - m_timeEnteringState > ros::Duration(1.0))
-            {
-                Transition(RobotState::COLLECTING);
             }
             break;
 

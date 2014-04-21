@@ -1,3 +1,4 @@
+
 /**
  *  TaskResult.h
  *
@@ -22,7 +23,7 @@ public:
         FAILURE = 3,
         NAVSTACK_FAILURE = 5,
         COMM_FAILURE = 10,
-        DUMP_HALF_DONE = 50, 
+        DUMP_HALF_DONE = 50,
         DUMP_FINISHED = 51, // AVAILABLE > INPROGRESS > DUMP_HALF_DONE > DUMP_FINISHED > SUCCESS
         UNINITIALIZED = 99,
     };
@@ -45,6 +46,10 @@ public:
                 return "NAVSTACK_FAILURE";
             case COMM_FAILURE:
                 return "COMM_FAILURE";
+            case DUMP_HALF_DONE:
+                return "DUMP_HALF_DONE";
+            case DUMP_FINISHED:
+                return "DUMP_FINISHED";
             case UNINITIALIZED:
                 return "UNINITIALIZED";
             default:

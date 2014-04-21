@@ -53,7 +53,6 @@ find_package(Boost REQUIRED COMPONENTS system thread)
 add_message_files(
   FILES
     RobotStatus.msg
-    GoalMsg.msg
     GoalSeen.msg
     WaypointMsg.msg
     DumpMsg.msg
@@ -65,11 +64,9 @@ add_service_files(
     SetTrashSrv.srv
     RobotStatusSrv.srv
     SetRobotStatusSrv.srv
-    GoalSrv.srv
     WaypointSrv.srv
     DumpSrv.srv
     #task finshed messages
-    GoalFinished.srv
     WaypointFinished.srv
     DumpFinished.srv
 )
