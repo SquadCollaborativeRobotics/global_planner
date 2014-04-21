@@ -353,16 +353,43 @@ bool RobotController::cb_SetRobotStatus(global_planner::SetRobotStatusSrv::Reque
  * Returns: void
  * Effects: Called when a goal task is finished.  Publish the result
  ***********************************************************************/
-void RobotController::SendGoalFinished(TaskResult::Status status)
+bool RobotController::SendGoalFinished(TaskResult::Status status)
 {
     if (m_status.GetTaskID() < 0)
-        return ;
+    {
+        ROS_INFO_STREAM("m_status task id invalid: "<<m_status.GetTaskID());
+        return false;
+    }
 
     global_planner::GoalFinished goalMsg;
     goalMsg.request.id = m_status.GetTaskID();
     goalMsg.request.status = Conversion::TaskResultToInt(status);
 
-    m_goalFinishedPub.call(goalMsg);
+    if (!m_goalFinishedPub)
+    {
+        m_goalFinishedPub = m_nh->serviceClient<global_planner::GoalFinished>(Conversion::RobotIDToGoalFinishedTopic(m_status.GetID()), true);
+    }
+
+    if (m_goalFinishedPub)
+    {
+        if (m_goalFinishedPub.call(goalMsg))
+        {
+            ROS_INFO_STREAM("Sending goal finished success");
+            return true;
+        }
+        else
+        {
+            ROS_ERROR_STREAM("Failed to call goal finished service");
+            return false;
+        }
+    }
+    else
+    {
+        ROS_ERROR_STREAM("Goal finished service not setup properly");
+        return false;
+    }
+
+    return false;
 }
 
 
@@ -372,16 +399,42 @@ void RobotController::SendGoalFinished(TaskResult::Status status)
  * Returns: void
  * Effects: Called when a waypoint task is finished.  Publish the result
  ***********************************************************************/
-void RobotController::SendWaypointFinished(TaskResult::Status status)
+bool RobotController::SendWaypointFinished(TaskResult::Status status)
 {
     if (m_status.GetTaskID() < 0)
-        return ;
+    {
+        ROS_INFO_STREAM("m_status task id invalid: "<<m_status.GetTaskID());
+        return false;
+    }
 
     global_planner::WaypointFinished wpMsg;
     wpMsg.request.id = m_status.GetTaskID();
     wpMsg.request.status = Conversion::TaskResultToInt(status);
 
-    m_waypointFinishedPub.call(wpMsg);
+    if (!m_waypointFinishedPub)
+    {
+        m_waypointFinishedPub = m_nh->serviceClient<global_planner::WaypointFinished>(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), true);
+    }
+
+    if (m_waypointFinishedPub)
+    {
+        if (m_waypointFinishedPub.call(wpMsg))
+        {
+            ROS_INFO_STREAM("Sending waypoint finished success");
+            return true;
+        }
+        else
+        {
+            ROS_ERROR_STREAM("Failed to call waypoint finished service");
+            return false;
+        }
+    }
+    else
+    {
+        ROS_ERROR_STREAM("Still not connected to waypoint finished service");
+        return false;
+    }
+    return false;
 }
 
 
@@ -391,17 +444,29 @@ void RobotController::SendWaypointFinished(TaskResult::Status status)
  * Returns: void
  * Effects: Called when the bot has reached its goal position for dumping
  ***********************************************************************/
-void RobotController::SendDumpFinished(TaskResult::Status status)
+bool RobotController::SendDumpFinished(TaskResult::Status status)
 {
     if (m_status.GetTaskID() < 0)
-        return ;
+        return false;
 
     global_planner::DumpFinished dumpMsg;
     dumpMsg.request.id = m_status.GetTaskID();
     dumpMsg.request.robotID = m_status.GetID();
     dumpMsg.request.status = Conversion::TaskResultToInt(status);
 
-    m_dumpFinishedPub.call(dumpMsg);
+    if (m_dumpFinishedPub)
+    {
+        if (m_dumpFinishedPub.call(dumpMsg))
+        {
+            ROS_INFO_STREAM("Sending dump finished success");
+        }
+        else
+        {
+            ROS_ERROR_STREAM("Failed to call dump finished service");
+        }
+        ROS_ERROR_STREAM("dump finished service not setup properly");
+    }
+    return true;
 }
 
 
@@ -515,10 +580,15 @@ void RobotController::SetupCallbacks()
 
     m_statusPub = m_nh->advertise<global_planner::RobotStatus>("/robot_status", 100);
 
+    ROS_INFO_STREAM("Connecting to service: "<<Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()));
     //Task Finished services
-    m_goalFinishedPub = m_nh->serviceClient<global_planner::RobotStatusSrv>(Conversion::RobotIDToGoalFinishedTopic(m_status.GetID()), true);
-    m_waypointFinishedPub = m_nh->serviceClient<global_planner::RobotStatusSrv>(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), true);
-    m_dumpFinishedPub = m_nh->serviceClient<global_planner::RobotStatusSrv>(Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()), true);
+    m_goalFinishedPub = m_nh->serviceClient<global_planner::GoalFinished>(Conversion::RobotIDToGoalFinishedTopic(m_status.GetID()), true);
+    m_waypointFinishedPub = m_nh->serviceClient<global_planner::WaypointFinished>(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), true);
+    if (m_waypointFinishedPub)
+    {
+        ROS_INFO_STREAM("Successfully connected to wp finished service");
+    }
+    m_dumpFinishedPub = m_nh->serviceClient<global_planner::DumpFinished>(Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()), true);
 
     std::string statusServiceTopic = Conversion::RobotIDToServiceName(m_status.GetID());
     m_statusService = m_nh->advertiseService(statusServiceTopic, &RobotController::SendRobotStatus, this);

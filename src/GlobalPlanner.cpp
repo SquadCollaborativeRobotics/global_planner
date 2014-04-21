@@ -133,7 +133,7 @@ void GlobalPlanner::Execute()
 {
     ros::spinOnce();
 
-    if ((ros::Time::now() - m_lastDisplay) > ros::Duration(3))
+    if ((ros::Time::now() - m_lastDisplay) > ros::Duration(5))
     {
         Display();
     }

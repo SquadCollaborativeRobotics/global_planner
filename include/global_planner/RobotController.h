@@ -59,9 +59,9 @@ public:
     // void cb_statusService(const std_msgs::Int32 id);
 
 
-    void SendGoalFinished(TaskResult::Status status);
-    void SendWaypointFinished(TaskResult::Status status);
-    void SendDumpFinished(TaskResult::Status status);
+    bool SendGoalFinished(TaskResult::Status status);
+    bool SendWaypointFinished(TaskResult::Status status);
+    bool SendDumpFinished(TaskResult::Status status);
 
 
     void Init(ros::NodeHandle* nh,
