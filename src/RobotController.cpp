@@ -269,10 +269,24 @@ bool RobotController::SendRobotStatus(global_planner::RobotStatusSrv::Request  &
  *  nodes
  ***********************************************************************/
 bool RobotController::cb_SetRobotStatus(global_planner::SetRobotStatusSrv::Request  &req,
-                                      global_planner::SetRobotStatusSrv::Response &res)
+                                        global_planner::SetRobotStatusSrv::Response &res)
 {
-    // TODO: this
-    return false;
+    if (req.status.storage_used >= 0)
+    {
+        m_status.SetStorageUsed(req.status.storage_used);
+    }
+    if (req.status.storage_capacity >= 0)
+    {
+        m_status.SetStorageCapacity(req.status.storage_capacity);
+    }
+    if (req.status.taskID >= 0)
+    {
+        m_status.SetTaskID(req.status.taskID);
+    }
+
+    res.res = 0;
+
+    return true;
 }
 
 
@@ -476,14 +490,10 @@ void RobotController::SetupCallbacks()
         ROS_INFO_STREAM("Successfully connected to dump finished service");
     }
 
-    std::string statusServiceTopic = Conversion::RobotIDToServiceName(m_status.GetID());
-    m_statusService = m_nh->advertiseService(statusServiceTopic, &RobotController::SendRobotStatus, this);
-
-    std::string waypointServiceTopic = Conversion::RobotIDToWaypointTopic(m_status.GetID());
-    m_waypointService = m_nh->advertiseService(waypointServiceTopic, &RobotController::cb_waypointSub, this);
-
-    std::string dumpServiceTopic = Conversion::RobotIDToDumpTopic(m_status.GetID());
-    m_dumpService = m_nh->advertiseService(dumpServiceTopic, &RobotController::cb_dumpSub, this);
+    m_statusService = m_nh->advertiseService(Conversion::RobotIDToServiceName(m_status.GetID()), &RobotController::SendRobotStatus, this);
+    m_waypointService = m_nh->advertiseService(Conversion::RobotIDToWaypointTopic(m_status.GetID()), &RobotController::cb_waypointSub, this);
+    m_dumpService = m_nh->advertiseService(Conversion::RobotIDToDumpTopic(m_status.GetID()), &RobotController::cb_dumpSub, this);
+    m_setStatusService = m_nh->advertiseService(Conversion::RobotIDToSetStatusTopic(m_status.GetID()), &RobotController::cb_SetRobotStatus, this);
 
     //Let the global planner know that this robot is alive an active
     UpdatePose();
@@ -628,8 +638,12 @@ void RobotController::StateExecute()
                 switch (result)
                 {
                     case actionlib::SimpleClientGoalState::SUCCEEDED:
-                        ROS_INFO_STREAM("Movebase reached target.");
+                        ROS_INFO_STREAM("Movebase reached target (task id = "<<m_status.GetTaskID()<<")");
                         SendWaypointFinished(TaskResult::SUCCESS);
+                        if (m_status.GetTaskID() < WAYPOINT_START_ID)
+                        {
+                            m_status.IncrementStorageUsed();
+                        }
                         Transition(RobotState::WAITING);
                         break;
                     case actionlib::SimpleClientGoalState::ABORTED:
@@ -661,7 +675,6 @@ void RobotController::StateExecute()
                 //Transition back to the navigating state, using the same goal as before
                 ROS_INFO("Resuming robot");
                 Transition(RobotState::NAVIGATING_TAG_FINISHED);
-                break;
             }
             else
             {
@@ -674,7 +687,7 @@ void RobotController::StateExecute()
             {
                 Transition(RobotState::NAVIGATING);
             }
-            break;
+        break;
 
         case RobotState::DUMPING:
         {
@@ -703,7 +716,7 @@ void RobotController::StateExecute()
                     ROS_INFO_STREAM_THROTTLE(10, "Navigation state = " << action_client_ptr->getState().toString() );
                     break;
             }
-            break;
+        break;
         }
 
         case RobotState::DUMPING_FINISHED:
@@ -726,5 +739,4 @@ void RobotController::cb_odomSub(const nav_msgs::Odometry::ConstPtr &msg)
 {
     m_status.SetTwist(msg->twist.twist);
 }
-
 

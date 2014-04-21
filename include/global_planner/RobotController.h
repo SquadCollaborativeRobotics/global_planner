@@ -18,6 +18,8 @@
 #include <std_msgs/Empty.h>
 #include <std_msgs/String.h>
 
+#include <global_planner/TaskMaster.h>
+
 #include <global_planner/WaypointFinished.h>
 #include <global_planner/DumpFinished.h>
 #include <global_planner/AprilTagProcessor.h>
@@ -91,7 +93,8 @@ private:
     // Subscribers to the global planner
     ros::ServiceServer m_waypointService;
     ros::ServiceServer m_dumpService;
-    ros::ServiceServer m_setTrashService;
+    ros::ServiceServer m_setStatusService;
+
     ros::Subscriber m_eStopSub;
     ros::Subscriber m_odomSub;
 

@@ -103,6 +103,12 @@ public:
         ss << "/dumps/"<<id;
         return ss.str();
     }
+    static const std::string RobotIDToSetStatusTopic(int id)
+    {
+        std::stringstream ss;
+        ss << "/set_robot_status/"<<id;
+        return ss.str();
+    }
     static const std::string RobotIDToWaypointFinishedTopic(int id)
     {
         std::stringstream ss;
