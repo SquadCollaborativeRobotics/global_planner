@@ -291,22 +291,22 @@ bool AprilTagProcessor::UpdatePose()
             else
             {
                 ROS_ERROR("Cannot transform from camera to robot base");
-                return true;
+                return false;
             }
         }
         else
         {
             ROS_ERROR("Cannot transform from tag to camera");
-            return true;
+            return false;
         }
     }
     else
     {
         ROS_ERROR("Cannot transform from map to landmark");
-        return true;
+        return false;
     }
 
-    return true;
+    return false;
 }
 
 
@@ -351,14 +351,18 @@ bool AprilTagProcessor::FindGoals()
                 tf::Quaternion quat;
 
                 quat = transform.getRotation();
+                tf::Transform offsetTransform;
+                tf::Vector3 origin(-0.5, 0, 0);
+                offsetTransform.setOrigin(origin);
+                tf::Transform finalTransform = transform * (offsetTransform * tf::Transform(quat));
 
                 // Get pose in map frame
                 ps.header.frame_id = "/map";
 
                 //Set garbage pose based on the transform
-                ps.pose.position.x = transform.getOrigin().x();
-                ps.pose.position.y = transform.getOrigin().y();
-                ps.pose.position.z = transform.getOrigin().z();
+                ps.pose.position.x = finalTransform.getOrigin().x();
+                ps.pose.position.y = finalTransform.getOrigin().y();
+                ps.pose.position.z = finalTransform.getOrigin().z();
 
                 //Set garbage rotation from the transform
                 geometry_msgs::Quaternion quatMsg;
@@ -382,6 +386,7 @@ bool AprilTagProcessor::FindGoals()
             else
             {
                 ROS_ERROR_STREAM("Cannot transform from map to "<<goal_frame);
+                retVal = false;
             }
         }
     }
