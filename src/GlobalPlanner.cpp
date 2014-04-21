@@ -72,11 +72,14 @@ void GlobalPlanner::Display()
     }
     for (std::map<int, Waypoint_Ptr>::iterator it = wps.begin(); it != wps.end(); ++it)
     {
-        ROS_INFO_STREAM(it->second->ToString());
-        if (it->second->GetStatus() == TaskResult::SUCCESS)
-            finPoseArray.poses.push_back(it->second->GetPose());
-        else
-            availPoseArray.poses.push_back(it->second->GetPose());
+        if (m_tm.IsWaypoint(it->first))
+        {
+            ROS_INFO_STREAM(it->second->ToString());
+            if (it->second->GetStatus() == TaskResult::SUCCESS)
+                finPoseArray.poses.push_back(it->second->GetPose());
+            else
+                availPoseArray.poses.push_back(it->second->GetPose());
+        }
     }
     m_waypointPoseArrayAvailPub.publish(availPoseArray);
     m_waypointPoseArrayFinPub.publish(finPoseArray);
@@ -798,12 +801,14 @@ void GlobalPlanner::Finished()
         std::stringstream ss;
         for (std::map<int, double>::iterator waypoint_it = robot_it->second.begin(); waypoint_it != robot_it->second.end(); ++waypoint_it)
         {
-            ss << "[WP " << waypoint_it->first << ": " << waypoint_it->second << "s] ";
+            if (m_tm.IsWaypoint(waypoint_it->first))
+            {
+                ss << "[WP " << waypoint_it->first << ": " << waypoint_it->second << "s] ";
+            }
         }
         ROS_INFO_STREAM(m_robots[robot_it->first]->GetName() << "(" << robot_it->first << ") : " << ss.str());
     }
 
-/*
     // Print out goal assignment table
     ROS_INFO_STREAM("Robots - Goal Assignment Table:");
     for (std::map<int, std::map<int, double> >::iterator robot_it = robot_goal_times.begin();
@@ -817,7 +822,6 @@ void GlobalPlanner::Finished()
         }
         ROS_INFO_STREAM(m_robots[robot_it->first]->GetName() << "(" << robot_it->first << ") : " << ss.str());
     }
-    */
 }
 
 // True if all waypoints chomped (success/failure/abort of any kind), false if any are still available or in progress
@@ -923,6 +927,7 @@ double GlobalPlanner::Get2DPoseDistance(geometry_msgs::Pose a, geometry_msgs::Po
     double dy = (b.position.y - a.position.y);
     return sqrt( dx*dx + dy*dy );
 }
+
 
 double GlobalPlanner::TimeSinceStart()
 {

@@ -385,14 +385,26 @@ bool TaskMaster::cb_waypointFinished(global_planner::WaypointFinished::Request  
 {
     int status = req.status;
     m_waypointMap[req.id]->SetStatus(Conversion::IntToTaskResult(status));
+
     if (status == TaskResult::SUCCESS)
     {
-        ROS_INFO_STREAM("Waypoint["<<req.id<<"] reached successfully");
-        SendSound("beep.wav");
+        if (IsWaypoint(req.id))
+        {
+            ROS_INFO_STREAM("Waypoint["<<req.id<<"] reached successfully");
+            SendSound("beep.wav");
 
-        std::stringstream ss;
-        ss << "SUCCESS: Waypoint ("<<req.id<<") finished successfully";
-        SendText(ss.str());
+            std::stringstream ss;
+            ss << "SUCCESS: Waypoint ("<<req.id<<") finished successfully";
+            SendText(ss.str());
+        }
+        else
+        {
+            SendSound("mario_coin.wav");
+            std::stringstream ss;
+            ss<<"SUCCESS: Goal ("<<req.id<<") finished successfully";
+            SendText(ss.str());
+            ROS_INFO_STREAM("Goal finished successfully");
+        }
     }
     else
     {

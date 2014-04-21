@@ -158,6 +158,7 @@ bool RobotController::cb_waypointSub(global_planner::WaypointSrv::Request  &req,
         {
             case RobotState::DUMPING_FINISHED:
             case RobotState::WAITING:
+            case RobotState::WAITING:
                 m_moveBaseGoal = Conversion::PoseToMoveBaseGoal(wpWrapper.GetPose());
                 ROS_INFO_STREAM("Move to new waypoint ("<<wpWrapper.GetID()<<")");
                 m_status.SetTaskID( wpWrapper.GetID() );
