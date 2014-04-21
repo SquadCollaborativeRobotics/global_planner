@@ -158,27 +158,21 @@ bool RobotController::cb_waypointSub(global_planner::WaypointSrv::Request  &req,
         {
             case RobotState::DUMPING_FINISHED:
             case RobotState::WAITING:
-            case RobotState::WAITING:
                 m_moveBaseGoal = Conversion::PoseToMoveBaseGoal(wpWrapper.GetPose());
                 ROS_INFO_STREAM("Move to new waypoint ("<<wpWrapper.GetID()<<")");
                 m_status.SetTaskID( wpWrapper.GetID() );
                 Transition(RobotState::NAVIGATING);
                 res.result = 0;
             break;
+            case RobotState::WAITING_TAG_SPOTTED:
+            case RobotState::NAVIGATING_TAG_SPOTTED:
+                res.result = -1;
+                ROS_ERROR_STREAM("Currently processing april tag... do not accept waypoint");
+            break;
             default:
                 ROS_ERROR_STREAM("Waypoint hit: Robot is in state: "<<RobotState::ToString(m_status.GetState())<<", which should not be sent a waypoint message");
+                res.result = -1;
             break;
-
-            /*
-            case RobotState::NAVIGATING:
-            ROS_ERROR_STREAM("WARNING: In Navigation State, Ignoring Waypoint.");
-            break;
-
-            case RobotState::DUMPING:
-            ROS_ERROR_STREAM("WARNING: In Dumping State, Ignoring Waypoint.");
-            break;
-
-            */
         }
     }
 }

@@ -115,7 +115,7 @@ void TaskMaster::LoadWaypoints(std::string filename)
     std::ifstream fin(filename.c_str());
     std::string s;
     //read a line into 's' from 'fin' each time
-    for(int id=0; getline(fin,s); id++){
+    for(int id=WAYPOINT_START_ID; getline(fin,s); id++){
         //use the string 's' as input stream, the usage of 'sin' is just like 'cin'
         std::istringstream sin(s);
         double x,y,rz,rw;
@@ -555,8 +555,7 @@ std::vector<Waypoint_Ptr> TaskMaster::GetAvailableWaypoints()
     for (std::map<int, Waypoint_Ptr>::iterator it = m_waypointMap.begin(); it != m_waypointMap.end(); ++it)
     {
         // If it's avilable for task setting
-        if (IsWaypoint(it->first) &&
-            IsAvailable(it->first))
+        if (IsAvailable(it->first))
         {
             v.push_back(it->second);
         }
@@ -658,8 +657,8 @@ bool TaskMaster::IsGoal(int taskID)
 
 bool TaskMaster::IsAvailable(int taskID)
 {
-    if (m_waypointMap[taskID]->GetStatus() == TaskResult::AVAILABLE ||
-        m_waypointMap[taskID]->GetStatus() == TaskResult::INPROGRESS)
+    if (m_waypointMap[taskID]->GetStatus() == TaskResult::AVAILABLE)
+        // m_waypointMap[taskID]->GetStatus() == TaskResult::INPROGRESS)
         return true;
     return false;
 }

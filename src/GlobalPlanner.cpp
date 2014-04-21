@@ -404,7 +404,6 @@ bool GlobalPlanner::AssignRobotWaypoint(int robot_id, int waypoint_id)
     if (m_tm.SendWaypoint(waypoint_id))
     {
         //Update lists of waypoints/robots
-        m_robots[robot_id]->SetState(RobotState::NAVIGATING);
         wp->SetStatus(TaskResult::INPROGRESS);
         // Track assignment in statistics
         // map<robot_id, map<waypoint_id, double_seconds_since_start> >
@@ -418,6 +417,8 @@ bool GlobalPlanner::AssignRobotWaypoint(int robot_id, int waypoint_id)
         wp->SetStatus(TaskResult::COMM_FAILURE);
         ROS_ERROR_STREAM("Could not assign waypoint["<<waypoint_id<<"] to robot ["<<robot_id<<"]");
     }
+
+    QueryRobot(robot_id);
 
     return true;
 }
@@ -464,7 +465,8 @@ bool GlobalPlanner::AssignRobotsDump(int collector_robot_id, int bin_robot_id, i
         return false;
     }
 
-
+    QueryRobot(collector_robot_id);
+    QueryRobot(bin_robot_id);
 
     return true;
 }
@@ -945,26 +947,32 @@ void GlobalPlanner::QueryRobots()
 {
     for (std::map<int, ros::ServiceClient>::iterator it = m_statusServices.begin(); it != m_statusServices.end(); ++it)
     {
-        global_planner::RobotStatusSrv s;
-        s.request.id = it->first;
-        if (it->second)
+        QueryRobot(it->first);
+    }
+}
+
+void GlobalPlanner::QueryRobot(int id)
+{
+    global_planner::RobotStatusSrv s;
+    s.request.id = id;
+
+    if (m_statusServices[id])
+    {
+        if (m_statusServices[id].call(s))
         {
-            if (it->second.call(s))
-            {
-                m_robots[s.request.id]->SetData(s.response.status);
-                ROS_INFO_STREAM_THROTTLE(10.0, "Received response from robot: "<<s.response.status.id<<" : "<<m_robots[s.request.id]->ToString());
-            }
-            else
-            {
-                ROS_ERROR_STREAM("Did not receive response from robot: "<<it->first);
-            }
+            m_robots[s.request.id]->SetData(s.response.status);
+            ROS_INFO_STREAM_THROTTLE(10.0, "Received response from robot: "<<s.response.status.id<<" : "<<m_robots[s.request.id]->ToString());
         }
         else
         {
-            ROS_ERROR_STREAM("Not connected to robot: "<<it->first<<"... retrying");
-            std::string serviceTopic = Conversion::RobotIDToServiceName(it->first);
-            m_statusServices[it->first] = m_nh->serviceClient<global_planner::RobotStatusSrv>(serviceTopic, true);
+            ROS_ERROR_STREAM_THROTTLE(3.0, "Did not receive good response from robot: "<<id);
         }
+    }
+    else
+    {
+        ROS_ERROR_STREAM_THROTTLE(3.0, "Not connected to robot: "<<id<<"... retrying");
+        std::string serviceTopic = Conversion::RobotIDToServiceName(id);
+        m_statusServices[id] = m_nh->serviceClient<global_planner::RobotStatusSrv>(serviceTopic, true);
     }
 }
 
@@ -972,9 +980,7 @@ void GlobalPlanner::QueryRobots()
 bool GlobalPlanner::IsRobotAvailable(int robotID)
 {
     Robot_Ptr robot = m_robots[robotID];
-    if (robot->GetState() == RobotState::WAITING ||
-        robot->GetState() == RobotState::NAVIGATING ||
-        robot->GetState() == RobotState::NAVIGATING_TAG_FINISHED)
+    if (robot->GetState() == RobotState::WAITING)
     {
         return true;
     }

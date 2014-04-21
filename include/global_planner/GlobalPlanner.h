@@ -96,6 +96,7 @@ public:
     void SendSound(std::string filename);
 
     void QueryRobots();
+    void QueryRobot(int id);
     bool IsRobotAvailable(int robot_id);
 
 private:
