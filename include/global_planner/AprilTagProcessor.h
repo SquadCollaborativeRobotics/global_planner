@@ -20,7 +20,7 @@
 
 #define STOP_LIN_THRESHOLD 0.01 //Meters/sec
 #define STOP_ANG_THRESHOLD 0.01 // Radians/sec
-#define UPDATE_RANGE_THRESHOLD 2 //meters
+#define UPDATE_RANGE_THRESHOLD 1.5 //meters
 
 class AprilTagProcessor
 {

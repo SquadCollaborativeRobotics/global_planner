@@ -1,8 +1,8 @@
 <launch>
   <arg name="mode" default="false"/>
   <arg name="kinect" default="false" />
-  <arg name-"robot" default="robot1" />
-  <arg name-"tf_prefix" default="$(arg robot)_tf" />
+  <arg name="robot" default="robot1" />
+  <arg name="tf_prefix" default="$(arg robot)_tf" />
 
   <group ns="$(arg robot)">
     <group if="$(arg mode)">

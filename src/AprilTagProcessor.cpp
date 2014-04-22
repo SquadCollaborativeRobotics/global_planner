@@ -104,7 +104,7 @@ bool AprilTagProcessor::Execute()
     {
         //Stop for a second to get the newest april tag data
         ros::Time time = ros::Time::now();
-        while(ros::Time::now()-time < ros::Duration(1.0))
+        while(ros::Time::now()-time < ros::Duration(2.0))
         {
             ROS_INFO_STREAM_THROTTLE(1.0, "Waiting after being stopped to get the most up to date info from the tag reader");
             usleep(100*1000);
