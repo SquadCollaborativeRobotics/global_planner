@@ -134,6 +134,7 @@ private:
 
     void SendSound(std::string filename);
     void SendText(std::string text);
+
     // Sound message publisher
     ros::Publisher m_soundPub;
     // Sound message publisher

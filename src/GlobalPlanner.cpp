@@ -791,6 +791,8 @@ void GlobalPlanner::Finished()
     ss << "Global Planner finished";
     SendText(ss.str());
 
+    Display();
+
     // TODO: Wrap up statistics here.
     ROS_INFO("Global Planner finished in : %g seconds", TimeSinceStart() );
 
@@ -965,7 +967,7 @@ void GlobalPlanner::QueryRobot(int id)
         }
         else
         {
-            ROS_ERROR_STREAM_THROTTLE(3.0, "Did not receive good response from robot: "<<id);
+            ROS_ERROR_STREAM("Did not receive good response from robot: "<<id);
         }
     }
     else

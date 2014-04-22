@@ -386,7 +386,7 @@ void RobotController::Execute()
     //Don't need anymore since we're using services
     if (ros::Time::now() - m_lastStatusUpdate > ros::Duration(2))
     {
-        ROS_WARN_STREAM_THROTTLE(10, "Robot has not been in communication for "<<(ros::Time::now() - m_lastStatusUpdate) << " seconds");
+        ROS_WARN_STREAM_THROTTLE(1, "Robot has not been in communication for "<<(ros::Time::now() - m_lastStatusUpdate) << " seconds");
         UpdatePose();
         m_statusPub.publish(m_status.GetMessage());
         m_lastStatusUpdate = ros::Time::now();
@@ -523,9 +523,12 @@ void RobotController::Transition(RobotState::State newState, void* args)
 
     switch(m_status.GetState())
     {
+        case RobotState::WAITING:
         case RobotState::WAITING_TAG_FINISHED:
+        case RobotState::NAVIGATING:
         case RobotState::NAVIGATING_TAG_FINISHED:
-            m_tagProcessor->SetShouldPause(false);
+            // m_tagProcessor->SetShouldPause(false);
+            break;
     }
 
     m_status.SetState(newState);
@@ -596,6 +599,8 @@ void RobotController::StateExecute()
         case RobotState::WAITING:
             if (m_tagProcessor->ShouldPause())
             {
+                SendText("should pause - Waiting");
+                // SendSound("mario_pause.wav");
                 Transition(RobotState::WAITING_TAG_SPOTTED);
             }
         break;
@@ -608,6 +613,7 @@ void RobotController::StateExecute()
             if (m_tagProcessor->ShouldResume())
             {
                 //Transition back to the navigating state, using the same goal as before
+                SendText("should resume - WAITING_TAG_SPOTTED");
                 ROS_INFO("Resuming robot");
                 Transition(RobotState::WAITING_TAG_FINISHED);
                 break;
@@ -616,21 +622,29 @@ void RobotController::StateExecute()
             {
                 ROS_INFO_STREAM_THROTTLE(1, "Waiting on the OK to resume from the tag processor");
             }
+
+            if (ros::Time::now() - m_timeEnteringState > ros::Duration(5))
+            {
+                ROS_ERROR_STREAM("ERROR: could not find any tags while stopped.  we are going to just resume WAITING");
+                Transition(RobotState::NAVIGATING);
+            }
         break;
 
         case RobotState::WAITING_TAG_FINISHED:
             if (ros::Time::now() - m_timeEnteringState > ros::Duration(1.0))
             {
+                SendSound("mario_pause.wav");
+                SendText("resuming - WAITING_TAG_FINISHED");
                 Transition(RobotState::WAITING);
+                m_tagProcessor->SetShouldPause(false);
             }
-            Transition(RobotState::WAITING);
             break;
 
         case RobotState::NAVIGATING:
             if (m_tagProcessor->ShouldPause())
             {
                 Transition(RobotState::NAVIGATING_TAG_SPOTTED);
-                break;
+                // SendSound("mario_pause.wav");
             }
             else
             {
@@ -673,18 +687,30 @@ void RobotController::StateExecute()
             if (m_tagProcessor->ShouldResume())
             {
                 //Transition back to the navigating state, using the same goal as before
+                SendText("Resuming robot");
                 ROS_INFO("Resuming robot");
+                SendText("should resume- NAVIGATING_TAG_SPOTTED");
                 Transition(RobotState::NAVIGATING_TAG_FINISHED);
             }
             else
             {
                 ROS_INFO_STREAM_THROTTLE(1, "Waiting on the OK to resume from the tag processor");
             }
+
+            if (ros::Time::now() - m_timeEnteringState > ros::Duration(5))
+            {
+                ROS_ERROR_STREAM("ERROR: could not find any tags while stopped.  we are going to just resume NAVIGATING");
+                Transition(RobotState::NAVIGATING);
+                m_tagProcessor->SetShouldPause(false);
+            }
         break;
 
         case RobotState::NAVIGATING_TAG_FINISHED:
-            if (ros::Time::now() - m_timeEnteringState > ros::Duration(1.0))
+            if (ros::Time::now() - m_timeEnteringState > ros::Duration(2))
             {
+                SendSound("mario_pause.wav");
+                SendText("resuming - NAVIGATING_TAG_FINISHED");
+                ROS_INFO_STREAM("Transitioning back to navigating");
                 Transition(RobotState::NAVIGATING);
             }
         break;
@@ -739,4 +765,21 @@ void RobotController::cb_odomSub(const nav_msgs::Odometry::ConstPtr &msg)
 {
     m_status.SetTwist(msg->twist.twist);
 }
+
+
+void RobotController::SendSound(std::string filename)
+{
+    std_msgs::String s;
+    s.data = filename;
+    m_soundPub.publish(s);
+}
+
+
+void RobotController::SendText(std::string text)
+{
+    std_msgs::String s;
+    s.data = text;
+    m_textPub.publish(s);
+}
+
 

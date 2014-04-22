@@ -77,12 +77,10 @@ int main(int argc, char** argv){
     ros::NodeHandle nh;
 
     // Subscribe to command node
-    ros::Subscriber sound_sub = nh.subscribe("/interface_sound", 1, sound_callback);
-    ros::Subscriber text_sub = nh.subscribe("/interface_text", 1, text_callback);
+    ros::Subscriber sound_sub = nh.subscribe("/interface_sound", 5, sound_callback);
+    ros::Subscriber text_sub = nh.subscribe("/interface_text", 10, text_callback);
 
     ROS_INFO("Starting interaction node");
-
-    ros::Rate r(10);
 
     ros::spin();
 }

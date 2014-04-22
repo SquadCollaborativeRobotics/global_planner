@@ -15,6 +15,7 @@
 #include <april_tags/AprilTag.h>
 #include <tf/transform_listener.h>
 #include <global_planner/GoalSeen.h>
+#include <std_msgs/String.h>
 
 #include <boost/shared_ptr.hpp>
 
@@ -54,6 +55,7 @@ private:
     bool FindGoals();
 
     ros::Time LastSeenTime(int tagID);
+    void UpdateLastSeenTime(int tagID, ros::Time time);
     ros::Time LastGoalSendTime(int tagID);
     void GetLandmarks(std::vector<int>& ret);
     void GetGoals(std::vector<int>& ret);
@@ -91,6 +93,7 @@ private:
 
     // Map that keeps track of when the last time this goal was published
     std::map<int, ros::Time> m_goalSendTime;
+    std::map<int, ros::Time> m_timeSeenClose;
     ros::Time m_lastImageTime;
     ros::Time m_lastLocalizeTime;
 
@@ -121,4 +124,14 @@ private:
 
     //Subscribe to April Tag messages from the robot
     ros::Subscriber m_tagSub;
+
+
+
+    void SendSound(std::string filename);
+    void SendText(std::string text);
+
+    // Sound message publisher
+    ros::Publisher m_soundPub;
+    // Sound message publisher
+    ros::Publisher m_textPub;
 };

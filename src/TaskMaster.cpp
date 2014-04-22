@@ -343,38 +343,6 @@ std::map<int, Dump_Ptr> TaskMaster::GetDumps()
 
 
 /***********************************************************************
- *  Method: TaskMaster::cb_goalFinished
- *  Params: const global_planner::GoalFinished::ConstPtr& msg
- * Returns: void
- * Effects: Callback for when a goal is finished
- ***********************************************************************/
- /*
-bool TaskMaster::cb_goalFinished(global_planner::GoalFinished::Request  &req,
-                                 global_planner::GoalFinished::Response &res)
-{
-    int status = req.status;
-    m_goalMap[req.id]->SetStatus(Conversion::IntToTaskResult(status));
-    if (status == TaskResult::SUCCESS)
-    {
-        SendSound("mario_coin.wav");
-        std::stringstream ss;
-        ss<<"SUCCESS: Goal ("<<req.id<<") finished successfully";
-        SendText(ss.str());
-        ROS_INFO_STREAM("Goal finished successfully");
-    }
-    else
-    {
-        ROS_ERROR_STREAM("ERROR, Goal finished with status: " << req.status
-                         << " : " << Conversion::TaskResultToString(Conversion::IntToTaskResult(req.status)));
-        std::stringstream ss;
-        ss << "ERROR: Goal ("<<req.id<<") not finished successfully " << Conversion::TaskResultToString(Conversion::IntToTaskResult(req.status));
-        SendText(ss.str());
-    }
-}
-*/
-
-
-/***********************************************************************
  *  Method: TaskMaster::cb_waypointFinished
  *  Params: const global_planner::WaypointFinished::ConstPtr& msg
  * Returns: void

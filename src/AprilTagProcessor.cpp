@@ -60,6 +60,8 @@ bool AprilTagProcessor::Init(ros::NodeHandle *nh, int robotID)
         }
     }
 
+    // m_goalTypeMap[3] = AprilTagProcessor::UNKNOWN;
+
     //Setup publishers
     m_goalPub = m_nh->advertise<global_planner::GoalSeen>("/goal_seen", 100);
     m_newPosePub = m_nh->advertise<geometry_msgs::PoseStamped>("new_pose", 100);
@@ -88,6 +90,9 @@ bool AprilTagProcessor::Init(ros::NodeHandle *nh, int robotID)
     m_cameraFrame = tf_prefix + "/"+cam_frame;
 
     ROS_INFO("Successfully setup the april tag processor");
+
+    m_soundPub = m_nh->advertise<std_msgs::String>("/interface_sound", 100);
+    m_textPub = m_nh->advertise<std_msgs::String>("/interface_text", 100);
 }
 
 
@@ -104,7 +109,7 @@ bool AprilTagProcessor::Execute()
     {
         //Stop for a second to get the newest april tag data
         ros::Time time = ros::Time::now();
-        while(ros::Time::now()-time < ros::Duration(2.0))
+        while(ros::Time::now()-time < ros::Duration(1.5))
         {
             ROS_INFO_STREAM_THROTTLE(1.0, "Waiting after being stopped to get the most up to date info from the tag reader");
             usleep(100*1000);
@@ -115,12 +120,16 @@ bool AprilTagProcessor::Execute()
         {
             ROS_INFO_STREAM_THROTTLE(0.5, "Searching for goals");
             foundGoal = FindGoals();
+            if (foundLandmark)
+                ROS_INFO_STREAM_THROTTLE(0.5, "Found a goal");
         }
 
         if (true)
         {
             ROS_INFO_STREAM_THROTTLE(0.5, "Searching for landmarks");
             foundLandmark = UpdatePose();
+            if (foundLandmark)
+                ROS_INFO_STREAM_THROTTLE(0.5, "Found a landmark");
         }
     }
     else
@@ -200,7 +209,7 @@ bool AprilTagProcessor::UpdatePose()
 
     if (bestLandmarkId < 0)
     {
-        ROS_INFO_STREAM_THROTTLE(5.0, "No landmarks are in camera frame");
+        ROS_INFO_STREAM_THROTTLE(3.0, "No landmarks are in camera frame");
         return false;
     }
 
@@ -381,6 +390,7 @@ bool AprilTagProcessor::FindGoals()
                 m_goalSendTime[tagID] = ros::Time::now();
 
                 ROS_INFO_STREAM("Sent goal pose ["<<goal.pose<<"] with ID: "<<tagID);
+                SendText("Sent goal");
                 retVal = true;
             }
             else
@@ -447,11 +457,22 @@ void AprilTagProcessor::GetGoals(std::vector<int>& vec)
  ***********************************************************************/
 ros::Time AprilTagProcessor::LastSeenTime(int tagID)
 {
-    if (m_pose.find(tagID) != m_pose.end())
+    if (m_timeSeenClose.find(tagID) != m_timeSeenClose.end())
     {
-        return m_pose[tagID].header.stamp;
+        return m_timeSeenClose[tagID];
     }
     return ros::Time(0);
+}
+
+/***********************************************************************
+ *  Method: AprilTagProcessor::UpdateLastSeenTime
+ *  Params: int tagID
+ * Returns: void
+ * Effects:
+ ***********************************************************************/
+void AprilTagProcessor::UpdateLastSeenTime(int tagID, ros::Time time)
+{
+    m_timeSeenClose[tagID] = time;
 }
 
 
@@ -480,10 +501,12 @@ bool AprilTagProcessor::IsStopped()
 void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &msg)
 {
     int numTags = msg->tag_ids.size();
+    m_lastImageTime = ros::Time::now();
 
     if (numTags == 0)
     {
         ROS_INFO_THROTTLE(20, "No tags seen in the robot's camera this time");
+        return ;
     }
     else
     {
@@ -504,6 +527,10 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
 
         if (type != AprilTagProcessor::UNKNOWN)
         {
+            if (GetDistance(m_pose[tagID]) < UPDATE_RANGE_THRESHOLD)
+            {
+                UpdateLastSeenTime(tagID, m_pose[tagID].header.stamp);
+            }
             // Don't worry about pausing if the robot is currently paused
             if (m_shouldPause == false)
             {
@@ -514,20 +541,24 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
                         //Check if the tag is closer than the threshold distance
                         if (GetDistance(m_pose[tagID]) < UPDATE_RANGE_THRESHOLD)
                         {
-                            ROS_INFO_STREAM_THROTTLE(0.5, "We got a winner landmark here. Should Update = true");
+                            UpdateLastSeenTime(tagID, m_pose[tagID].header.stamp);
                             m_shouldPause = true;
                             m_seesLandmark = true;
+                            SendText("Pausing for landmark");
+                            SendSound("seen_goal.wav");
+                            ros::Duration timeSinceLastUpdate = m_pose[tagID].header.stamp - m_lastLocalizeTime;
+                            ROS_INFO_STREAM_THROTTLE(0.5, "We got a winner landmark ("<<tagID<<") here. Should Update = true. Last update was : "<<timeSinceLastUpdate);
                         }
                         else
                         {
-                            ROS_INFO_STREAM_THROTTLE(1.0, "Landmark not close enough");
+                            ROS_INFO_STREAM_THROTTLE(1.0, "Landmark ("<<tagID<<") not close enough");
                         }
                     }
                 }
                 else if (type == AprilTagProcessor::GOAL)
                 {
                     // Only attempt to send the goal again if it's been a while since last sending it
-                    if (m_pose[tagID].header.stamp - LastGoalSendTime(tagID) > ros::Duration(9.0) ) {
+                    if (m_pose[tagID].header.stamp - LastGoalSendTime(tagID) > ros::Duration(10.0) ) {
                         //The goal hasn't been updated in a while...
 
                         //Check if the tag is closer than the threshold distance
@@ -535,6 +566,13 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
                         {
                             m_shouldPause = true;
                             m_seesGoal = true;
+                            SendText("Pausing for goal");
+                            SendSound("seen_goal.wav");
+                            ROS_INFO_STREAM("Pausing for goal: "<<tagID);
+                        }
+                        else
+                        {
+                            ROS_INFO_STREAM_THROTTLE(1.0, "Goal ["<<tagID<<"] not close enough");
                         }
                     }
                 }
@@ -637,6 +675,7 @@ bool AprilTagProcessor::IsLandmarkVisible()
 
         return true;
     }
+    return false;
 }
 
 
@@ -798,4 +837,22 @@ ros::Time AprilTagProcessor::LastGoalSendTime(int tagID)
         return m_goalSendTime[tagID];
     }
     return ros::Time(0);
+}
+
+
+void AprilTagProcessor::SendSound(std::string filename)
+{
+    std_msgs::String s;
+    s.data = filename;
+    m_soundPub.publish(s);
+    ROS_WARN_STREAM("Sent sound: "<<filename);
+}
+
+
+void AprilTagProcessor::SendText(std::string text)
+{
+    std_msgs::String s;
+    s.data = text;
+    m_textPub.publish(s);
+    ROS_WARN_STREAM("Sent text: "<<text);
 }
