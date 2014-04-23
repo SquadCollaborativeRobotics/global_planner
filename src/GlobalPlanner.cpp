@@ -42,6 +42,24 @@ bool GlobalPlanner::Init(ros::NodeHandle* nh)
             m_planner = PLANNER_CLOSEST_WAYPOINT;
         }
 	}
+    // Need to wait for m_robots to get populated by callback
+    // Some better ways todo: call globalplanner with param saying # of robots, then wait till # robots is populated
+    // for now just pausing for 10 seconds
+    // Unsustainable. Must hack harder.
+    // ROS_INFO_STREAM("Waiting till 2 robot controllers are loaded and update global planner robot map...");
+    // int robot_count = 0;
+    // while (robot_count < 2)
+    // {
+    //     robot_count = 0;
+    //     for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
+    //     {
+    //         robot_count++;
+    //     }
+    //     ROS_INFO_STREAM(robot_count << " robots loaded so far.");
+    //     ros::spinOnce();
+    //     sleep(1);
+    // }
+    // ROS_INFO("Done waiting, initializing task master.");
     m_tm.Init(nh, m_robots, waypointFile);
 
     ros::spinOnce();
@@ -166,9 +184,9 @@ void GlobalPlanner::Execute()
     //      OPTIONAL: IF need to cancel robot's current goal -> Send Cancel Message First AND update the task it was assigned to
     //      Send Waypoint Message
 
-    /*
+    
     // Check if a robot is full & find the best binbot for it
-    std::vector<Robot_Ptr> availableRobots = GetAvailableRobots();
+    std::vector<Robot_Ptr> availableRobots = GetAvailableRobots(0); // Get any available robots even with no storage space left
     for (std::vector<Robot_Ptr>::iterator it = availableRobots.begin(); it != availableRobots.end(); ++it)
     {
         Robot_Ptr robot = *it;
@@ -178,7 +196,7 @@ void GlobalPlanner::Execute()
         {
             ROS_INFO_STREAM_THROTTLE(5, "Robot " << robot->GetName() <<
                             "(" << robot->GetID() << ")" <<
-                            " full, trying to find bin bot to dump to...");
+                            " full, searching for closest available bin bot...");
             int collectorBot = robot->GetID();
             // Get closest bin bot to collector bot if it exists
             int bestBinBot = GetBestBinBot( collectorBot );
@@ -205,8 +223,13 @@ void GlobalPlanner::Execute()
     for (std::map<int, Dump_Ptr>::iterator it = dumps.begin(); it != dumps.end(); ++it)
     {
         Dump_Ptr dump = it->second;
-        if (dump->GetReadyToTransfer()) {
-            ROS_INFO_STREAM("Dump(" << dump->GetID() << ") transfering trash.");
+        int collectorBot = dump->GetRobot1();
+        int binBot = dump->GetRobot2();
+        // if (dump->GetReadyToTransfer()) { // This requires services to work
+        // Avoid services by querying robot states
+        if (m_robots[collectorBot]->GetState() == RobotState::DUMPING_FINISHED && m_robots[binBot]->GetState() == RobotState::DUMPING_FINISHED)
+        {
+            ROS_INFO_STREAM("Dump(" << dump->GetID() << ") transferring trash.");
 
             // Move trash over
             int collectorBot = dump->GetRobot1();
@@ -231,6 +254,7 @@ void GlobalPlanner::Execute()
 
             // Set states to waiting in global planner but not robot controllers
             // the robot controllers are in DUMP_FINISHED state, but they're ready to transition to waypoints etc.
+            // So set them to waiting in global planner and hopefully go to planning before a callback update resets them.
             m_robots[collectorBot]->SetState(RobotState::WAITING);
             m_robots[binBot]->SetState(RobotState::WAITING);
 
@@ -238,7 +262,7 @@ void GlobalPlanner::Execute()
             dump->SetStatus(TaskResult::SUCCESS);
         }
     }
-    */
+    
 
     // ProcessGoals();
 
@@ -344,7 +368,8 @@ void GlobalPlanner::ProcessGoals()
  ***********************************************************************/
 void GlobalPlanner::PlanNNWaypoint()
 {
-    std::vector<Robot_Ptr> availableRobots = GetAvailableRobots();
+    ROS_INFO_STREAM_THROTTLE(10,"Planning NN Waypoints...");
+    std::vector<Robot_Ptr> availableRobots = GetAvailableRobots(1); // Find those robots with at least 1 storage space
     std::map<int, Waypoint_Ptr> allWaypoints = m_tm.GetWaypoints();
     std::vector<Waypoint_Ptr> availableWaypoints = m_tm.GetAvailableWaypoints();
     // Break if all waypoints reached.
@@ -352,6 +377,12 @@ void GlobalPlanner::PlanNNWaypoint()
 
     for (std::vector<Robot_Ptr>::iterator i = availableRobots.begin(); i != availableRobots.end(); ++i)
     {
+        Robot_Ptr robot = *i;
+        if (robot->GetType() == RobotState::BIN_BOT) {
+            // TEMP: bin bots don't search waypoints..
+            continue;
+        }
+
         // Get updated set of available waypoints each time
         availableWaypoints = m_tm.GetAvailableWaypoints();
         ROS_INFO_STREAM("Waypoints to go: (" << availableWaypoints.size() << ")");
@@ -360,7 +391,9 @@ void GlobalPlanner::PlanNNWaypoint()
         if (availableWaypoints.size() == 0) {
             break;
         }
-        Robot_Ptr robot = *i;
+        
+
+        
 
         int waypoint_id = GetWaypointClosestToRobot(robot->GetID());
         if (waypoint_id == NO_WAYPOINT_FOUND) {
@@ -574,19 +607,6 @@ void GlobalPlanner::PlanNaive()
     }
 }
 
-
-/***********************************************************************
- *  Method: GlobalPlanner::GetAvailableRobots
- *  Params:
- * Returns: std::vector<Robot_Ptr> of all available robots
- * Effects: Returns all robots that are in the available state (even with no storage space)
- ***********************************************************************/
-std::vector<Robot_Ptr> GlobalPlanner::GetAvailableRobots()
-{
-    return GetAvailableRobots(0);
-}
-
-
 // Get Available robots with at least the number of available storage
 std::vector<Robot_Ptr> GlobalPlanner::GetAvailableRobots(int available_storage)
 {
@@ -720,7 +740,7 @@ int GlobalPlanner::GetRobotClosestToPose(geometry_msgs::Pose pose, RobotState::T
         Robot_Ptr robot = it->second;
 
         // If robot is waiting, is right kind, and has storage space
-        if (IsRobotAvailable(robot_id) && robot->GetState() &&  // Robot is available
+        if (IsRobotAvailable(robot_id) &&  // Robot is available
             (type == RobotState::ANY || robot->GetType() == type) && // And robot is right kind (any or collector or bin)
             robot->GetStorageAvailable() > 0) // And robot has storage space
         {

@@ -291,6 +291,38 @@ bool RobotController::cb_SetRobotStatus(global_planner::SetRobotStatusSrv::Reque
 
 
 /***********************************************************************
+ *  Method: RobotController::cb_SetTrash
+ *  Params: 
+ * Returns: void
+ * Effects: Called to set the amount of storage used by robot
+ ***********************************************************************/
+bool RobotController::cb_SetTrash(global_planner::SetTrashSrv::Request  &req,
+                                  global_planner::SetTrashSrv::Response &res)
+{
+    // If robot can hold requested trash, set it.
+    if (m_status.GetStorageCapacity() >= req.storage)
+    {
+        m_status.SetStorageUsed(req.storage); // Set storage to requested storage
+
+        // Horrible Hack due to service issues, need to have a binbot transition to waiting state once trash is transferred
+        if (m_status.GetState() == RobotState::DUMPING_FINISHED && m_status.GetType() == RobotState::BIN_BOT)
+        {
+            ROS_INFO("TEMPORARY : Transition from DUMPING_FINISHED to WAITING due to trash loading");
+            Transition(RobotState::WAITING);
+        }
+
+        res.result = 0; // Success
+    }
+    else
+    {
+        res.result = -1; // Failure
+        return false;
+    }
+    return true;
+}
+
+
+/***********************************************************************
  *  Method: RobotController::SendWaypointFinished
  *  Params: TaskResult::Status status
  * Returns: void
@@ -485,23 +517,44 @@ void RobotController::SetupCallbacks()
 
     m_statusPub = m_nh->advertise<global_planner::RobotStatus>("/robot_status", 100);
 
+    // Publish my info first, so global planner can start task master, which can then start services...
+    // This is unsustainable.
+    // sleep(1);
+    // m_statusPub.publish(m_status.GetMessage());
+
+
     ROS_INFO_STREAM("Connecting to service: "<<Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()));
+    // ROS_INFO_STREAM("Waiting for wp service to come up...");
+    // ros::service::waitForService( Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()) );
     //Task Finished services
     m_waypointFinishedPub = m_nh->serviceClient<global_planner::WaypointFinished>(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), true);
     if (m_waypointFinishedPub)
     {
         ROS_INFO_STREAM("Successfully connected to wp finished service");
     }
+    else
+    {
+        ROS_ERROR_STREAM("Could not connect to wp finished service.");
+    }
+    
+    ROS_INFO_STREAM("Connecting to service: "<<Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()));
+    // ROS_INFO_STREAM("Waiting for dump service to come up...");
+    // ros::service::waitForService( Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()) );
     m_dumpFinishedPub = m_nh->serviceClient<global_planner::DumpFinished>(Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()), true);
     if (m_dumpFinishedPub)
     {
         ROS_INFO_STREAM("Successfully connected to dump finished service");
+    }
+    else
+    {
+        ROS_ERROR_STREAM("Could not connect to dump finished service.");
     }
 
     m_statusService = m_nh->advertiseService(Conversion::RobotIDToServiceName(m_status.GetID()), &RobotController::SendRobotStatus, this);
     m_waypointService = m_nh->advertiseService(Conversion::RobotIDToWaypointTopic(m_status.GetID()), &RobotController::cb_waypointSub, this);
     m_dumpService = m_nh->advertiseService(Conversion::RobotIDToDumpTopic(m_status.GetID()), &RobotController::cb_dumpSub, this);
     m_setStatusService = m_nh->advertiseService(Conversion::RobotIDToSetStatusTopic(m_status.GetID()), &RobotController::cb_SetRobotStatus, this);
+    m_setTrashService = m_nh->advertiseService(Conversion::RobotIDToSetTrash(m_status.GetID()), &RobotController::cb_SetTrash, this);
 
     //Let the global planner know that this robot is alive an active
     UpdatePose();
@@ -568,6 +621,7 @@ void RobotController::OnEntry(void *args)
             break;
         case RobotState::DUMPING_FINISHED:
             ROS_INFO_STREAM("Reached Dump Site");
+            SendDumpFinished(TaskResult::SUCCESS);
             break;
         break;
     }
@@ -705,7 +759,6 @@ void RobotController::StateExecute()
             {
                 case actionlib::SimpleClientGoalState::SUCCEEDED:
                     ROS_INFO_STREAM("Movebase reached target.");
-                    SendDumpFinished(TaskResult::SUCCESS);
                     Transition(RobotState::DUMPING_FINISHED);
                     break;
                 case actionlib::SimpleClientGoalState::ABORTED:

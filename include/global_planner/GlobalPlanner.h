@@ -63,7 +63,6 @@ public:
     std::map<int, Waypoint_Ptr > GetWaypoints() { return m_tm.GetWaypoints(); };
     std::map<int, Dump_Ptr > GetDumps() { return m_tm.GetDumps(); };
 
-    std::vector<Robot_Ptr> GetAvailableRobots();
     std::vector<Robot_Ptr> GetAvailableRobots(int available_storage);
 
     int GetBestBinBot(int idOfRobotThatNeedsIt);
