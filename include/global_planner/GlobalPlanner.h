@@ -106,6 +106,9 @@ private:
     // get robot information
     void cb_robotStatus(const global_planner::RobotStatus::ConstPtr& msg);
 
+    // Add fake trashcan waypoint to task master
+    void cb_FakeTrashWaypoint(const global_planner::WaypointMsg::ConstPtr& msg);
+
     // Gets x/y 2D distance between two poses
     double Get2DPoseDistance(geometry_msgs::Pose a, geometry_msgs::Pose b);
 
@@ -118,6 +121,9 @@ private:
     //Subscriber to robot status callbacks
     ros::Subscriber m_robotSub;
     std::map<int, ros::ServiceClient > m_statusServices;
+
+    // Fake trashcan waypoint subscriber, any waypoint received is added to the waypoint map (overwriting those with the same id as needed)
+    ros::Subscriber m_fakeTrashSub;
 
     // Set Trash robot service map
     std::map<int, ros::ServiceClient > m_setTrashServices;

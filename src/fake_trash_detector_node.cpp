@@ -38,13 +38,13 @@ void updateRobotPose(const global_planner::RobotStatus::ConstPtr& msg)
 // pretty prints out robot poses to ros info
 void printRobotPoses()
 {
-    ROS_INFO("Robot Poses:");
+    ROS_INFO("-------------------- Robot Poses:");
     for (std::map<int, geometry_msgs::Pose>::iterator it = robot_poses.begin(); it != robot_poses.end(); ++it)
     {
         // ROS_INFO_STREAM(it->first << " : x:" << it->second);
         ROS_INFO_STREAM(it->first << " : x:" << it->second.position.x << ", y:" << it->second.position.y);
     }
-    ROS_INFO("Trashcan Poses:");
+    ROS_INFO("-------------------- Trashcan Poses:");
     for (std::map<int, Waypoint_Ptr>::iterator it = trashcan_waypoints.begin(); it != trashcan_waypoints.end(); ++it)
     {
         ROS_INFO_STREAM(it->first << " : " << it->second->ToString());
@@ -59,6 +59,7 @@ double get2DPoseDistance(geometry_msgs::Pose a, geometry_msgs::Pose b) {
 
 void publishTrash(int trash_id)
 {
+    // ROS_INFO_STREAM("Publishing" << trash_id << " : " << trashcan_waypoints[trash_id]->GetMessage());
     trashPub.publish( trashcan_waypoints[trash_id]->GetMessage() );
     published_trashcans.insert(trash_id); // Add to published trashcan set so we don't republish
 }
@@ -69,14 +70,14 @@ bool canRobotSeeTrash(int robot_id, int trash_id)
     if (get2DPoseDistance(robot_poses[robot_id], trashcan_waypoints[trash_id]->GetPose()) < DISTANCE_THRESHOLD)
     {
         // Trashcan visible, publish it (if it hasn't yet)
-        ROS_INFO_STREAM("SEEN : Robot " << robot_id << " 'sees' Trash Waypoint" << trash_id);
+        ROS_INFO_STREAM("SEEN : Robot " << robot_id << " 'sees' Trash Waypoint " << trash_id);
         publishTrash(trash_id);
         return true;
     }
     return false;
 }
 
-bool hasPublishedTrash(int trash_id)
+bool haveAlreadyPublishedTrash(int trash_id)
 {
     return published_trashcans.find(trash_id) != published_trashcans.end();
 }
@@ -87,7 +88,7 @@ void doTrashVisibilityCheck()
     for (std::map<int, Waypoint_Ptr>::iterator trash_it = trashcan_waypoints.begin(); trash_it != trashcan_waypoints.end(); ++trash_it)
     {
         // Only check trashcan if it hasn't been seen yet
-        if (!hasPublishedTrash(trash_it->first))
+        if (!haveAlreadyPublishedTrash(trash_it->first))
         {
             // For each robot pose, break on first success
             for (std::map<int, geometry_msgs::Pose>::iterator robot_it = robot_poses.begin(); robot_it != robot_poses.end(); ++robot_it)
@@ -147,9 +148,17 @@ int main(int argc, char** argv)
     // Track robots
     ros::Subscriber robotStatusSub = nh.subscribe("/robot_status", 10, updateRobotPose);
 
+    // Wait for ros
+
     ros::Time last_time = ros::Time::now();
 
+    // Wait so that ros can catch up and will receive publish messages
+    ROS_INFO("Waiting 2 seconds for /fakee_trashcans advertising to catch...");
+    while (ros::Time::now() - last_time < ros::Duration(2)) {};
+
     ros::Rate loop_rate(1); // 1 Hz
+
+    ros::spinOnce();
 
     ROS_INFO("Initialized. Starting Fake Trash Detector Loop.");
     while (ros::ok())
@@ -159,7 +168,7 @@ int main(int argc, char** argv)
         doTrashVisibilityCheck();
 
         // Print out map every N seconds
-        if ((ros::Time::now() - last_time) > ros::Duration(2))
+        if ((ros::Time::now() - last_time) > ros::Duration(10))
         {
             printRobotPoses();
             last_time = ros::Time::now();

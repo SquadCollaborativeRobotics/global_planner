@@ -849,9 +849,23 @@ bool GlobalPlanner::SetupCallbacks()
     m_soundPub = m_nh->advertise<std_msgs::String>("/interface_sound", 100);
     m_textPub = m_nh->advertise<std_msgs::String>("/interface_text", 100);
 
+    m_fakeTrashSub = m_nh->subscribe("/fake_trashcans", 10, &GlobalPlanner::cb_FakeTrashWaypoint, this);
+
     ros::spinOnce();
 }
 
+// Trash waypoint published by fake trash detector, add to waypoint map (overwriting same id entry as needed)
+void GlobalPlanner::cb_FakeTrashWaypoint(const global_planner::WaypointMsg::ConstPtr& msg)
+{
+    ROS_INFO_STREAM("Received Fake Trash Waypoint " << msg->id);
+    // Create waypoint from message
+    Waypoint_Ptr wp(new WaypointWrapper());
+    global_planner::WaypointMsg data = *msg;
+    wp->SetData(data);
+
+    // Add waypoint to task master
+    m_tm.AddWaypoint(wp);
+}
 
 // Get robot information TODO: better definition
 void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& msg)
