@@ -137,7 +137,7 @@ target_link_libraries(human_interface_node ${catkin_LIBRARIES} ${Boost_LIBRARIES
 add_dependencies(human_interface_node ${PROJECT_NAME}_generate_messages_cpp)
 
 add_executable(fake_trash_detector_node src/fake_trash_detector_node.cpp)
-target_link_libraries(fake_trash_detector_node ${catkin_LIBRARIES} ${Boost_LIBRARIES} )
+target_link_libraries(fake_trash_detector_node global_planner_lib ${catkin_LIBRARIES} ${Boost_LIBRARIES} )
 add_dependencies(fake_trash_detector_node ${PROJECT_NAME}_generate_messages_cpp)
 
 add_executable(global_planner_node src/global_planner_node.cpp)
