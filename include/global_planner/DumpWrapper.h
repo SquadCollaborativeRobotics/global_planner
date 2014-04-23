@@ -22,6 +22,7 @@ class DumpWrapper
 
 public:
     DumpWrapper(){};
+    DumpWrapper(int id){ SetID(id); };
     DumpWrapper(global_planner::DumpMsg& msg){ m_msg = msg; };
     ~DumpWrapper(){};
 

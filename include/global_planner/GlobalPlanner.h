@@ -156,6 +156,9 @@ private:
     // Statistics
     ros::Time m_start_time;
 
+    // Count of number of dumps, used to choose next dump id (0 indexed)
+    int dumps_count;
+
     // Map or robot_id to
     //                    map of waypoint id chosen and seconds since start it was chosen
     std::map<int, std::map<int, double> > robot_waypoint_times;

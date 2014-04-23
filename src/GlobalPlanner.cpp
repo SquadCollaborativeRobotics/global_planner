@@ -2,9 +2,8 @@
 #include <math.h> /* sqrt */
 // #include <string>
 
-GlobalPlanner::GlobalPlanner()
+GlobalPlanner::GlobalPlanner() : dumps_count(0), m_nh(0)
 {
-    m_nh = 0;
 }
 
 GlobalPlanner::~GlobalPlanner()
@@ -205,7 +204,7 @@ void GlobalPlanner::Execute()
                 ROS_INFO_STREAM("Bin Bot " << robot->GetName() <<
                                 "(" << robot->GetID() << ") found.");
                 // Create new dump site
-                Dump_Ptr dp(new DumpWrapper());
+                Dump_Ptr dp(new DumpWrapper(dumps_count++));
                 m_tm.AddDump(dp);
                 // Assign collector robot to dump, Assign bin bot to dump
                 if (!AssignRobotsDump(collectorBot, bestBinBot, dp->GetID()))
@@ -227,7 +226,7 @@ void GlobalPlanner::Execute()
         int binBot = dump->GetRobot2();
         // if (dump->GetReadyToTransfer()) { // This requires services to work
         // Avoid services by querying robot states
-        if (m_robots[collectorBot]->GetState() == RobotState::DUMPING_FINISHED && m_robots[binBot]->GetState() == RobotState::DUMPING_FINISHED)
+        if (dump->GetInProgress() && m_robots[collectorBot]->GetState() == RobotState::DUMPING_FINISHED && m_robots[binBot]->GetState() == RobotState::DUMPING_FINISHED)
         {
             ROS_INFO_STREAM("Dump(" << dump->GetID() << ") transferring trash.");
 
