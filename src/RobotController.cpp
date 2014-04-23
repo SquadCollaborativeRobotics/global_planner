@@ -386,10 +386,10 @@ void RobotController::Execute()
     //Don't need anymore since we're using services
     if (ros::Time::now() - m_lastStatusUpdate > ros::Duration(2))
     {
-        ROS_WARN_STREAM_THROTTLE(1, "Robot has not been in communication for "<<(ros::Time::now() - m_lastStatusUpdate) << " seconds");
+        // ROS_WARN_STREAM_THROTTLE(1, "Robot has not been in communication for "<<(ros::Time::now() - m_lastStatusUpdate) << " seconds");
         UpdatePose();
         m_statusPub.publish(m_status.GetMessage());
-        m_lastStatusUpdate = ros::Time::now();
+        // m_lastStatusUpdate = ros::Time::now();
     }
 }
 

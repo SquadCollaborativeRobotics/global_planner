@@ -866,7 +866,8 @@ void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& 
     //If it is already in the map...
     if(it != m_robots.end())
     {
-        m_robots[id]->SetPose(status.pose);
+        m_robots[id]->SetData(status);
+        // m_robots[id]->SetPose(status.pose);
     }
     else
     {
@@ -955,6 +956,7 @@ void GlobalPlanner::QueryRobots()
 
 void GlobalPlanner::QueryRobot(int id)
 {
+    return;
     global_planner::RobotStatusSrv s;
     s.request.id = id;
 
