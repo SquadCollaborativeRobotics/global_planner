@@ -30,6 +30,8 @@
 #define NO_ROBOT_FOUND -1 // Robot ID -1 is no robot found
 #define NO_WAYPOINT_FOUND -1 // Waypoint ID -1 is no robot found
 #define MAX_DIST 1000000 // Hardcoded for robot search routine for now, 1,000 km is a reasonable for this demo
+#define DUMPSITE_COLLECTOR_WEIGHT 0.8 // Prefer collector bot distance over bin bot weighting, (ex., for 0.8 -> 0.8 of collector vs 0.2 of bin bot)
+
 
 class GlobalPlanner
 {

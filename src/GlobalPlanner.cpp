@@ -823,8 +823,8 @@ int GlobalPlanner::GetClosestDumpSite(int collector_robot_id, int bin_robot_id)
         geometry_msgs::Pose collector_pose = m_robots[collector_robot_id]->GetPose();
         geometry_msgs::Pose bin_pose = m_robots[bin_robot_id]->GetPose();
 
-        // Get combined distances to dumpsite
-        double dist = Get2DPoseDistance(collector_pose, dump_collector_pose) + Get2DPoseDistance(bin_pose, dump_bin_pose);
+        // Get combined distances to dumpsite, weighted to prefer one over the other
+        double dist = DUMPSITE_COLLECTOR_WEIGHT * Get2DPoseDistance(collector_pose, dump_collector_pose) + (1 - DUMPSITE_COLLECTOR_WEIGHT) * Get2DPoseDistance(bin_pose, dump_bin_pose);
 
         // If closer, new best
         if (dist < best_distance)
@@ -1107,6 +1107,7 @@ void GlobalPlanner::loadDumpSites(std::string filename)
 
         ROS_INFO_STREAM("Loaded dumpsite pair[" << id << "]: C[" << x << ", " << y << ", " << rz << ", " << rw 
                                                       << "] B[" << x2 << ", " << y2 << ", " << rz2 << ", " << rw2  << "]");
+
         dumpsite_pose_pairs[id] = std::pair<geometry_msgs::Pose, geometry_msgs::Pose>(collectorPose, binPose);
     }
     fin.close();
