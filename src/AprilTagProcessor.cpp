@@ -558,7 +558,7 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
                 else if (type == AprilTagProcessor::GOAL)
                 {
                     // Only attempt to send the goal again if it's been a while since last sending it
-                    if (m_pose[tagID].header.stamp - LastGoalSendTime(tagID) > ros::Duration(10.0) ) {
+                    if (m_pose[tagID].header.stamp - LastGoalSendTime(tagID) > ros::Duration(20.0) ) {
                         //The goal hasn't been updated in a while...
 
                         //Check if the tag is closer than the threshold distance
