@@ -130,6 +130,7 @@ private:
     boost::shared_ptr<AprilTagProcessor> m_tagProcessor;
 
     ros::Time m_lastStatusUpdate;
+    ros::Time m_lastConstantStatusUpdate;
 
 
     void SendSound(std::string filename);

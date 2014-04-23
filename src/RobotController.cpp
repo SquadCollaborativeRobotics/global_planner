@@ -112,7 +112,7 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
         ROS_ERROR_STREAM("ERROR: storage used > storage capacity: used=" << storage_used <<  ", cap=" << storage_cap);
         return;
     }
-
+    // Todo only start if something.
     m_tagProcessor.reset( new AprilTagProcessor() );
     m_tagProcessor->Init(nh, robotID);
 
@@ -386,11 +386,20 @@ void RobotController::Execute()
     //Don't need anymore since we're using services
     if (ros::Time::now() - m_lastStatusUpdate > ros::Duration(2))
     {
-        ROS_WARN_STREAM_THROTTLE(10, "Robot has not been in communication for "<<(ros::Time::now() - m_lastStatusUpdate) << " seconds");
+        // ROS_WARN_STREAM("Robot has not been in communication for "<<(ros::Time::now() - m_lastStatusUpdate) << " seconds");
         UpdatePose();
         m_statusPub.publish(m_status.GetMessage());
         m_lastStatusUpdate = ros::Time::now();
     }
+
+    // Constant update every 3 seconds
+    if (ros::Time::now() - m_lastConstantStatusUpdate > ros::Duration(3))
+    {
+        UpdatePose();
+        m_statusPub.publish(m_status.GetMessage());
+        m_lastConstantStatusUpdate = ros::Time::now();
+    }
+    ROS_INFO_THROTTLE(5,"boop");
 }
 
 
