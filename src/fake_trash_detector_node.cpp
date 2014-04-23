@@ -17,7 +17,7 @@ That is all
 */
 
 #define WAYPOINT_START_ID 1 // Start id for waypoints read from file
-#define DISTANCE_THRESHOLD 2 // meters, threshold distance where trashcan is 'seen' by a robot (50cm = 0.5)
+#define DISTANCE_THRESHOLD 3 // meters, threshold distance where trashcan is 'seen' by a robot (50cm = 0.5)
 
 std::map<int, geometry_msgs::Pose> robot_poses;
 // List of all trashcan waypoints (all of them loaded at start, visible or not)

@@ -392,8 +392,8 @@ void RobotController::Execute()
         m_lastStatusUpdate = ros::Time::now();
     }
 
-    // Constant update every 3 seconds
-    if (ros::Time::now() - m_lastConstantStatusUpdate > ros::Duration(3))
+    // Constant update every 200ms ~ 5 Hz
+    if (ros::Time::now() - m_lastConstantStatusUpdate > ros::Duration(0.2))
     {
         UpdatePose();
         m_statusPub.publish(m_status.GetMessage());
