@@ -89,17 +89,15 @@ bool TaskMaster::RegisterServices()
 
     for (std::map<int, Robot_Ptr>::iterator i = m_robots.begin(); i != m_robots.end(); ++i)
     {
-        std::string waypointServiceTopic = Conversion::RobotIDToWaypointTopic(i->first);
-        std::string dumpServiceTopic = Conversion::RobotIDToDumpTopic(i->first);
+        if (!(m_waypointClients[i->first].isValid()))
+            m_waypointClients[i->first] = m_nh->serviceClient<global_planner::WaypointSrv>(Conversion::RobotIDToWaypointTopic(i->first), false);
+        if (!(m_dumpClients[i->first].isValid()))
+            m_dumpClients[i->first] = m_nh->serviceClient<global_planner::DumpSrv>(Conversion::RobotIDToDumpTopic(i->first), false);
 
-        m_waypointClients[i->first] = m_nh->serviceClient<global_planner::WaypointSrv>(waypointServiceTopic, true);
-        m_dumpClients[i->first] = m_nh->serviceClient<global_planner::DumpSrv>(dumpServiceTopic, true);
-
-        std::string waypointFinServiceTopic = Conversion::RobotIDToWaypointFinishedTopic(i->first);
-        std::string dumpFinServiceTopic = Conversion::RobotIDToDumpFinishedTopic(i->first);
-
-        m_wpFinishedService[i->first] = m_nh->advertiseService(waypointFinServiceTopic, &TaskMaster::cb_waypointFinished, this);
-        m_dumpFinishedService[i->first] = m_nh->advertiseService(dumpFinServiceTopic, &TaskMaster::cb_dumpFinished, this);
+        if (!(m_wpFinishedService[i->first]))
+            m_wpFinishedService[i->first] = m_nh->advertiseService(Conversion::RobotIDToWaypointFinishedTopic(i->first), &TaskMaster::cb_waypointFinished, this);
+        if (!(m_dumpFinishedService[i->first]))
+            m_dumpFinishedService[i->first] = m_nh->advertiseService(Conversion::RobotIDToDumpFinishedTopic(i->first), &TaskMaster::cb_dumpFinished, this);
     }
 }
 

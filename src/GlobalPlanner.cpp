@@ -877,10 +877,10 @@ void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& 
 
         std::string serviceTopic = Conversion::RobotIDToServiceName(id);
         //create a persistant service with this
-        m_statusServices[id] = m_nh->serviceClient<global_planner::RobotStatusSrv>(serviceTopic, true);
+        m_statusServices[id] = m_nh->serviceClient<global_planner::RobotStatusSrv>(serviceTopic, false);
 
         std::string serviceTopic2 = Conversion::RobotIDToSetTrash(id);
-        m_setTrashServices[id] = m_nh->serviceClient<global_planner::SetTrashSrv>(serviceTopic2, true);
+        m_setTrashServices[id] = m_nh->serviceClient<global_planner::SetTrashSrv>(serviceTopic2, false);
 
         m_tm.UpdateRobotMap(m_robots);
 
@@ -974,7 +974,7 @@ void GlobalPlanner::QueryRobot(int id)
     {
         ROS_ERROR_STREAM_THROTTLE(3.0, "Not connected to robot: "<<id<<"... retrying");
         std::string serviceTopic = Conversion::RobotIDToServiceName(id);
-        m_statusServices[id] = m_nh->serviceClient<global_planner::RobotStatusSrv>(serviceTopic, true);
+        m_statusServices[id] = m_nh->serviceClient<global_planner::RobotStatusSrv>(serviceTopic, false);
     }
 }
 

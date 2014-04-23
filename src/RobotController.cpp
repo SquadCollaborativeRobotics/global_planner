@@ -308,12 +308,12 @@ bool RobotController::SendWaypointFinished(TaskResult::Status status)
     wpMsg.request.id = m_status.GetTaskID();
     wpMsg.request.status = Conversion::TaskResultToInt(status);
 
-    if (!m_waypointFinishedPub)
+    if (!m_waypointFinishedPub.isValid())
     {
-        m_waypointFinishedPub = m_nh->serviceClient<global_planner::WaypointFinished>(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), true);
+        m_waypointFinishedPub = m_nh->serviceClient<global_planner::WaypointFinished>(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), false);
     }
 
-    if (m_waypointFinishedPub)
+    if (m_waypointFinishedPub.isValid())
     {
         if (m_waypointFinishedPub.call(wpMsg))
         {
@@ -479,13 +479,15 @@ void RobotController::SetupCallbacks()
 
     ROS_INFO_STREAM("Connecting to service: "<<Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()));
     //Task Finished services
-    m_waypointFinishedPub = m_nh->serviceClient<global_planner::WaypointFinished>(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), true);
-    if (m_waypointFinishedPub)
+
+    //TODO: waitForExistence
+    m_waypointFinishedPub = m_nh->serviceClient<global_planner::WaypointFinished>(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), false);
+    if (m_waypointFinishedPub.isValid())
     {
         ROS_INFO_STREAM("Successfully connected to wp finished service");
     }
-    m_dumpFinishedPub = m_nh->serviceClient<global_planner::DumpFinished>(Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()), true);
-    if (m_dumpFinishedPub)
+    m_dumpFinishedPub = m_nh->serviceClient<global_planner::DumpFinished>(Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()), false);
+    if (m_dumpFinishedPub.isValid())
     {
         ROS_INFO_STREAM("Successfully connected to dump finished service");
     }
