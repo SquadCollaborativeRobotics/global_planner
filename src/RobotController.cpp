@@ -551,8 +551,10 @@ void RobotController::OnEntry(void *args)
     {
         case RobotState::WAITING:
             m_status.SetTaskID(-1);
+            action_client_ptr->cancelAllGoals();
             break;
         case RobotState::NAVIGATING:
+            action_client_ptr->cancelAllGoals();
             action_client_ptr->sendGoal(m_moveBaseGoal);
             break;
         case RobotState::NAVIGATING_TAG_SPOTTED:
