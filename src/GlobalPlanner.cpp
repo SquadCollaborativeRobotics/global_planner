@@ -41,6 +41,13 @@ bool GlobalPlanner::Init(ros::NodeHandle* nh)
             m_planner = PLANNER_CLOSEST_WAYPOINT;
         }
 	}
+
+    // Load list of possible dumpsites
+    std::string dumpsiteFile("cubicle_dump_meets.points");
+    m_nh->getParam("/global_planner/dumpsite_file", dumpsiteFile);
+    ROS_INFO_STREAM("Loading dumpsite file: " << dumpsiteFile);
+    loadDumpSites(dumpsiteFile);
+
     // Need to wait for m_robots to get populated by callback
     // Some better ways todo: call globalplanner with param saying # of robots, then wait till # robots is populated
     // for now just pausing for 10 seconds
@@ -472,10 +479,9 @@ bool GlobalPlanner::AssignRobotsDump(int collector_robot_id, int bin_robot_id, i
     // Assign dump to robot
     dump_ptr->SetRobot1(collector_robot_id);
     dump_ptr->SetRobot2(bin_robot_id);
+    // TODO : Get closest dump site (currently hardcoded)
     dump_ptr->SetPose1(Conversion::SetPose(2,0,1,0)); // TODO : choose from list of locations
     dump_ptr->SetPose2(Conversion::SetPose(2,3,1,0));
-    // dump_ptr->SetPose1(Conversion::SetPose(2,-3,1,0)); // TODO : choose from list of locations
-    // dump_ptr->SetPose2(Conversion::SetPose(2,-2,0,1));
     dump_ptr->SetTime(ros::Time::now());
 
     // Assign robot to best dump
@@ -1020,3 +1026,46 @@ bool GlobalPlanner::IsRobotAvailable(int robotID)
     return false;
 }
 
+// Loads pairs of waypoints as dumpsites from a waypoints file (must contain even number of waypoints)
+// File contains pairs of waypoints (poses) like:
+// W1A
+// W1B
+// W2A
+// W2B
+// ...
+void GlobalPlanner::loadDumpSites(std::string filename)
+{
+    ROS_INFO_STREAM("Loading dumpsites from file: " << filename);
+    std::string filepath = ros::package::getPath("global_planner");
+    filepath += std::string("/resources/waypoint_lists/");
+    filepath += filename;
+    std::ifstream fin(filepath.c_str());
+    std::string s;
+    //read a line into 's' from 'fin' each time
+    for(int id=0; getline(fin,s); id++){
+        //use the string 's' as input stream, the usage of 'sin' is just like 'cin'
+        std::istringstream sin(s);
+        double x,y,rz,rw;
+        double x2,y2,rz2,rw2;
+        sin>>x;
+        sin>>y;
+        sin>>rz;
+        sin>>rw;
+        geometry_msgs::Pose collectorPose = Conversion::SetPose(x,y,rz,rw);
+
+        if (!getline(fin,s)) {
+            ROS_ERROR_STREAM("Uneven number of waypoints in dumpsite file" << filename);
+            break;
+        }
+        sin>>x2;
+        sin>>y2;
+        sin>>rz2;
+        sin>>rw2;
+        geometry_msgs::Pose binPose = Conversion::SetPose(x2,y2,rz2,rw2);
+
+        ROS_INFO_STREAM("Loaded dumpsite pair[" << id << "]: C[" << x << ", " << y << ", " << rz << ", " << rw 
+                                                      << "] B[" << x2 << ", " << y2 << ", " << rz2 << ", " << rw2  << "]");
+        dumpsite_pose_pairs[id] = std::pair<geometry_msgs::Pose, geometry_msgs::Pose>(collectorPose, binPose);
+    }
+    fin.close();
+}

@@ -98,6 +98,8 @@ public:
     void QueryRobot(int id);
     bool IsRobotAvailable(int robot_id);
 
+    void loadDumpSites(std::string filename);
+
 private:
     // setup callbacks, regiser services, load waypoints...
     bool SetupCallbacks();
@@ -158,6 +160,9 @@ private:
 
     // Count of number of dumps, used to choose next dump id (0 indexed)
     int dumps_count;
+
+    // map of dumpsite pair of poses
+    std::map<int, std::pair<geometry_msgs::Pose,geometry_msgs::Pose> > dumpsite_pose_pairs;
 
     // Map or robot_id to
     //                    map of waypoint id chosen and seconds since start it was chosen
