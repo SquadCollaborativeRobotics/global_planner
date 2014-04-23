@@ -17,7 +17,7 @@ That is all
 */
 
 #define WAYPOINT_START_ID 1 // Start id for waypoints read from file
-#define DISTANCE_THRESHOLD 0.5 // meters, threshold distance where trashcan is 'seen' by a robot (50cm = 0.5)
+#define DISTANCE_THRESHOLD 2 // meters, threshold distance where trashcan is 'seen' by a robot (50cm = 0.5)
 
 std::map<int, geometry_msgs::Pose> robot_poses;
 // List of all trashcan waypoints (all of them loaded at start, visible or not)
@@ -29,12 +29,6 @@ std::set<int> published_trashcans;
 // Trashcan waypoint publisher, publishes new trashcan when visible only once per trashcan
 ros::Publisher trashPub;
 
-// Callback to update pose of robot in robot_poses map
-void updateRobotPose(const global_planner::RobotStatus::ConstPtr& msg)
-{
-    robot_poses[msg->id] = msg->pose; // Create or update entry in map
-}
-
 // pretty prints out robot poses to ros info
 void printRobotPoses()
 {
@@ -44,11 +38,11 @@ void printRobotPoses()
         // ROS_INFO_STREAM(it->first << " : x:" << it->second);
         ROS_INFO_STREAM(it->first << " : x:" << it->second.position.x << ", y:" << it->second.position.y);
     }
-    ROS_INFO("-------------------- Trashcan Poses:");
-    for (std::map<int, Waypoint_Ptr>::iterator it = trashcan_waypoints.begin(); it != trashcan_waypoints.end(); ++it)
-    {
-        ROS_INFO_STREAM(it->first << " : " << it->second->ToString());
-    }
+    // ROS_INFO("-------------------- Trashcan Poses:");
+    // for (std::map<int, Waypoint_Ptr>::iterator it = trashcan_waypoints.begin(); it != trashcan_waypoints.end(); ++it)
+    // {
+    //     ROS_INFO_STREAM(it->first << " : " << it->second->ToString());
+    // }
 }
 
 double get2DPoseDistance(geometry_msgs::Pose a, geometry_msgs::Pose b) {
@@ -77,29 +71,49 @@ bool canRobotSeeTrash(int robot_id, int trash_id)
     return false;
 }
 
+// Boolean check if trashcan has been published before already
 bool haveAlreadyPublishedTrash(int trash_id)
 {
     return published_trashcans.find(trash_id) != published_trashcans.end();
 }
 
 // Check all trashcans against all robots for visibility
-void doTrashVisibilityCheck()
+// void doTrashVisibilityCheck()
+// {
+//     for (std::map<int, Waypoint_Ptr>::iterator trash_it = trashcan_waypoints.begin(); trash_it != trashcan_waypoints.end(); ++trash_it)
+//     {
+//         // Only check trashcan if it hasn't been seen yet
+//         if (!haveAlreadyPublishedTrash(trash_it->first))
+//         {
+//             // For each robot pose, break on first success
+//             for (std::map<int, geometry_msgs::Pose>::iterator robot_it = robot_poses.begin(); robot_it != robot_poses.end(); ++robot_it)
+//             {
+//                 if (canRobotSeeTrash(robot_it->first, trash_it->first))
+//                     break;
+//             }
+//         }
+//     }   
+// }
+
+// Check if any trashcans can be seen by robot
+void doRobotAnyTrashCheck(int robot_id)
 {
     for (std::map<int, Waypoint_Ptr>::iterator trash_it = trashcan_waypoints.begin(); trash_it != trashcan_waypoints.end(); ++trash_it)
     {
         // Only check trashcan if it hasn't been seen yet
         if (!haveAlreadyPublishedTrash(trash_it->first))
         {
-            // For each robot pose, break on first success
-            for (std::map<int, geometry_msgs::Pose>::iterator robot_it = robot_poses.begin(); robot_it != robot_poses.end(); ++robot_it)
-            {
-                if (canRobotSeeTrash(robot_it->first, trash_it->first))
-                    break;
-            }
+            canRobotSeeTrash(robot_id, trash_it->first);
         }
     }   
 }
 
+// Callback to update pose of robot in robot_poses map
+void updateRobotPose(const global_planner::RobotStatus::ConstPtr& msg)
+{
+    robot_poses[msg->id] = msg->pose; // Create or update entry in map
+    doRobotAnyTrashCheck(msg->id); // Check if new pose has hit an unseen trashcan
+}
 
 void loadWaypointsFromFile(std::string filename)
 {
@@ -133,7 +147,7 @@ int main(int argc, char** argv)
     ros::NodeHandle nh;
     ROS_INFO("Initializing Fake Trash Detector...");
 
-    std::string waypointFile("testList1.points");
+    std::string waypointFile("faketrash_cubicles.points");
     nh.getParam("trashcans_file", waypointFile); // Update waypointFile if it exists
     ROS_INFO_STREAM("Loading fake trash waypoints from: "<<waypointFile);
     loadWaypointsFromFile(waypointFile);
@@ -142,8 +156,8 @@ int main(int argc, char** argv)
     trashPub = nh.advertise<global_planner::WaypointMsg>("/fake_trashcans", 100);
 
     // Add fake robot
-    geometry_msgs::Pose p = Conversion::SetPose(2.9,0,0,0);
-    robot_poses[13] = p;
+    // geometry_msgs::Pose p = Conversion::SetPose(2.9,0,0,0);
+    // robot_poses[13] = p;
 
     // Track robots
     ros::Subscriber robotStatusSub = nh.subscribe("/robot_status", 10, updateRobotPose);
@@ -153,10 +167,10 @@ int main(int argc, char** argv)
     ros::Time last_time = ros::Time::now();
 
     // Wait so that ros can catch up and will receive publish messages
-    ROS_INFO("Waiting 2 seconds for /fakee_trashcans advertising to catch...");
+    ROS_INFO("Waiting 2 seconds for /fake_trashcans advertising to catch...");
     while (ros::Time::now() - last_time < ros::Duration(2)) {};
 
-    ros::Rate loop_rate(1); // 1 Hz
+    ros::Rate loop_rate(1); //
 
     ros::spinOnce();
 
@@ -165,7 +179,7 @@ int main(int argc, char** argv)
     {   
         // Check if a robot is near a trashcan
         // If yes, and the trashcan hasn't been published yet, publish it.
-        doTrashVisibilityCheck();
+        // doTrashVisibilityCheck();
 
         // Print out map every N seconds
         if ((ros::Time::now() - last_time) > ros::Duration(10))

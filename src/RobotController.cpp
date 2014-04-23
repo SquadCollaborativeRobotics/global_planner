@@ -399,7 +399,6 @@ void RobotController::Execute()
         m_statusPub.publish(m_status.GetMessage());
         m_lastConstantStatusUpdate = ros::Time::now();
     }
-    ROS_INFO_THROTTLE(5,"boop");
 }
 
 
