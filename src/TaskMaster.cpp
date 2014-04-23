@@ -575,7 +575,7 @@ bool TaskMaster::isFinished()
     for (std::map<int, Waypoint_Ptr>::iterator it = m_waypointMap.begin(); it != m_waypointMap.end(); ++it)
     {
         // If it's avilable for task setting
-        if (IsAvailable(it->first))
+        if ( IsAvailable(it->first) || IsInProgress(it->first) )
         {
             return false;
         }
@@ -658,7 +658,13 @@ bool TaskMaster::IsGoal(int taskID)
 bool TaskMaster::IsAvailable(int taskID)
 {
     if (m_waypointMap[taskID]->GetStatus() == TaskResult::AVAILABLE)
-        // m_waypointMap[taskID]->GetStatus() == TaskResult::INPROGRESS)
+        return true;
+    return false;
+}
+
+bool TaskMaster::IsInProgress(int taskID)
+{
+    if (m_waypointMap[taskID]->GetStatus() == TaskResult::INPROGRESS)
         return true;
     return false;
 }
