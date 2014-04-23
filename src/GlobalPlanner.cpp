@@ -480,8 +480,19 @@ bool GlobalPlanner::AssignRobotsDump(int collector_robot_id, int bin_robot_id, i
     dump_ptr->SetRobot1(collector_robot_id);
     dump_ptr->SetRobot2(bin_robot_id);
     // TODO : Get closest dump site (currently hardcoded)
-    dump_ptr->SetPose1(Conversion::SetPose(2,0,1,0)); // TODO : choose from list of locations
-    dump_ptr->SetPose2(Conversion::SetPose(2,3,1,0));
+    int best_dumpsite_id = GetClosestDumpSite(collector_robot_id, bin_robot_id);
+    if (best_dumpsite_id == NO_WAYPOINT_FOUND)
+    {
+        ROS_ERROR_STREAM("Could not assign dump because there are no dump sites.");
+        return false;
+    }
+
+    std::pair<geometry_msgs::Pose, geometry_msgs::Pose> dumpsite = dumpsite_pose_pairs[best_dumpsite_id];
+    dump_ptr->SetPose1(dumpsite.first);
+    dump_ptr->SetPose2(dumpsite.second);
+
+    // dump_ptr->SetPose1(Conversion::SetPose(2,0,1,0)); // TODO : choose from list of locations
+    // dump_ptr->SetPose2(Conversion::SetPose(2,3,1,0));
     dump_ptr->SetTime(ros::Time::now());
 
     // Assign robot to best dump
@@ -797,6 +808,35 @@ int GlobalPlanner::GetWaypointClosestToRobot(int robot_id) {
     return best_waypoint_id;
 }
 
+int GlobalPlanner::GetClosestDumpSite(int collector_robot_id, int bin_robot_id)
+{
+    int best_dumpsite_id = NO_WAYPOINT_FOUND;
+    double best_distance = MAX_DIST;
+
+    for (std::map<int, std::pair<geometry_msgs::Pose,geometry_msgs::Pose> >::iterator i = dumpsite_pose_pairs.begin(); i != dumpsite_pose_pairs.end(); ++i)
+    {
+        // format is map<int , pair<collector pose, bin pose> >
+        int dumpsite_id = i->first;
+        geometry_msgs::Pose dump_collector_pose = i->second.first;
+        geometry_msgs::Pose dump_bin_pose = i->second.second;
+
+        geometry_msgs::Pose collector_pose = m_robots[collector_robot_id]->GetPose();
+        geometry_msgs::Pose bin_pose = m_robots[bin_robot_id]->GetPose();
+
+        // Get combined distances to dumpsite
+        double dist = Get2DPoseDistance(collector_pose, dump_collector_pose) + Get2DPoseDistance(bin_pose, dump_bin_pose);
+
+        // If closer, new best
+        if (dist < best_distance)
+        {
+            best_distance = dist;
+            best_dumpsite_id = dumpsite_id;
+        }
+    }
+
+    return best_dumpsite_id;
+}
+
 // System Start
 void GlobalPlanner::Start()
 {
@@ -1041,6 +1081,7 @@ void GlobalPlanner::loadDumpSites(std::string filename)
     filepath += filename;
     std::ifstream fin(filepath.c_str());
     std::string s;
+    std::string s2;
     //read a line into 's' from 'fin' each time
     for(int id=0; getline(fin,s); id++){
         //use the string 's' as input stream, the usage of 'sin' is just like 'cin'
@@ -1053,14 +1094,15 @@ void GlobalPlanner::loadDumpSites(std::string filename)
         sin>>rw;
         geometry_msgs::Pose collectorPose = Conversion::SetPose(x,y,rz,rw);
 
-        if (!getline(fin,s)) {
+        if (!getline(fin,s2)) {
             ROS_ERROR_STREAM("Uneven number of waypoints in dumpsite file" << filename);
             break;
         }
-        sin>>x2;
-        sin>>y2;
-        sin>>rz2;
-        sin>>rw2;
+        std::istringstream sin2(s2);
+        sin2>>x2;
+        sin2>>y2;
+        sin2>>rz2;
+        sin2>>rw2;
         geometry_msgs::Pose binPose = Conversion::SetPose(x2,y2,rz2,rw2);
 
         ROS_INFO_STREAM("Loaded dumpsite pair[" << id << "]: C[" << x << ", " << y << ", " << rz << ", " << rw 

@@ -86,6 +86,7 @@ public:
     int GetRobotClosestToWaypoint(int waypointID, RobotState::Type type);
     int GetRobotClosestToPose(geometry_msgs::Pose pose, RobotState::Type type);
     int GetWaypointClosestToRobot(int robot_id);
+    int GetClosestDumpSite(int collector_robot_id, int bin_robot_id);
 
     bool AssignRobotWaypoint(int robot_id, int waypoint_id);
     bool AssignRobotsDump(int collector_robot_id, int bin_robot_id, int dump_id);
