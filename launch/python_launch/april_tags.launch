@@ -11,7 +11,7 @@
           <arg name="focalLength" value="525" />
           <arg name="imageTopic" value="camera/rgb/image_color" />
           <arg name="imageFrame" value="camera_rgb_frame" />
-          <!-- <arg name="tf_prefix" value="$(arg tf_prefix)" /> -->
+          <arg name="tf_prefix" value="$(arg tf_prefix)" />
         </include>
       </group>
       <group unless="$(arg kinect)">
@@ -22,7 +22,7 @@
     	    <arg name="focalLength" value="790" />
     	    <arg name="imageTopic" value="camera/image_raw" />
     	    <arg name="imageFrame" value="camera_link" />
-    	    <!-- <arg name="tf_prefix" value="$(arg tf_prefix)" /> -->
+    	    <arg name="tf_prefix" value="$(arg tf_prefix)" />
         </include>
       </group>
     </group>
@@ -31,7 +31,7 @@
         <arg name="focalLength" value="554" />
         <arg name="imageTopic" value="camera/image_raw" />
         <arg name="imageFrame" value="camera_link" />
-        <!-- <arg name="tf_prefix" value="$(arg tf_prefix)" /> -->
+        <arg name="tf_prefix" value="$(arg tf_prefix)" />
       </include>
     </group>
   </group>
