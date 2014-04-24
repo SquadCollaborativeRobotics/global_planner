@@ -55,6 +55,8 @@ void TaskMaster::AdvertiseServices(int robotID)
 {
     m_wpFinishedService[robotID] = m_nh->advertiseService(Conversion::RobotIDToWaypointFinishedTopic(robotID), &TaskMaster::cb_waypointFinished, this);
     m_dumpFinishedService[robotID] = m_nh->advertiseService(Conversion::RobotIDToDumpFinishedTopic(robotID), &TaskMaster::cb_dumpFinished, this);
+    ros::spinOnce();
+    ROS_INFO_STREAM("Advertised Taskmaster services for robot: "<<robotID);
 }
 
 void TaskMaster::RegisterClients(int robotID)
@@ -96,6 +98,7 @@ void TaskMaster::RegisterClients(int robotID)
     {
         ROS_ERROR_STREAM("dump waitForService timeout occured for robot: "<<robotID);
     }
+    ROS_INFO_STREAM("Registered services for robot: "<<robotID);
 }
 
 

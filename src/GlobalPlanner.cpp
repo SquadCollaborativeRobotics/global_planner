@@ -1069,7 +1069,6 @@ void GlobalPlanner::QueryRobots()
 
 void GlobalPlanner::QueryRobot(int id)
 {
-    return;
     global_planner::RobotStatusSrv s;
     s.request.id = id;
 
