@@ -292,7 +292,7 @@ bool RobotController::cb_SetRobotStatus(global_planner::SetRobotStatusSrv::Reque
 
 /***********************************************************************
  *  Method: RobotController::cb_SetTrash
- *  Params: 
+ *  Params:
  * Returns: void
  * Effects: Called to set the amount of storage used by robot
  ***********************************************************************/
@@ -415,14 +415,15 @@ void RobotController::Execute()
     // 2) Perform any state related actions
     StateExecute();
 
+    UpdatePose();
+    m_statusPub.publish(m_status.GetMessage());
+
     //Don't need anymore since we're using services
-    if (ros::Time::now() - m_lastStatusUpdate > ros::Duration(2))
-    {
-        ROS_WARN_STREAM_THROTTLE(10, "Robot has not been in communication for "<<(ros::Time::now() - m_lastStatusUpdate) << " seconds");
-        UpdatePose();
-        m_statusPub.publish(m_status.GetMessage());
-        m_lastStatusUpdate = ros::Time::now();
-    }
+    // if (ros::Time::now() - m_lastStatusUpdate > ros::Duration(2))
+    // {
+    //     ROS_WARN_STREAM_THROTTLE(10, "Robot has not been in communication for "<<(ros::Time::now() - m_lastStatusUpdate) << " seconds");
+    //     m_lastStatusUpdate = ros::Time::now();
+    // }
 
     // Constant update every 200ms ~ 5 Hz
     if (ros::Time::now() - m_lastConstantStatusUpdate > ros::Duration(0.2))
@@ -530,7 +531,7 @@ void RobotController::SetupCallbacks()
     {
         ROS_ERROR_STREAM("Could not connect to wp finished service.");
     }
-    
+
     ROS_INFO_STREAM("Connecting to service: "<<Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()));
     // ROS_INFO_STREAM("Waiting for dump service to come up...");
     // ros::service::waitForService( Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()) );
