@@ -51,6 +51,53 @@ void TaskMaster::UpdateRobotMap(std::map<int, Robot_Ptr> new_robots)
 }
 
 
+void TaskMaster::AdvertiseServices(int robotID)
+{
+    m_wpFinishedService[robotID] = m_nh->advertiseService(Conversion::RobotIDToWaypointFinishedTopic(robotID), &TaskMaster::cb_waypointFinished, this);
+    m_dumpFinishedService[robotID] = m_nh->advertiseService(Conversion::RobotIDToDumpFinishedTopic(robotID), &TaskMaster::cb_dumpFinished, this);
+}
+
+void TaskMaster::RegisterClients(int robotID)
+{
+    ROS_INFO_STREAM("Waiting up to 10 seconds for waypoint service to come up");
+    bool success = ros::service::waitForService(Conversion::RobotIDToWaypointTopic(robotID), ros::Duration(10));
+    if (success)
+    {
+        m_waypointClients[robotID] = m_nh->serviceClient<global_planner::WaypointSrv>(Conversion::RobotIDToWaypointTopic(robotID), false);
+        if (m_waypointClients[robotID].isValid())
+        {
+            ROS_INFO_STREAM("Waypoint finished listening service successfully setup for robot: "<<robotID);
+        }
+        else
+        {
+            ROS_ERROR_STREAM("Waypoint finished listening service FAILED to set up for robot: "<<robotID);
+        }
+    }
+    else
+    {
+        ROS_ERROR_STREAM("waypoint waitForService timeout occured for robot: "<<robotID);
+    }
+
+    ROS_INFO_STREAM("Waiting up to 10 seconds for Dump service to come up");
+    success = ros::service::waitForService(Conversion::RobotIDToDumpTopic(robotID), ros::Duration(10));
+    if (success)
+    {
+        m_dumpClients[robotID] = m_nh->serviceClient<global_planner::WaypointSrv>(Conversion::RobotIDToWaypointTopic(robotID), false);
+        if (m_dumpClients[robotID].isValid())
+        {
+            ROS_INFO_STREAM("Dump Finished listening service successfully setup for robot: "<<robotID);
+        }
+        else
+        {
+            ROS_ERROR_STREAM("Dump Finished listening service FAILED to set up for robot: "<<robotID);
+        }
+    }
+    else
+    {
+        ROS_ERROR_STREAM("dump waitForService timeout occured for robot: "<<robotID);
+    }
+}
+
 
 void TaskMaster::AddRobot(int robotID)
 {
