@@ -86,6 +86,7 @@ public:
 
     void LoadWaypoints(std::string filename);
     void UpdateRobotMap(std::map< int, Robot_Ptr > new_robots);
+    void AddRobot(int robotID);
 
 private:
     // Initialize lists, setup callbacks, regiser services

@@ -94,6 +94,7 @@ private:
     ros::ServiceServer m_waypointService;
     ros::ServiceServer m_dumpService;
     ros::ServiceServer m_setStatusService;
+    ros::ServiceServer m_setTrashService;
 
     ros::Subscriber m_eStopSub;
     ros::Subscriber m_odomSub;
