@@ -122,7 +122,6 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
         ROS_INFO_THROTTLE(3.0,"Waiting for the move_base action server to come up");
     }
 
-
     SetupCallbacks();
 
     ROS_DEBUG_STREAM("Robot has setup the movebase client");
@@ -175,6 +174,7 @@ bool RobotController::cb_waypointSub(global_planner::WaypointSrv::Request  &req,
             break;
         }
     }
+    return true;
 }
 
 
@@ -604,9 +604,12 @@ void RobotController::OnEntry(void *args)
     switch(m_status.GetState())
     {
         case RobotState::WAITING:
+            action_client_ptr->cancelAllGoals();
             m_status.SetTaskID(-1);
             break;
         case RobotState::NAVIGATING:
+            action_client_ptr->cancelAllGoals();
+            usleep(10000);
             action_client_ptr->sendGoal(m_moveBaseGoal);
             break;
         case RobotState::NAVIGATING_TAG_SPOTTED:
@@ -690,7 +693,7 @@ void RobotController::StateExecute()
         case RobotState::WAITING_TAG_FINISHED:
             if (ros::Time::now() - m_timeEnteringState > ros::Duration(1.0))
             {
-                SendSound("mario_pause.wav");
+                // SendSound("mario_pause.wav");
                 SendText("resuming - WAITING_TAG_FINISHED");
                 Transition(RobotState::WAITING);
                 m_tagProcessor->SetShouldPause(false);

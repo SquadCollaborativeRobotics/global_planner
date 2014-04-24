@@ -48,7 +48,7 @@ bool AprilTagProcessor::Init(ros::NodeHandle *nh, int robotID)
     m_tfListener.reset( new tf::TransformListener(*m_nh) );
 
     //Setup tag types
-    for (int i=0; i<=10; i++)
+    for (int i=0; i<=20; i++)
     {
         if (i%2 == 0)
         {
@@ -845,7 +845,7 @@ void AprilTagProcessor::SendSound(std::string filename)
     std_msgs::String s;
     s.data = filename;
     m_soundPub.publish(s);
-    ROS_WARN_STREAM("Sent sound: "<<filename);
+    ROS_DEBUG_STREAM("Sent sound: "<<filename);
 }
 
 
@@ -854,5 +854,5 @@ void AprilTagProcessor::SendText(std::string text)
     std_msgs::String s;
     s.data = text;
     m_textPub.publish(s);
-    ROS_WARN_STREAM("Sent text: "<<text);
+    ROS_DEBUG_STREAM("Sent text: "<<text);
 }
