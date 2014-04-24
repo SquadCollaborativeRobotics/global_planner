@@ -78,27 +78,29 @@ bool TaskMaster::SetupTopics()
  ***********************************************************************/
 bool TaskMaster::RegisterServices()
 {
-    m_waypointClients.clear();
-    m_dumpClients.clear();
+    // m_waypointClients.clear();
+    // m_dumpClients.clear();
 
-    m_wpFinishedService.clear();
-    m_dumpFinishedService.clear();
+    // m_wpFinishedService.clear();
+    // m_dumpFinishedService.clear();
 
-    sleep(0.5);
-    ros::spinOnce();
+    // sleep(0.5);
+    // ros::spinOnce();
 
-    for (std::map<int, Robot_Ptr>::iterator i = m_robots.begin(); i != m_robots.end(); ++i)
-    {
-        if (!(m_waypointClients[i->first].isValid()))
-            m_waypointClients[i->first] = m_nh->serviceClient<global_planner::WaypointSrv>(Conversion::RobotIDToWaypointTopic(i->first), false);
-        if (!(m_dumpClients[i->first].isValid()))
-            m_dumpClients[i->first] = m_nh->serviceClient<global_planner::DumpSrv>(Conversion::RobotIDToDumpTopic(i->first), false);
+    // for (std::map<int, Robot_Ptr>::iterator i = m_robots.begin(); i != m_robots.end(); ++i)
+    // {
+    //     std::string waypointServiceTopic = Conversion::RobotIDToWaypointTopic(i->first);
+    //     std::string dumpServiceTopic = Conversion::RobotIDToDumpTopic(i->first);
 
-        if (!(m_wpFinishedService[i->first]))
-            m_wpFinishedService[i->first] = m_nh->advertiseService(Conversion::RobotIDToWaypointFinishedTopic(i->first), &TaskMaster::cb_waypointFinished, this);
-        if (!(m_dumpFinishedService[i->first]))
-            m_dumpFinishedService[i->first] = m_nh->advertiseService(Conversion::RobotIDToDumpFinishedTopic(i->first), &TaskMaster::cb_dumpFinished, this);
-    }
+    //     m_waypointClients[i->first] = m_nh->serviceClient<global_planner::WaypointSrv>(waypointServiceTopic, true);
+    //     m_dumpClients[i->first] = m_nh->serviceClient<global_planner::DumpSrv>(dumpServiceTopic, true);
+
+    //     std::string waypointFinServiceTopic = Conversion::RobotIDToWaypointFinishedTopic(i->first);
+    //     std::string dumpFinServiceTopic = Conversion::RobotIDToDumpFinishedTopic(i->first);
+
+    //     m_wpFinishedService[i->first] = m_nh->advertiseService(waypointFinServiceTopic, &TaskMaster::cb_waypointFinished, this);
+    //     m_dumpFinishedService[i->first] = m_nh->advertiseService(dumpFinServiceTopic, &TaskMaster::cb_dumpFinished, this);
+    // }
 }
 
 /***********************************************************************
@@ -341,6 +343,38 @@ std::map<int, Dump_Ptr> TaskMaster::GetDumps()
 
 
 /***********************************************************************
+ *  Method: TaskMaster::cb_goalFinished
+ *  Params: const global_planner::GoalFinished::ConstPtr& msg
+ * Returns: void
+ * Effects: Callback for when a goal is finished
+ ***********************************************************************/
+ /*
+bool TaskMaster::cb_goalFinished(global_planner::GoalFinished::Request  &req,
+                                 global_planner::GoalFinished::Response &res)
+{
+    int status = req.status;
+    m_goalMap[req.id]->SetStatus(Conversion::IntToTaskResult(status));
+    if (status == TaskResult::SUCCESS)
+    {
+        SendSound("mario_coin.wav");
+        std::stringstream ss;
+        ss<<"SUCCESS: Goal ("<<req.id<<") finished successfully";
+        SendText(ss.str());
+        ROS_INFO_STREAM("Goal finished successfully");
+    }
+    else
+    {
+        ROS_ERROR_STREAM("ERROR, Goal finished with status: " << req.status
+                         << " : " << Conversion::TaskResultToString(Conversion::IntToTaskResult(req.status)));
+        std::stringstream ss;
+        ss << "ERROR: Goal ("<<req.id<<") not finished successfully " << Conversion::TaskResultToString(Conversion::IntToTaskResult(req.status));
+        SendText(ss.str());
+    }
+}
+*/
+
+
+/***********************************************************************
  *  Method: TaskMaster::cb_waypointFinished
  *  Params: const global_planner::WaypointFinished::ConstPtr& msg
  * Returns: void
@@ -541,7 +575,7 @@ bool TaskMaster::isFinished()
     for (std::map<int, Waypoint_Ptr>::iterator it = m_waypointMap.begin(); it != m_waypointMap.end(); ++it)
     {
         // If it's avilable for task setting
-        if ( IsAvailable(it->first) || IsInProgress(it->first) )
+        if (IsAvailable(it->first))
         {
             return false;
         }
@@ -624,13 +658,7 @@ bool TaskMaster::IsGoal(int taskID)
 bool TaskMaster::IsAvailable(int taskID)
 {
     if (m_waypointMap[taskID]->GetStatus() == TaskResult::AVAILABLE)
-        return true;
-    return false;
-}
-
-bool TaskMaster::IsInProgress(int taskID)
-{
-    if (m_waypointMap[taskID]->GetStatus() == TaskResult::INPROGRESS)
+        // m_waypointMap[taskID]->GetStatus() == TaskResult::INPROGRESS)
         return true;
     return false;
 }

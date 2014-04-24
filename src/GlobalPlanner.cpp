@@ -945,7 +945,8 @@ void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& 
     //If it is already in the map...
     if(it != m_robots.end())
     {
-        m_robots[id]->SetPose(status.pose);
+        m_robots[id]->SetData(status);
+        // m_robots[id]->SetPose(status.pose);
     }
     else
     {
@@ -954,14 +955,48 @@ void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& 
         ptr->SetState(RobotState::UNINITIALIZED);
         m_robots[id] = ptr;
 
-        std::string serviceTopic = Conversion::RobotIDToServiceName(id);
-        //create a persistant service with this
-        m_statusServices[id] = m_nh->serviceClient<global_planner::RobotStatusSrv>(serviceTopic, false);
+        ROS_INFO_STREAM("Waiting up to 10 seconds for robot status service to come up");
+        bool success = ros::service::waitForService(Conversion::RobotIDToServiceName(id), ros::Duration(10));
+        if (success)
+        {
+            m_statusServices[id] = m_nh->serviceClient<global_planner::RobotStatusSrv>(Conversion::RobotIDToServiceName(id), false);
+            if (m_statusServices[id].isValid())
+            {
+                ROS_INFO_STREAM("Robot status service successfully setup for robot: "<<id);
+            }
+            else
+            {
+                ROS_ERROR_STREAM("Robot status service FAILED to set up for robot: "<<id);
+            }
+        }
+        else
+        {
+            ROS_ERROR_STREAM("Robot status service waitForService timeout occured for robot: "<<id);
+        }
 
-        std::string serviceTopic2 = Conversion::RobotIDToSetTrash(id);
-        m_setTrashServices[id] = m_nh->serviceClient<global_planner::SetTrashSrv>(serviceTopic2, false);
+        ROS_INFO_STREAM("Waiting up to 10 seconds for set dump service to come up");
+        success = ros::service::waitForService(Conversion::RobotIDToSetTrash(id), ros::Duration(10));
+        if (success)
+        {
+            m_setTrashServices[id] = m_nh->serviceClient<global_planner::SetTrashSrv>(Conversion::RobotIDToSetTrash(id), false);
+            if (m_setTrashServices[id].isValid())
+            {
+                ROS_INFO_STREAM("set dump service successfully setup for robot: "<<id);
+            }
+            else
+            {
+                ROS_ERROR_STREAM("set dump service FAILED to set up for robot: "<<id);
+            }
+        }
+        else
+        {
+            ROS_ERROR_STREAM("set dump service waitForService timeout occured for robot: "<<id);
+        }
 
-        m_tm.UpdateRobotMap(m_robots);
+        ros::spinOnce();
+
+        // m_tm.UpdateRobotMap(m_robots);
+        m_tm.AddRobot(id);
 
         ROS_INFO_STREAM("Added new robot: " << ptr->ToString());
     }
@@ -1034,10 +1069,12 @@ void GlobalPlanner::QueryRobots()
 
 void GlobalPlanner::QueryRobot(int id)
 {
+    return;
     global_planner::RobotStatusSrv s;
     s.request.id = id;
 
-    if (m_statusServices[id])
+    // Global planner is connected to robot
+    if (m_statusServices[id].isValid())
     {
         if (m_statusServices[id].call(s))
         {
@@ -1051,9 +1088,26 @@ void GlobalPlanner::QueryRobot(int id)
     }
     else
     {
+        // Global planner is not connected to robot, which it has previously communciated with
         ROS_ERROR_STREAM_THROTTLE(3.0, "Not connected to robot: "<<id<<"... retrying");
-        std::string serviceTopic = Conversion::RobotIDToServiceName(id);
-        m_statusServices[id] = m_nh->serviceClient<global_planner::RobotStatusSrv>(serviceTopic, false);
+        bool success = ros::service::waitForService(Conversion::RobotIDToServiceName(id), ros::Duration(5));
+        if (success)
+        {
+            m_statusServices[id] = m_nh->serviceClient<global_planner::RobotStatusSrv>(Conversion::RobotIDToServiceName(id), false);
+            if (m_statusServices[id].isValid())
+            {
+                ROS_INFO_STREAM("Successfully setup the robot service for robot: "<<id);
+            }
+            else
+            {
+                ROS_ERROR_STREAM("Setup failed. robot status service for robot: "<<id<<" is not valid");
+            }
+        }
+        else
+        {
+            ROS_ERROR_STREAM("Setup failed. wait for robot status service for robot: "<<id);
+        }
+
     }
 }
 
