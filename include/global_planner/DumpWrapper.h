@@ -22,6 +22,7 @@ class DumpWrapper
 
 public:
     DumpWrapper(){};
+    DumpWrapper(int id){ SetID(id); };
     DumpWrapper(global_planner::DumpMsg& msg){ m_msg = msg; };
     ~DumpWrapper(){};
 
@@ -38,10 +39,10 @@ public:
         std::stringstream ss;
         geometry_msgs::Pose p1 = GetPose1();
         geometry_msgs::Pose p2 = GetPose2();
-        ss<<"Dump id = "<<GetID()<<" | status = "<<GetStatus()<<" | updated at time: "<<GetTime()<<" -- Robot1 = "
-        <<GetRobot1()<<" | Robot2 = "<<GetRobot2()<<" | Pose 1: "
-        << p1.position.x << ' ' << p1.position.y << ' ' << p1.orientation.z << ' ' << p1.orientation.w<<
-        "Pose 2: "<< p2.position.x << ' ' << p2.position.y << ' ' << p2.orientation.z << ' ' << p2.orientation.w;
+        ss << "Dump id = " << GetID() << " | status = " <<  Conversion::TaskResultToString(Conversion::IntToTaskResult(m_msg.status))  << " | updated at time: " << GetTime() << " -- Robot1 = "
+           << GetRobot1() << " | Robot2 = " << GetRobot2() << " | Pose 1: "
+           << p1.position.x << ' ' << p1.position.y << ' ' << p1.orientation.z << ' ' << p1.orientation.w
+           << "Pose 2: "<< p2.position.x << ' ' << p2.position.y << ' ' << p2.orientation.z << ' ' << p2.orientation.w;
         return ss.str();
     }
 

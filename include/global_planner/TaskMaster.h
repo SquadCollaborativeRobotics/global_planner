@@ -61,6 +61,7 @@ public:
     bool IsWaypoint(int taskID);
     bool IsGoal(int taskID);
     bool IsAvailable(int taskID);
+    bool IsInProgress(int taskID);
 
     bool isFinished();
 

@@ -2,9 +2,8 @@
 #include <math.h> /* sqrt */
 // #include <string>
 
-GlobalPlanner::GlobalPlanner()
+GlobalPlanner::GlobalPlanner() : dumps_count(0), m_nh(0)
 {
-    m_nh = 0;
 }
 
 GlobalPlanner::~GlobalPlanner()
@@ -42,6 +41,31 @@ bool GlobalPlanner::Init(ros::NodeHandle* nh)
             m_planner = PLANNER_CLOSEST_WAYPOINT;
         }
 	}
+
+    // Load list of possible dumpsites
+    std::string dumpsiteFile("cubicle_dump_meets.points");
+    m_nh->getParam("/global_planner/dumpsite_file", dumpsiteFile);
+    ROS_INFO_STREAM("Loading dumpsite file: " << dumpsiteFile);
+    loadDumpSites(dumpsiteFile);
+
+    // Need to wait for m_robots to get populated by callback
+    // Some better ways todo: call globalplanner with param saying # of robots, then wait till # robots is populated
+    // for now just pausing for 10 seconds
+    // Unsustainable. Must hack harder.
+    // ROS_INFO_STREAM("Waiting till 2 robot controllers are loaded and update global planner robot map...");
+    // int robot_count = 0;
+    // while (robot_count < 2)
+    // {
+    //     robot_count = 0;
+    //     for (std::map<int, Robot_Ptr>::iterator it = m_robots.begin(); it != m_robots.end(); ++it)
+    //     {
+    //         robot_count++;
+    //     }
+    //     ROS_INFO_STREAM(robot_count << " robots loaded so far.");
+    //     ros::spinOnce();
+    //     sleep(1);
+    // }
+    // ROS_INFO("Done waiting, initializing task master.");
     m_tm.Init(nh, m_robots, waypointFile);
 
     ros::spinOnce();
@@ -166,9 +190,9 @@ void GlobalPlanner::Execute()
     //      OPTIONAL: IF need to cancel robot's current goal -> Send Cancel Message First AND update the task it was assigned to
     //      Send Waypoint Message
 
-    /*
+    
     // Check if a robot is full & find the best binbot for it
-    std::vector<Robot_Ptr> availableRobots = GetAvailableRobots();
+    std::vector<Robot_Ptr> availableRobots = GetAvailableRobots(0); // Get any available robots even with no storage space left
     for (std::vector<Robot_Ptr>::iterator it = availableRobots.begin(); it != availableRobots.end(); ++it)
     {
         Robot_Ptr robot = *it;
@@ -178,7 +202,7 @@ void GlobalPlanner::Execute()
         {
             ROS_INFO_STREAM_THROTTLE(5, "Robot " << robot->GetName() <<
                             "(" << robot->GetID() << ")" <<
-                            " full, trying to find bin bot to dump to...");
+                            " full, searching for closest available bin bot...");
             int collectorBot = robot->GetID();
             // Get closest bin bot to collector bot if it exists
             int bestBinBot = GetBestBinBot( collectorBot );
@@ -187,7 +211,7 @@ void GlobalPlanner::Execute()
                 ROS_INFO_STREAM("Bin Bot " << robot->GetName() <<
                                 "(" << robot->GetID() << ") found.");
                 // Create new dump site
-                Dump_Ptr dp(new DumpWrapper());
+                Dump_Ptr dp(new DumpWrapper(dumps_count++));
                 m_tm.AddDump(dp);
                 // Assign collector robot to dump, Assign bin bot to dump
                 if (!AssignRobotsDump(collectorBot, bestBinBot, dp->GetID()))
@@ -205,8 +229,13 @@ void GlobalPlanner::Execute()
     for (std::map<int, Dump_Ptr>::iterator it = dumps.begin(); it != dumps.end(); ++it)
     {
         Dump_Ptr dump = it->second;
-        if (dump->GetReadyToTransfer()) {
-            ROS_INFO_STREAM("Dump(" << dump->GetID() << ") transfering trash.");
+        int collectorBot = dump->GetRobot1();
+        int binBot = dump->GetRobot2();
+        // if (dump->GetReadyToTransfer()) { // This requires services to work
+        // Avoid services by querying robot states
+        if (dump->GetInProgress() && m_robots[collectorBot]->GetState() == RobotState::DUMPING_FINISHED && m_robots[binBot]->GetState() == RobotState::DUMPING_FINISHED)
+        {
+            ROS_INFO_STREAM("Dump(" << dump->GetID() << ") transferring trash.");
 
             // Move trash over
             int collectorBot = dump->GetRobot1();
@@ -231,6 +260,7 @@ void GlobalPlanner::Execute()
 
             // Set states to waiting in global planner but not robot controllers
             // the robot controllers are in DUMP_FINISHED state, but they're ready to transition to waypoints etc.
+            // So set them to waiting in global planner and hopefully go to planning before a callback update resets them.
             m_robots[collectorBot]->SetState(RobotState::WAITING);
             m_robots[binBot]->SetState(RobotState::WAITING);
 
@@ -238,7 +268,7 @@ void GlobalPlanner::Execute()
             dump->SetStatus(TaskResult::SUCCESS);
         }
     }
-    */
+    
 
     // ProcessGoals();
 
@@ -344,7 +374,8 @@ void GlobalPlanner::ProcessGoals()
  ***********************************************************************/
 void GlobalPlanner::PlanNNWaypoint()
 {
-    std::vector<Robot_Ptr> availableRobots = GetAvailableRobots();
+    ROS_INFO_STREAM_THROTTLE(10,"Planning NN Waypoints...");
+    std::vector<Robot_Ptr> availableRobots = GetAvailableRobots(1); // Find those robots with at least 1 storage space
     std::map<int, Waypoint_Ptr> allWaypoints = m_tm.GetWaypoints();
     std::vector<Waypoint_Ptr> availableWaypoints = m_tm.GetAvailableWaypoints();
     // Break if all waypoints reached.
@@ -352,6 +383,12 @@ void GlobalPlanner::PlanNNWaypoint()
 
     for (std::vector<Robot_Ptr>::iterator i = availableRobots.begin(); i != availableRobots.end(); ++i)
     {
+        Robot_Ptr robot = *i;
+        if (robot->GetType() == RobotState::BIN_BOT) {
+            // TEMP: bin bots don't search waypoints..
+            continue;
+        }
+
         // Get updated set of available waypoints each time
         availableWaypoints = m_tm.GetAvailableWaypoints();
         ROS_INFO_STREAM("Waypoints to go: (" << availableWaypoints.size() << ")");
@@ -360,7 +397,9 @@ void GlobalPlanner::PlanNNWaypoint()
         if (availableWaypoints.size() == 0) {
             break;
         }
-        Robot_Ptr robot = *i;
+        
+
+        
 
         int waypoint_id = GetWaypointClosestToRobot(robot->GetID());
         if (waypoint_id == NO_WAYPOINT_FOUND) {
@@ -440,10 +479,20 @@ bool GlobalPlanner::AssignRobotsDump(int collector_robot_id, int bin_robot_id, i
     // Assign dump to robot
     dump_ptr->SetRobot1(collector_robot_id);
     dump_ptr->SetRobot2(bin_robot_id);
-    dump_ptr->SetPose1(Conversion::SetPose(2,0,1,0)); // TODO : choose from list of locations
-    dump_ptr->SetPose2(Conversion::SetPose(2,3,1,0));
-    // dump_ptr->SetPose1(Conversion::SetPose(2,-3,1,0)); // TODO : choose from list of locations
-    // dump_ptr->SetPose2(Conversion::SetPose(2,-2,0,1));
+    // TODO : Get closest dump site (currently hardcoded)
+    int best_dumpsite_id = GetClosestDumpSite(collector_robot_id, bin_robot_id);
+    if (best_dumpsite_id == NO_WAYPOINT_FOUND)
+    {
+        ROS_ERROR_STREAM("Could not assign dump because there are no dump sites.");
+        return false;
+    }
+
+    std::pair<geometry_msgs::Pose, geometry_msgs::Pose> dumpsite = dumpsite_pose_pairs[best_dumpsite_id];
+    dump_ptr->SetPose1(dumpsite.first);
+    dump_ptr->SetPose2(dumpsite.second);
+
+    // dump_ptr->SetPose1(Conversion::SetPose(2,0,1,0)); // TODO : choose from list of locations
+    // dump_ptr->SetPose2(Conversion::SetPose(2,3,1,0));
     dump_ptr->SetTime(ros::Time::now());
 
     // Assign robot to best dump
@@ -573,19 +622,6 @@ void GlobalPlanner::PlanNaive()
         }
     }
 }
-
-
-/***********************************************************************
- *  Method: GlobalPlanner::GetAvailableRobots
- *  Params:
- * Returns: std::vector<Robot_Ptr> of all available robots
- * Effects: Returns all robots that are in the available state (even with no storage space)
- ***********************************************************************/
-std::vector<Robot_Ptr> GlobalPlanner::GetAvailableRobots()
-{
-    return GetAvailableRobots(0);
-}
-
 
 // Get Available robots with at least the number of available storage
 std::vector<Robot_Ptr> GlobalPlanner::GetAvailableRobots(int available_storage)
@@ -720,7 +756,7 @@ int GlobalPlanner::GetRobotClosestToPose(geometry_msgs::Pose pose, RobotState::T
         Robot_Ptr robot = it->second;
 
         // If robot is waiting, is right kind, and has storage space
-        if (IsRobotAvailable(robot_id) && robot->GetState() &&  // Robot is available
+        if (IsRobotAvailable(robot_id) &&  // Robot is available
             (type == RobotState::ANY || robot->GetType() == type) && // And robot is right kind (any or collector or bin)
             robot->GetStorageAvailable() > 0) // And robot has storage space
         {
@@ -770,6 +806,35 @@ int GlobalPlanner::GetWaypointClosestToRobot(int robot_id) {
         }
     }
     return best_waypoint_id;
+}
+
+int GlobalPlanner::GetClosestDumpSite(int collector_robot_id, int bin_robot_id)
+{
+    int best_dumpsite_id = NO_WAYPOINT_FOUND;
+    double best_distance = MAX_DIST;
+
+    for (std::map<int, std::pair<geometry_msgs::Pose,geometry_msgs::Pose> >::iterator i = dumpsite_pose_pairs.begin(); i != dumpsite_pose_pairs.end(); ++i)
+    {
+        // format is map<int , pair<collector pose, bin pose> >
+        int dumpsite_id = i->first;
+        geometry_msgs::Pose dump_collector_pose = i->second.first;
+        geometry_msgs::Pose dump_bin_pose = i->second.second;
+
+        geometry_msgs::Pose collector_pose = m_robots[collector_robot_id]->GetPose();
+        geometry_msgs::Pose bin_pose = m_robots[bin_robot_id]->GetPose();
+
+        // Get combined distances to dumpsite, weighted to prefer one over the other
+        double dist = DUMPSITE_COLLECTOR_WEIGHT * Get2DPoseDistance(collector_pose, dump_collector_pose) + (1 - DUMPSITE_COLLECTOR_WEIGHT) * Get2DPoseDistance(bin_pose, dump_bin_pose);
+
+        // If closer, new best
+        if (dist < best_distance)
+        {
+            best_distance = dist;
+            best_dumpsite_id = dumpsite_id;
+        }
+    }
+
+    return best_dumpsite_id;
 }
 
 // System Start
@@ -851,9 +916,23 @@ bool GlobalPlanner::SetupCallbacks()
     m_soundPub = m_nh->advertise<std_msgs::String>("/interface_sound", 100);
     m_textPub = m_nh->advertise<std_msgs::String>("/interface_text", 100);
 
+    m_fakeTrashSub = m_nh->subscribe("/fake_trashcans", 10, &GlobalPlanner::cb_FakeTrashWaypoint, this);
+
     ros::spinOnce();
 }
 
+// Trash waypoint published by fake trash detector, add to waypoint map (overwriting same id entry as needed)
+void GlobalPlanner::cb_FakeTrashWaypoint(const global_planner::WaypointMsg::ConstPtr& msg)
+{
+    ROS_INFO_STREAM("Received Fake Trash Waypoint " << msg->id);
+    // Create waypoint from message
+    Waypoint_Ptr wp(new WaypointWrapper());
+    global_planner::WaypointMsg data = *msg;
+    wp->SetData(data);
+
+    // Add waypoint to task master
+    m_tm.AddWaypoint(wp);
+}
 
 // Get robot information TODO: better definition
 void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& msg)
@@ -989,3 +1068,49 @@ bool GlobalPlanner::IsRobotAvailable(int robotID)
     return false;
 }
 
+// Loads pairs of waypoints as dumpsites from a waypoints file (must contain even number of waypoints)
+// File contains pairs of waypoints (poses) like:
+// W1A
+// W1B
+// W2A
+// W2B
+// ...
+void GlobalPlanner::loadDumpSites(std::string filename)
+{
+    ROS_INFO_STREAM("Loading dumpsites from file: " << filename);
+    std::string filepath = ros::package::getPath("global_planner");
+    filepath += std::string("/resources/waypoint_lists/");
+    filepath += filename;
+    std::ifstream fin(filepath.c_str());
+    std::string s;
+    std::string s2;
+    //read a line into 's' from 'fin' each time
+    for(int id=0; getline(fin,s); id++){
+        //use the string 's' as input stream, the usage of 'sin' is just like 'cin'
+        std::istringstream sin(s);
+        double x,y,rz,rw;
+        double x2,y2,rz2,rw2;
+        sin>>x;
+        sin>>y;
+        sin>>rz;
+        sin>>rw;
+        geometry_msgs::Pose collectorPose = Conversion::SetPose(x,y,rz,rw);
+
+        if (!getline(fin,s2)) {
+            ROS_ERROR_STREAM("Uneven number of waypoints in dumpsite file" << filename);
+            break;
+        }
+        std::istringstream sin2(s2);
+        sin2>>x2;
+        sin2>>y2;
+        sin2>>rz2;
+        sin2>>rw2;
+        geometry_msgs::Pose binPose = Conversion::SetPose(x2,y2,rz2,rw2);
+
+        ROS_INFO_STREAM("Loaded dumpsite pair[" << id << "]: C[" << x << ", " << y << ", " << rz << ", " << rw 
+                                                      << "] B[" << x2 << ", " << y2 << ", " << rz2 << ", " << rw2  << "]");
+
+        dumpsite_pose_pairs[id] = std::pair<geometry_msgs::Pose, geometry_msgs::Pose>(collectorPose, binPose);
+    }
+    fin.close();
+}

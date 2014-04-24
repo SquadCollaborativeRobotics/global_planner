@@ -94,6 +94,7 @@ private:
     ros::ServiceServer m_waypointService;
     ros::ServiceServer m_dumpService;
     ros::ServiceServer m_setStatusService;
+    ros::ServiceServer m_setTrashService;
 
     ros::Subscriber m_eStopSub;
     ros::Subscriber m_odomSub;
@@ -130,6 +131,7 @@ private:
     boost::shared_ptr<AprilTagProcessor> m_tagProcessor;
 
     ros::Time m_lastStatusUpdate;
+    ros::Time m_lastConstantStatusUpdate;
 
 
     void SendSound(std::string filename);

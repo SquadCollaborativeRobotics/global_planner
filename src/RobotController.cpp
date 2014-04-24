@@ -112,7 +112,7 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
         ROS_ERROR_STREAM("ERROR: storage used > storage capacity: used=" << storage_used <<  ", cap=" << storage_cap);
         return;
     }
-
+    // Todo: Only start if fake trash is not used
     m_tagProcessor.reset( new AprilTagProcessor() );
     m_tagProcessor->Init(nh, robotID);
 
@@ -291,6 +291,38 @@ bool RobotController::cb_SetRobotStatus(global_planner::SetRobotStatusSrv::Reque
 
 
 /***********************************************************************
+ *  Method: RobotController::cb_SetTrash
+ *  Params: 
+ * Returns: void
+ * Effects: Called to set the amount of storage used by robot
+ ***********************************************************************/
+bool RobotController::cb_SetTrash(global_planner::SetTrashSrv::Request  &req,
+                                  global_planner::SetTrashSrv::Response &res)
+{
+    // If robot can hold requested trash, set it.
+    if (m_status.GetStorageCapacity() >= req.storage)
+    {
+        m_status.SetStorageUsed(req.storage); // Set storage to requested storage
+
+        // Horrible Hack due to service issues, need to have a binbot transition to waiting state once trash is transferred
+        if (m_status.GetState() == RobotState::DUMPING_FINISHED && m_status.GetType() == RobotState::BIN_BOT)
+        {
+            ROS_INFO("TEMPORARY : Transition from DUMPING_FINISHED to WAITING due to trash loading");
+            Transition(RobotState::WAITING);
+        }
+
+        res.result = 0; // Success
+    }
+    else
+    {
+        res.result = -1; // Failure
+        return false;
+    }
+    return true;
+}
+
+
+/***********************************************************************
  *  Method: RobotController::SendWaypointFinished
  *  Params: TaskResult::Status status
  * Returns: void
@@ -308,12 +340,12 @@ bool RobotController::SendWaypointFinished(TaskResult::Status status)
     wpMsg.request.id = m_status.GetTaskID();
     wpMsg.request.status = Conversion::TaskResultToInt(status);
 
-    if (!m_waypointFinishedPub.isValid())
+    if (!m_waypointFinishedPub)
     {
-        m_waypointFinishedPub = m_nh->serviceClient<global_planner::WaypointFinished>(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), false);
+        m_waypointFinishedPub = m_nh->serviceClient<global_planner::WaypointFinished>(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), true);
     }
 
-    if (m_waypointFinishedPub.isValid())
+    if (m_waypointFinishedPub)
     {
         if (m_waypointFinishedPub.call(wpMsg))
         {
@@ -386,10 +418,18 @@ void RobotController::Execute()
     //Don't need anymore since we're using services
     if (ros::Time::now() - m_lastStatusUpdate > ros::Duration(2))
     {
-        ROS_WARN_STREAM_THROTTLE(1, "Robot has not been in communication for "<<(ros::Time::now() - m_lastStatusUpdate) << " seconds");
+        ROS_WARN_STREAM_THROTTLE(10, "Robot has not been in communication for "<<(ros::Time::now() - m_lastStatusUpdate) << " seconds");
         UpdatePose();
         m_statusPub.publish(m_status.GetMessage());
         m_lastStatusUpdate = ros::Time::now();
+    }
+
+    // Constant update every 200ms ~ 5 Hz
+    if (ros::Time::now() - m_lastConstantStatusUpdate > ros::Duration(0.2))
+    {
+        UpdatePose();
+        m_statusPub.publish(m_status.GetMessage());
+        m_lastConstantStatusUpdate = ros::Time::now();
     }
 }
 
@@ -478,24 +518,37 @@ void RobotController::SetupCallbacks()
     m_statusPub = m_nh->advertise<global_planner::RobotStatus>("/robot_status", 100);
 
     ROS_INFO_STREAM("Connecting to service: "<<Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()));
+    // ROS_INFO_STREAM("Waiting for wp service to come up...");
+    // ros::service::waitForService( Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()) );
     //Task Finished services
-
-    //TODO: waitForExistence
     m_waypointFinishedPub = m_nh->serviceClient<global_planner::WaypointFinished>(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), false);
     if (m_waypointFinishedPub.isValid())
     {
         ROS_INFO_STREAM("Successfully connected to wp finished service");
     }
-    m_dumpFinishedPub = m_nh->serviceClient<global_planner::DumpFinished>(Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()), false);
+    else
+    {
+        ROS_ERROR_STREAM("Could not connect to wp finished service.");
+    }
+    
+    ROS_INFO_STREAM("Connecting to service: "<<Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()));
+    // ROS_INFO_STREAM("Waiting for dump service to come up...");
+    // ros::service::waitForService( Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()) );
+    m_dumpFinishedPub = m_nh->serviceClient<global_planner::DumpFinished>(Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()), true);
     if (m_dumpFinishedPub.isValid())
     {
         ROS_INFO_STREAM("Successfully connected to dump finished service");
+    }
+    else
+    {
+        ROS_ERROR_STREAM("Could not connect to dump finished service.");
     }
 
     m_statusService = m_nh->advertiseService(Conversion::RobotIDToServiceName(m_status.GetID()), &RobotController::SendRobotStatus, this);
     m_waypointService = m_nh->advertiseService(Conversion::RobotIDToWaypointTopic(m_status.GetID()), &RobotController::cb_waypointSub, this);
     m_dumpService = m_nh->advertiseService(Conversion::RobotIDToDumpTopic(m_status.GetID()), &RobotController::cb_dumpSub, this);
     m_setStatusService = m_nh->advertiseService(Conversion::RobotIDToSetStatusTopic(m_status.GetID()), &RobotController::cb_SetRobotStatus, this);
+    m_setTrashService = m_nh->advertiseService(Conversion::RobotIDToSetTrash(m_status.GetID()), &RobotController::cb_SetTrash, this);
 
     //Let the global planner know that this robot is alive an active
     UpdatePose();
@@ -565,6 +618,7 @@ void RobotController::OnEntry(void *args)
             break;
         case RobotState::DUMPING_FINISHED:
             ROS_INFO_STREAM("Reached Dump Site");
+            SendDumpFinished(TaskResult::SUCCESS);
             break;
         break;
     }
@@ -701,7 +755,7 @@ void RobotController::StateExecute()
 
             if (ros::Time::now() - m_timeEnteringState > ros::Duration(5))
             {
-                ROS_ERROR_STREAM("ERROR: could not find any tags while stopped.  we are going to just resume NAVIGATING");
+                ROS_ERROR_STREAM("Could not find any tags while stopped.  we are going to just resume NAVIGATING");
                 Transition(RobotState::NAVIGATING);
                 m_tagProcessor->SetShouldPause(false);
             }
@@ -783,5 +837,3 @@ void RobotController::SendText(std::string text)
     s.data = text;
     m_textPub.publish(s);
 }
-
-

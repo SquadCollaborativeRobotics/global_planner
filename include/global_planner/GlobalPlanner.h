@@ -30,6 +30,8 @@
 #define NO_ROBOT_FOUND -1 // Robot ID -1 is no robot found
 #define NO_WAYPOINT_FOUND -1 // Waypoint ID -1 is no robot found
 #define MAX_DIST 1000000 // Hardcoded for robot search routine for now, 1,000 km is a reasonable for this demo
+#define DUMPSITE_COLLECTOR_WEIGHT 0.8 // Prefer collector bot distance over bin bot weighting, (ex., for 0.8 -> 0.8 of collector vs 0.2 of bin bot)
+
 
 class GlobalPlanner
 {
@@ -63,7 +65,6 @@ public:
     std::map<int, Waypoint_Ptr > GetWaypoints() { return m_tm.GetWaypoints(); };
     std::map<int, Dump_Ptr > GetDumps() { return m_tm.GetDumps(); };
 
-    std::vector<Robot_Ptr> GetAvailableRobots();
     std::vector<Robot_Ptr> GetAvailableRobots(int available_storage);
 
     int GetBestBinBot(int idOfRobotThatNeedsIt);
@@ -87,6 +88,7 @@ public:
     int GetRobotClosestToWaypoint(int waypointID, RobotState::Type type);
     int GetRobotClosestToPose(geometry_msgs::Pose pose, RobotState::Type type);
     int GetWaypointClosestToRobot(int robot_id);
+    int GetClosestDumpSite(int collector_robot_id, int bin_robot_id);
 
     bool AssignRobotWaypoint(int robot_id, int waypoint_id);
     bool AssignRobotsDump(int collector_robot_id, int bin_robot_id, int dump_id);
@@ -99,12 +101,17 @@ public:
     void QueryRobot(int id);
     bool IsRobotAvailable(int robot_id);
 
+    void loadDumpSites(std::string filename);
+
 private:
     // setup callbacks, regiser services, load waypoints...
     bool SetupCallbacks();
 
     // get robot information
     void cb_robotStatus(const global_planner::RobotStatus::ConstPtr& msg);
+
+    // Add fake trashcan waypoint to task master
+    void cb_FakeTrashWaypoint(const global_planner::WaypointMsg::ConstPtr& msg);
 
     // Gets x/y 2D distance between two poses
     double Get2DPoseDistance(geometry_msgs::Pose a, geometry_msgs::Pose b);
@@ -118,6 +125,9 @@ private:
     //Subscriber to robot status callbacks
     ros::Subscriber m_robotSub;
     std::map<int, ros::ServiceClient > m_statusServices;
+
+    // Fake trashcan waypoint subscriber, any waypoint received is added to the waypoint map (overwriting those with the same id as needed)
+    ros::Subscriber m_fakeTrashSub;
 
     // Set Trash robot service map
     std::map<int, ros::ServiceClient > m_setTrashServices;
@@ -150,6 +160,12 @@ private:
 
     // Statistics
     ros::Time m_start_time;
+
+    // Count of number of dumps, used to choose next dump id (0 indexed)
+    int dumps_count;
+
+    // map of dumpsite pair of poses
+    std::map<int, std::pair<geometry_msgs::Pose,geometry_msgs::Pose> > dumpsite_pose_pairs;
 
     // Map or robot_id to
     //                    map of waypoint id chosen and seconds since start it was chosen
