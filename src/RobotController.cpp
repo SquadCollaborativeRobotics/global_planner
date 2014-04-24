@@ -292,7 +292,7 @@ bool RobotController::cb_SetRobotStatus(global_planner::SetRobotStatusSrv::Reque
 
 /***********************************************************************
  *  Method: RobotController::cb_SetTrash
- *  Params: 
+ *  Params:
  * Returns: void
  * Effects: Called to set the amount of storage used by robot
  ***********************************************************************/
@@ -340,12 +340,12 @@ bool RobotController::SendWaypointFinished(TaskResult::Status status)
     wpMsg.request.id = m_status.GetTaskID();
     wpMsg.request.status = Conversion::TaskResultToInt(status);
 
-    if (!m_waypointFinishedPub)
+    if (!m_waypointFinishedPub.isValid())
     {
         m_waypointFinishedPub = m_nh->serviceClient<global_planner::WaypointFinished>(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), true);
     }
 
-    if (m_waypointFinishedPub)
+    if (m_waypointFinishedPub.isValid())
     {
         if (m_waypointFinishedPub.call(wpMsg))
         {
@@ -415,13 +415,16 @@ void RobotController::Execute()
     // 2) Perform any state related actions
     StateExecute();
 
+    UpdatePose();
+    m_statusPub.publish(m_status.GetMessage());
+
     //Don't need anymore since we're using services
     if (ros::Time::now() - m_lastStatusUpdate > ros::Duration(2))
     {
-        ROS_WARN_STREAM_THROTTLE(10, "Robot has not been in communication for "<<(ros::Time::now() - m_lastStatusUpdate) << " seconds");
-        UpdatePose();
-        m_statusPub.publish(m_status.GetMessage());
-        m_lastStatusUpdate = ros::Time::now();
+        // ROS_WARN_STREAM_THROTTLE(10, "Robot has not been in communication for "<<(ros::Time::now() - m_lastStatusUpdate) << " seconds");
+        // UpdatePose();
+        // m_statusPub.publish(m_status.GetMessage());
+        // m_lastStatusUpdate = ros::Time::now();
     }
 
     // Constant update every 200ms ~ 5 Hz
@@ -530,7 +533,7 @@ void RobotController::SetupCallbacks()
     {
         ROS_ERROR_STREAM("Could not connect to wp finished service.");
     }
-    
+
     ROS_INFO_STREAM("Connecting to service: "<<Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()));
     // ROS_INFO_STREAM("Waiting for dump service to come up...");
     // ros::service::waitForService( Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()) );
@@ -550,15 +553,71 @@ void RobotController::SetupCallbacks()
     m_setStatusService = m_nh->advertiseService(Conversion::RobotIDToSetStatusTopic(m_status.GetID()), &RobotController::cb_SetRobotStatus, this);
     m_setTrashService = m_nh->advertiseService(Conversion::RobotIDToSetTrash(m_status.GetID()), &RobotController::cb_SetTrash, this);
 
-    //Let the global planner know that this robot is alive an active
-    UpdatePose();
-    m_statusPub.publish(m_status.GetMessage());
+    ros::spinOnce();
+
+    // Keep trying to connect to the global planner until we see the waypoint finished service running
+    m_status.SetState(RobotState::UNINITIALIZED);
+    bool waypointFin = false;
+    bool dumpFin = false;
+    while (waypointFin == false || dumpFin == false)
+    {
+        //Task Finished services
+        ROS_INFO_STREAM("Connecting to service: "<<Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()));
+        ROS_INFO_STREAM("Waiting up to 10 seconds for waypoint finished service to come up");
+        // Setup waypoint finished service client
+        while (true)
+        {
+            bool success = ros::service::waitForService(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), ros::Duration(5));
+            if (success)
+            {
+                m_waypointFinishedPub = m_nh->serviceClient<global_planner::WaypointFinished>(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), false);
+                if (m_waypointFinishedPub.isValid())
+                {
+                    ROS_INFO_STREAM("waypoint finished service successfully setup for robot: "<<m_status.GetID());
+                    break;
+                }
+                else
+                {
+                    ROS_ERROR_STREAM("waypoint finished service FAILED to set up for robot: "<<m_status.GetID());
+                }
+            }
+            else
+            {
+                ROS_ERROR_STREAM("waypoint waitForService timeout occured for robot: "<<m_status.GetID());
+            }
+        }
+
+        while (true)
+        {
+            // Setup dump finished service client
+            bool success = ros::service::waitForService(Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()), ros::Duration(5));
+            if (success)
+            {
+                m_dumpFinishedPub = m_nh->serviceClient<global_planner::DumpFinished>(Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()), false);
+                if (m_dumpFinishedPub.isValid())
+                {
+                    ROS_INFO_STREAM("dump finished service successfully setup for robot: "<<m_status.GetID());
+                    break;
+                }
+                else
+                {
+                    ROS_ERROR_STREAM("dump finished service FAILED to set up for robot: "<<m_status.GetID());
+                }
+            }
+            else
+            {
+                ROS_ERROR_STREAM("dump waitForService timeout occured for robot: "<<m_status.GetID());
+            }
+        }
+
+        ros::spinOnce();
+    }
 
     // Publishers to send human interface output
     m_soundPub = m_nh->advertise<std_msgs::String>("/interface_sound", 100);
     m_textPub = m_nh->advertise<std_msgs::String>("/interface_text", 100);
 
-    ROS_INFO_STREAM("Finished setting up topics");
+    ROS_INFO_STREAM("Finished setting up topics and services");
 }
 
 
@@ -604,8 +663,10 @@ void RobotController::OnEntry(void *args)
     {
         case RobotState::WAITING:
             m_status.SetTaskID(-1);
+            action_client_ptr->cancelAllGoals();
             break;
         case RobotState::NAVIGATING:
+            action_client_ptr->cancelAllGoals();
             action_client_ptr->sendGoal(m_moveBaseGoal);
             break;
         case RobotState::NAVIGATING_TAG_SPOTTED:

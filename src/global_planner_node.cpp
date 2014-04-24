@@ -31,7 +31,7 @@ int main(int argc, char** argv){
 
     ros::Time lastDisplay = ros::Time::now();
 
-    ros::Rate r(5);
+    ros::Rate r(1);
     while(ros::ok() && !gp.isFinished())
     {
         if (running)

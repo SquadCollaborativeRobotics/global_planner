@@ -190,7 +190,7 @@ void GlobalPlanner::Execute()
     //      OPTIONAL: IF need to cancel robot's current goal -> Send Cancel Message First AND update the task it was assigned to
     //      Send Waypoint Message
 
-    
+
     // Check if a robot is full & find the best binbot for it
     std::vector<Robot_Ptr> availableRobots = GetAvailableRobots(0); // Get any available robots even with no storage space left
     for (std::vector<Robot_Ptr>::iterator it = availableRobots.begin(); it != availableRobots.end(); ++it)
@@ -268,7 +268,7 @@ void GlobalPlanner::Execute()
             dump->SetStatus(TaskResult::SUCCESS);
         }
     }
-    
+
 
     // ProcessGoals();
 
@@ -397,9 +397,9 @@ void GlobalPlanner::PlanNNWaypoint()
         if (availableWaypoints.size() == 0) {
             break;
         }
-        
 
-        
+
+
 
         int waypoint_id = GetWaypointClosestToRobot(robot->GetID());
         if (waypoint_id == NO_WAYPOINT_FOUND) {
@@ -945,7 +945,8 @@ void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& 
     //If it is already in the map...
     if(it != m_robots.end())
     {
-        m_robots[id]->SetPose(status.pose);
+        m_robots[id]->SetData(status);
+        // m_robots[id]->SetPose(status.pose);
     }
     else
     {
@@ -1034,6 +1035,7 @@ void GlobalPlanner::QueryRobots()
 
 void GlobalPlanner::QueryRobot(int id)
 {
+    return;
     global_planner::RobotStatusSrv s;
     s.request.id = id;
 
@@ -1107,7 +1109,7 @@ void GlobalPlanner::loadDumpSites(std::string filename)
         sin2>>rw2;
         geometry_msgs::Pose binPose = Conversion::SetPose(x2,y2,rz2,rw2);
 
-        ROS_INFO_STREAM("Loaded dumpsite pair[" << id << "]: C[" << x << ", " << y << ", " << rz << ", " << rw 
+        ROS_INFO_STREAM("Loaded dumpsite pair[" << id << "]: C[" << x << ", " << y << ", " << rz << ", " << rw
                                                       << "] B[" << x2 << ", " << y2 << ", " << rz2 << ", " << rw2  << "]");
 
         dumpsite_pose_pairs[id] = std::pair<geometry_msgs::Pose, geometry_msgs::Pose>(collectorPose, binPose);
