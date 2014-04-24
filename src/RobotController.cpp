@@ -554,7 +554,8 @@ void RobotController::SetupCallbacks()
 
     // Keep trying to connect to the global planner until we see the waypoint finished service running
     m_status.SetState(RobotState::UNINITIALIZED);
-    bool waypointFin = dumpFin = false;
+    bool waypointFin = false;
+    bool dumpFin = false;
     while (waypointFin == false || dumpFin == false)
     {
         //Task Finished services
