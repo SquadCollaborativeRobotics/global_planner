@@ -496,7 +496,8 @@ bool GlobalPlanner::AssignRobotsDump(int collector_robot_id, int bin_robot_id, i
     dump_ptr->SetTime(ros::Time::now());
 
     // Assign robot to best dump
-    if (m_tm.SendDump(dump_id))
+    int sendResult = m_tm.SendDump(dump_id);
+    if (sendResult == 0)
     {
         // Update lists of dumps/robots
         m_robots[collector_robot_id]->SetState(RobotState::DUMPING);
@@ -507,8 +508,17 @@ bool GlobalPlanner::AssignRobotsDump(int collector_robot_id, int bin_robot_id, i
     }
     else
     {
-        dump_ptr->SetRobot1(NO_ROBOT_FOUND);
-        dump_ptr->SetRobot2(NO_ROBOT_FOUND);
+        if (sendResult == 1)
+        {
+            //Collector failed
+        }
+        else if(sendResult == 2)
+        {
+            //Bin bot failed
+            if (!CancelRobot(collector_robot_id))
+                ROS_ERROR_STREAM("did not send the cancel correctly");
+            dump_ptr->SetRobot1(NO_ROBOT_FOUND);
+        }
         dump_ptr->SetStatus(TaskResult::COMM_FAILURE);
         ROS_ERROR_STREAM("Could not assign dump[" << dump_id<<"] to robots [" << collector_robot_id << "] & [" << bin_robot_id << "]");
         return false;
@@ -956,10 +966,11 @@ void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& 
 
         std::string serviceTopic = Conversion::RobotIDToServiceName(id);
         //create a persistant service with this
-        m_statusServices[id] = m_nh->serviceClient<global_planner::RobotStatusSrv>(serviceTopic, false);
+        m_statusServices[id] = m_nh->serviceClient<global_planner::RobotStatusSrv>(serviceTopic, true);
+        m_setStatusServices[id] = m_nh->serviceClient<global_planner::SetRobotStatusSrv>(Conversion::RobotIDToSetStatusTopic(id), true);
 
         std::string serviceTopic2 = Conversion::RobotIDToSetTrash(id);
-        m_setTrashServices[id] = m_nh->serviceClient<global_planner::SetTrashSrv>(serviceTopic2, false);
+        m_setTrashServices[id] = m_nh->serviceClient<global_planner::SetTrashSrv>(serviceTopic2, true);
 
         m_tm.UpdateRobotMap(m_robots);
 
@@ -1114,4 +1125,37 @@ void GlobalPlanner::loadDumpSites(std::string filename)
         dumpsite_pose_pairs[id] = std::pair<geometry_msgs::Pose, geometry_msgs::Pose>(collectorPose, binPose);
     }
     fin.close();
+}
+
+
+bool GlobalPlanner::CancelRobot(int id)
+{
+    global_planner::SetRobotStatusSrv s;
+    s.request.status.id = id;
+    s.request.status.taskID = 10000;
+
+    if (!(m_setStatusServices[id].isValid()))
+    {
+        ROS_ERROR_STREAM_THROTTLE(3.0, "(cancel robot request) Not connected to robot: "<<id<<"... retrying");
+        // ros::service::waitForService(Conversion::RobotIDToSetStatusTopic(id), ros::Duration(1.5));
+        m_setStatusServices[id] = m_nh->serviceClient<global_planner::SetRobotStatusSrv>(Conversion::RobotIDToSetStatusTopic(id), true);
+    }
+
+    if (m_setStatusServices[id].isValid())
+    {
+        if (m_setStatusServices[id].call(s))
+        {
+            ROS_INFO_STREAM_THROTTLE(10.0, "Received cancel response from robot: "<<s.response.res);
+            return true;
+        }
+        else
+        {
+            ROS_ERROR_STREAM("(cancel robot request) Did not receive good response from robot: "<<id);
+        }
+    }
+    else
+    {
+        ROS_ERROR_STREAM("Still not connected to the cancel robot service:"<<id);
+    }
+    return false;
 }

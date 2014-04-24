@@ -70,7 +70,7 @@ public:
 
     // Send messages over ROS
     bool SendWaypoint(int wpID);
-    bool SendDump(int dumpID);
+    int SendDump(int dumpID);
 
     std::map<int, Waypoint_Ptr > GetWaypoints();
     std::map<int, Waypoint_Ptr > GetGoals();

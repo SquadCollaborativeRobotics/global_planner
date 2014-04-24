@@ -103,6 +103,8 @@ public:
 
     void loadDumpSites(std::string filename);
 
+    bool CancelRobot(int id);
+
 private:
     // setup callbacks, regiser services, load waypoints...
     bool SetupCallbacks();
@@ -125,6 +127,7 @@ private:
     //Subscriber to robot status callbacks
     ros::Subscriber m_robotSub;
     std::map<int, ros::ServiceClient > m_statusServices;
+    std::map<int, ros::ServiceClient > m_setStatusServices;
 
     // Fake trashcan waypoint subscriber, any waypoint received is added to the waypoint map (overwriting those with the same id as needed)
     ros::Subscriber m_fakeTrashSub;
