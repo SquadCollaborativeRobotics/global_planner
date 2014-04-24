@@ -56,7 +56,7 @@ void TaskMaster::AddRobot(int robotID)
     m_wpFinishedService[robotID] = m_nh->advertiseService(Conversion::RobotIDToWaypointFinishedTopic(robotID), &TaskMaster::cb_waypointFinished, this);
     m_dumpFinishedService[robotID] = m_nh->advertiseService(Conversion::RobotIDToDumpFinishedTopic(robotID), &TaskMaster::cb_dumpFinished, this);
 
-    ROS_INFO_STREAM("Waiting 10 seconds for waypoint service to come up");
+    ROS_INFO_STREAM("Waiting up to 10 seconds for waypoint service to come up");
     bool success = ros::service::waitForService(Conversion::RobotIDToWaypointTopic(robotID), ros::Duration(10));
     if (success)
     {
@@ -75,7 +75,7 @@ void TaskMaster::AddRobot(int robotID)
         ROS_ERROR_STREAM("waypoint waitForService timeout occured for robot: "<<robotID);
     }
 
-    ROS_INFO_STREAM("Waiting 10 seconds for Dump service to come up");
+    ROS_INFO_STREAM("Waiting up to 10 seconds for Dump service to come up");
     success = ros::service::waitForService(Conversion::RobotIDToDumpTopic(robotID), ros::Duration(10));
     if (success)
     {

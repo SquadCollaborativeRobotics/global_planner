@@ -876,8 +876,7 @@ void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& 
         ptr->SetState(RobotState::UNINITIALIZED);
         m_robots[id] = ptr;
 
-
-        ROS_INFO_STREAM("Waiting 10 seconds for robot status service to come up");
+        ROS_INFO_STREAM("Waiting up to 10 seconds for robot status service to come up");
         bool success = ros::service::waitForService(Conversion::RobotIDToServiceName(id), ros::Duration(10));
         if (success)
         {
@@ -893,27 +892,29 @@ void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& 
         }
         else
         {
-            ROS_ERROR_STREAM("waypoint waitForService timeout occured for robot: "<<id);
+            ROS_ERROR_STREAM("Robot status service waitForService timeout occured for robot: "<<id);
         }
 
-        ROS_INFO_STREAM("Waiting 10 seconds for robot status service to come up");
+        ROS_INFO_STREAM("Waiting up to 10 seconds for set dump service to come up");
         success = ros::service::waitForService(Conversion::RobotIDToSetTrash(id), ros::Duration(10));
         if (success)
         {
             m_setTrashServices[id] = m_nh->serviceClient<global_planner::SetTrashSrv>(Conversion::RobotIDToSetTrash(id), false);
             if (m_setTrashServices[id].isValid())
             {
-                ROS_INFO_STREAM("Robot status service successfully setup for robot: "<<id);
+                ROS_INFO_STREAM("set dump service successfully setup for robot: "<<id);
             }
             else
             {
-                ROS_ERROR_STREAM("Robot status service FAILED to set up for robot: "<<id);
+                ROS_ERROR_STREAM("set dump service FAILED to set up for robot: "<<id);
             }
         }
         else
         {
-            ROS_ERROR_STREAM("waypoint waitForService timeout occured for robot: "<<id);
+            ROS_ERROR_STREAM("set dump service waitForService timeout occured for robot: "<<id);
         }
+
+        ros::spinOnce();
 
         // m_tm.UpdateRobotMap(m_robots);
         m_tm.AddRobot(id);
@@ -994,7 +995,7 @@ void GlobalPlanner::QueryRobot(int id)
     s.request.id = id;
 
     // Global planner is connected to robot
-    if (m_statusServices[id])
+    if (m_statusServices[id].isValid())
     {
         if (m_statusServices[id].call(s))
         {
