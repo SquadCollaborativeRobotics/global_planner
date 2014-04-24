@@ -221,6 +221,7 @@ bool RobotController::cb_dumpSub(global_planner::DumpSrv::Request  &req,
             break;
             default:
                 ROS_ERROR_STREAM("Dump hit: Robot is in state: " << RobotState::ToString(m_status.GetState()) <<", which should not be sent a dump message");
+                res.result = -1;
             break;
 
         }
@@ -283,6 +284,12 @@ bool RobotController::cb_SetRobotStatus(global_planner::SetRobotStatusSrv::Reque
     {
         m_status.SetTaskID(req.status.taskID);
     }
+    // if (req.status.state >= 0)
+    // {
+    //     action_client_ptr->cancelAllGoals();
+    //     ROS_INFO_STREAM("Transitioning state via setrobotstatus to " << req.status.state);
+    //     Transition(static_cast<RobotState::State>(req.status.state));
+    // }
 
     res.res = 0;
 

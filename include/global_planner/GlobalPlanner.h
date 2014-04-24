@@ -125,6 +125,9 @@ private:
     //Subscriber to robot status callbacks
     ros::Subscriber m_robotSub;
     std::map<int, ros::ServiceClient > m_statusServices;
+    
+    // Set robot state
+    std::map<int, ros::ServiceClient > m_setStatusServices;
 
     // Fake trashcan waypoint subscriber, any waypoint received is added to the waypoint map (overwriting those with the same id as needed)
     ros::Subscriber m_fakeTrashSub;

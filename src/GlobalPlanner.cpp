@@ -43,7 +43,8 @@ bool GlobalPlanner::Init(ros::NodeHandle* nh)
 	}
 
     // Load list of possible dumpsites
-    std::string dumpsiteFile("cubicle_dump_meets.points");
+    // std::string dumpsiteFile("cubicle_dump_meets.points");
+    std::string dumpsiteFile("springdemo_dump_meets.points");
     m_nh->getParam("/global_planner/dumpsite_file", dumpsiteFile);
     ROS_INFO_STREAM("Loading dumpsite file: " << dumpsiteFile);
     loadDumpSites(dumpsiteFile);
@@ -233,6 +234,11 @@ void GlobalPlanner::Execute()
         int binBot = dump->GetRobot2();
         // if (dump->GetReadyToTransfer()) { // This requires services to work
         // Avoid services by querying robot states
+        if ( dump->GetInProgress() && (m_robots[collectorBot]->GetState() == RobotState::WAITING || m_robots[binBot]->GetState() == RobotState::WAITING) )
+        {
+            // Resend dump so waiting robot
+            m_tm.SendDump(dump->GetID());
+        }
         if (dump->GetInProgress() && m_robots[collectorBot]->GetState() == RobotState::DUMPING_FINISHED && m_robots[binBot]->GetState() == RobotState::DUMPING_FINISHED)
         {
             ROS_INFO_STREAM("Dump(" << dump->GetID() << ") transferring trash.");
