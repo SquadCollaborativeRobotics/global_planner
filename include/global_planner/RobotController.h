@@ -75,7 +75,7 @@ private:
     void SetupCallbacks();
     bool UpdatePose();
     //Send the robot's status message
-    bool SendRobotStatus(global_planner::RobotStatusSrv::Request  &req,
+    bool cb_RobotStatus(global_planner::RobotStatusSrv::Request  &req,
                          global_planner::RobotStatusSrv::Response &res);
     // Set the storage value
     bool cb_SetTrash(global_planner::SetTrashSrv::Request  &req,

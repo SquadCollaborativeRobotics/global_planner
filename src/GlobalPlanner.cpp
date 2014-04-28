@@ -822,7 +822,7 @@ bool GlobalPlanner::isFinished() {
 // setup callbacks, regiser services, load waypoints...
 bool GlobalPlanner::SetupCallbacks()
 {
-    m_robotSub = m_nh->subscribe("/robot_status", 10, &GlobalPlanner::cb_robotStatus, this);
+    m_robotSub = m_nh->subscribe("/robot_status", 100, &GlobalPlanner::cb_robotStatus, this);
     m_eStopPub = m_nh->advertise<std_msgs::Empty>("/e_stop_pub", 10);
 
     m_waypointPoseArrayAvailPub = m_nh->advertise<geometry_msgs::PoseArray>("/waypoints_available", 5);

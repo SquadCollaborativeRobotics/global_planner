@@ -252,7 +252,7 @@ void RobotController::cb_eStopSub(const std_msgs::Empty &msg)
  * Effects: Sends the current status over ROS to any listening
  *  nodes
  ***********************************************************************/
-bool RobotController::SendRobotStatus(global_planner::RobotStatusSrv::Request  &req,
+bool RobotController::cb_RobotStatus(global_planner::RobotStatusSrv::Request  &req,
                                       global_planner::RobotStatusSrv::Response &res)
 {
     UpdatePose();
@@ -421,8 +421,8 @@ void RobotController::Execute()
     // 2) Perform any state related actions
     StateExecute();
 
-    UpdatePose();
-    m_statusPub.publish(m_status.GetMessage());
+    // UpdatePose();
+    // m_statusPub.publish(m_status.GetMessage());
 
     //Don't need anymore since we're using services
     // if (ros::Time::now() - m_lastStatusUpdate > ros::Duration(2))
@@ -527,7 +527,7 @@ void RobotController::SetupCallbacks()
     ROS_INFO_STREAM("Connecting to service: "<<Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()));
     //Task Finished services
 
-    m_statusService = m_nh->advertiseService(Conversion::RobotIDToServiceName(m_status.GetID()), &RobotController::SendRobotStatus, this);
+    m_statusService = m_nh->advertiseService(Conversion::RobotIDToServiceName(m_status.GetID()), &RobotController::cb_RobotStatus, this);
     m_waypointService = m_nh->advertiseService(Conversion::RobotIDToWaypointTopic(m_status.GetID()), &RobotController::cb_waypointSub, this);
     m_dumpService = m_nh->advertiseService(Conversion::RobotIDToDumpTopic(m_status.GetID()), &RobotController::cb_dumpSub, this);
     m_setStatusService = m_nh->advertiseService(Conversion::RobotIDToSetStatusTopic(m_status.GetID()), &RobotController::cb_SetRobotStatus, this);
@@ -543,14 +543,14 @@ void RobotController::SetupCallbacks()
 
         //Task Finished services
         ROS_INFO_STREAM("Connecting to service: "<<Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()));
-        ROS_INFO_STREAM("Waiting up to 10 seconds for waypoint finished service to come up");
+        ROS_INFO_STREAM("Waiting up to 2 seconds for waypoint finished service to come up");
         // Setup waypoint finished service client
         while (waypointFin == false)
         {
             UpdatePose();
             m_statusPub.publish(m_status.GetMessage());
             ros::spinOnce();
-            bool success = ros::service::waitForService(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), ros::Duration(5));
+            bool success = ros::service::waitForService(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), ros::Duration(2));
             if (success)
             {
                 m_waypointFinishedPub = m_nh->serviceClient<global_planner::WaypointFinished>(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), true);
@@ -571,7 +571,7 @@ void RobotController::SetupCallbacks()
         }
 
         ROS_INFO_STREAM("Connecting to service: "<<Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()));
-        ROS_INFO_STREAM("Waiting up to 10 seconds for dump finished service to come up");
+        ROS_INFO_STREAM("Waiting up to 2 seconds for dump finished service to come up");
         while (dumpFin == false)
         {
             UpdatePose();
@@ -579,7 +579,7 @@ void RobotController::SetupCallbacks()
             ros::spinOnce();
 
             // Setup dump finished service client
-            bool success = ros::service::waitForService(Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()), ros::Duration(5));
+            bool success = ros::service::waitForService(Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()), ros::Duration(2));
             if (success)
             {
                 m_dumpFinishedPub = m_nh->serviceClient<global_planner::DumpFinished>(Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()), true);
