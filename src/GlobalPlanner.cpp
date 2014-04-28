@@ -246,11 +246,11 @@ void GlobalPlanner::Execute()
             global_planner::SetTrashSrv s;
             s.request.storage = 0;
             if (m_setTrashServices[collectorBot].call(s) && s.response.result == 0) { ROS_INFO_STREAM("Set Trash for " << m_robots[collectorBot]->GetName()); }
-            else { ROS_ERROR_STREAM("Did not receive trash response from robot: " << collectorBot); }
+            else { ROS_ERROR_STREAM("Collector Bot Did not receive trash response from robot: " << collectorBot); }
 
             s.request.storage = m_robots[binBot]->GetStorageUsed() + trash_to_transfer;
             if (m_setTrashServices[binBot].call(s) && s.response.result == 0) { ROS_INFO_STREAM("Set Trash for " << m_robots[binBot]->GetName()); }
-            else { ROS_ERROR_STREAM("Did not receive trash response from robot: " << binBot); }
+            else { ROS_ERROR_STREAM("Bin Bot Did not receive trash response from robot: " << binBot); }
 
             // In global planner, update storage values
             // Add trash to bin bot
@@ -258,11 +258,14 @@ void GlobalPlanner::Execute()
             // Remove trash from collector bot
             m_robots[collectorBot]->SetStorageUsed(0);
 
-            // Set states to waiting in global planner but not robot controllers
+            // Set states to waiting in global planner but
+            //
+            //   not robot controllers
             // the robot controllers are in DUMP_FINISHED state, but they're ready to transition to waypoints etc.
-            // So set them to waiting in global planner and hopefully go to planning before a callback update resets them.
-            m_robots[collectorBot]->SetState(RobotState::WAITING);
-            m_robots[binBot]->SetState(RobotState::WAITING);
+            // So set them to waiting in global planner and hopefully go to planning before a callback update resets them
+
+            SetRobotState(collectorBot, RobotState::WAITING);
+            SetRobotState(binBot, RobotState::WAITING);
 
             // Transition dump state to success
             dump->SetStatus(TaskResult::SUCCESS);
@@ -965,8 +968,6 @@ void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& 
         m_robots[id] = ptr;
 
         //create a persistant service with this
-        m_setStatusServices[id] = m_nh->serviceClient<global_planner::SetRobotStatusSrv>(Conversion::RobotIDToSetStatusTopic(id), true);
-
         m_tm.AdvertiseServices(id);
 
         ROS_INFO_STREAM("Waiting up to 10 seconds for robot status service to come up");
@@ -1203,14 +1204,18 @@ void GlobalPlanner::loadDumpSites(std::string filename)
 
 bool GlobalPlanner::CancelRobot(int id)
 {
+    return SetRobotState(id, RobotState::WAITING);
+}
+
+
+bool GlobalPlanner::SetRobotState(int id, RobotState::State state)
+{
     global_planner::SetRobotStatusSrv s;
-    s.request.status.id = id;
-    s.request.status.taskID = 10000;
+    s.request.status.state = RobotState::ToInt(state);
 
     if (!(m_setStatusServices[id].isValid()))
     {
-        ROS_ERROR_STREAM_THROTTLE(3.0, "(cancel robot request) Not connected to robot: "<<id<<"... retrying");
-        // ros::service::waitForService(Conversion::RobotIDToSetStatusTopic(id), ros::Duration(1.5));
+        ROS_ERROR_STREAM_THROTTLE(3.0, "(set robot state) Not connected to robot: "<<id<<"... retrying");
         m_setStatusServices[id] = m_nh->serviceClient<global_planner::SetRobotStatusSrv>(Conversion::RobotIDToSetStatusTopic(id), true);
     }
 
@@ -1218,17 +1223,19 @@ bool GlobalPlanner::CancelRobot(int id)
     {
         if (m_setStatusServices[id].call(s))
         {
-            ROS_INFO_STREAM_THROTTLE(10.0, "Received cancel response from robot: "<<s.response.res);
+            ROS_INFO_STREAM("set robot["<<id<<"] to state: "<<state);
+            QueryRobot(id);
             return true;
         }
         else
         {
-            ROS_ERROR_STREAM("(cancel robot request) Did not receive good response from robot: "<<id);
+            ROS_ERROR_STREAM("(set robot state) Did not receive good response from robot: "<<id);
         }
     }
     else
     {
-        ROS_ERROR_STREAM("Still not connected to the cancel robot service:"<<id);
+        ROS_ERROR_STREAM("Still not connected to the set robot status service:"<<id);
     }
+    QueryRobot(id);
     return false;
 }

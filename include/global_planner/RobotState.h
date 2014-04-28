@@ -46,12 +46,12 @@ public:
         ESTOP = 100
     };
 
-    static const int RobotStateToInt(RobotState::State s)
+    static const int ToInt(RobotState::State s)
     {
         return static_cast<int>(s);
     }
 
-    static const RobotState::State IntToRobotState(int s)
+    static const RobotState::State ToRobotState(int s)
     {
         return static_cast<RobotState::State>(s);
     }

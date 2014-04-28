@@ -103,6 +103,7 @@ public:
 
     void loadDumpSites(std::string filename);
 
+    bool SetRobotState(int id, RobotState::State state);
     bool CancelRobot(int id);
 
 private:

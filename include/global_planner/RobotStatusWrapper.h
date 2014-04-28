@@ -70,8 +70,8 @@ public:
     *...
     *...
     *******************/
-    RobotState::State GetState() { return RobotState::IntToRobotState(m_status.state); };
-    void SetState(RobotState::State state) { m_status.state = RobotState::RobotStateToInt(state); };
+    RobotState::State GetState() { return RobotState::ToRobotState(m_status.state); };
+    void SetState(RobotState::State state) { m_status.state = RobotState::ToInt(state); };
 
     //Getters
 

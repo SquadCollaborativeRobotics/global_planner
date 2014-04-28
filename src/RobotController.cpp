@@ -280,9 +280,8 @@ bool RobotController::cb_SetRobotStatus(global_planner::SetRobotStatusSrv::Reque
     {
         m_status.SetStorageCapacity(req.status.storage_capacity);
     }
-    if (req.status.taskID == 10000)
+    if (req.status.state == RobotState::WAITING)
     {
-        action_client_ptr->cancelAllGoals();
         Transition(RobotState::WAITING);
     }
     else if (req.status.taskID >= 0)
@@ -314,7 +313,7 @@ bool RobotController::cb_SetTrash(global_planner::SetTrashSrv::Request  &req,
         if (m_status.GetState() == RobotState::DUMPING_FINISHED && m_status.GetType() == RobotState::BIN_BOT)
         {
             ROS_INFO("TEMPORARY : Transition from DUMPING_FINISHED to WAITING due to trash loading");
-            Transition(RobotState::WAITING);
+            // Transition(RobotState::WAITING);
         }
 
         res.result = 0; // Success
