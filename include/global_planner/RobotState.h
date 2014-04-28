@@ -31,7 +31,8 @@ public:
 
     enum State
     {
-        WAITING = 0,
+        NONE = 0,
+        WAITING = 1,
         WAITING_TAG_SPOTTED = 2,
         WAITING_TAG_FINISHED = 3,
         // WAITING_FINISHED = 9,

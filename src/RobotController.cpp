@@ -280,9 +280,9 @@ bool RobotController::cb_SetRobotStatus(global_planner::SetRobotStatusSrv::Reque
     {
         m_status.SetStorageCapacity(req.status.storage_capacity);
     }
-    if (req.status.state == RobotState::WAITING)
+    if (req.status.state != RobotState::NONE)
     {
-        Transition(RobotState::WAITING);
+        Transition(RobotState::ToRobotState(req.status.state));
     }
     else if (req.status.taskID >= 0)
     {
