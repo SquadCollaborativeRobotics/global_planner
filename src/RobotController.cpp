@@ -122,9 +122,9 @@ void RobotController::Init(ros::NodeHandle *nh, int robotID, std::string robotNa
         ROS_INFO_THROTTLE(3.0,"Waiting for the move_base action server to come up");
     }
 
-    SetupCallbacks();
-
     ROS_DEBUG_STREAM("Robot has setup the movebase client");
+
+    SetupCallbacks();
 
     Transition(RobotState::WAITING);
     m_timeEnteringState = ros::Time::now();
@@ -346,12 +346,13 @@ bool RobotController::SendWaypointFinished(TaskResult::Status status)
     wpMsg.request.id = m_status.GetTaskID();
     wpMsg.request.status = Conversion::TaskResultToInt(status);
 
-    if (!m_waypointFinishedPub)
+    if (!m_waypointFinishedPub.isValid())
     {
+        ROS_ERROR_STREAM("ERROR: the waypoint finished publisher went down");
         m_waypointFinishedPub = m_nh->serviceClient<global_planner::WaypointFinished>(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), true);
     }
 
-    if (m_waypointFinishedPub)
+    if (m_waypointFinishedPub.isValid())
     {
         if (m_waypointFinishedPub.call(wpMsg))
         {
@@ -525,31 +526,7 @@ void RobotController::SetupCallbacks()
     m_statusPub = m_nh->advertise<global_planner::RobotStatus>("/robot_status", 100);
 
     ROS_INFO_STREAM("Connecting to service: "<<Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()));
-    // ROS_INFO_STREAM("Waiting for wp service to come up...");
-    // ros::service::waitForService( Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()) );
     //Task Finished services
-    m_waypointFinishedPub = m_nh->serviceClient<global_planner::WaypointFinished>(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), false);
-    if (m_waypointFinishedPub.isValid())
-    {
-        ROS_INFO_STREAM("Successfully connected to wp finished service");
-    }
-    else
-    {
-        ROS_ERROR_STREAM("Could not connect to wp finished service.");
-    }
-
-    ROS_INFO_STREAM("Connecting to service: "<<Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()));
-    // ROS_INFO_STREAM("Waiting for dump service to come up...");
-    // ros::service::waitForService( Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()) );
-    m_dumpFinishedPub = m_nh->serviceClient<global_planner::DumpFinished>(Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()), true);
-    if (m_dumpFinishedPub.isValid())
-    {
-        ROS_INFO_STREAM("Successfully connected to dump finished service");
-    }
-    else
-    {
-        ROS_ERROR_STREAM("Could not connect to dump finished service.");
-    }
 
     m_statusService = m_nh->advertiseService(Conversion::RobotIDToServiceName(m_status.GetID()), &RobotController::SendRobotStatus, this);
     m_waypointService = m_nh->advertiseService(Conversion::RobotIDToWaypointTopic(m_status.GetID()), &RobotController::cb_waypointSub, this);
@@ -557,15 +534,78 @@ void RobotController::SetupCallbacks()
     m_setStatusService = m_nh->advertiseService(Conversion::RobotIDToSetStatusTopic(m_status.GetID()), &RobotController::cb_SetRobotStatus, this);
     m_setTrashService = m_nh->advertiseService(Conversion::RobotIDToSetTrash(m_status.GetID()), &RobotController::cb_SetTrash, this);
 
-    //Let the global planner know that this robot is alive an active
-    UpdatePose();
-    m_statusPub.publish(m_status.GetMessage());
+    ros::spinOnce();
+
+    // Keep trying to connect to the global planner until we see the waypoint finished service running
+    bool waypointFin = false;
+    bool dumpFin = false;
+    while (waypointFin == false || dumpFin == false)
+    {
+
+        //Task Finished services
+        ROS_INFO_STREAM("Connecting to service: "<<Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()));
+        ROS_INFO_STREAM("Waiting up to 10 seconds for waypoint finished service to come up");
+        // Setup waypoint finished service client
+        while (waypointFin == false)
+        {
+            UpdatePose();
+            m_statusPub.publish(m_status.GetMessage());
+            ros::spinOnce();
+            bool success = ros::service::waitForService(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), ros::Duration(5));
+            if (success)
+            {
+                m_waypointFinishedPub = m_nh->serviceClient<global_planner::WaypointFinished>(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), true);
+                if (m_waypointFinishedPub.isValid())
+                {
+                    ROS_INFO_STREAM("waypoint finished service successfully setup for robot: "<<m_status.GetID());
+                    waypointFin = true;
+                }
+                else
+                {
+                    ROS_ERROR_STREAM("waypoint finished service FAILED to set up for robot: "<<m_status.GetID());
+                }
+            }
+            else
+            {
+                ROS_ERROR_STREAM("waypoint waitForService timeout occured for robot: "<<m_status.GetID());
+            }
+        }
+
+        ROS_INFO_STREAM("Connecting to service: "<<Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()));
+        ROS_INFO_STREAM("Waiting up to 10 seconds for dump finished service to come up");
+        while (dumpFin == false)
+        {
+            UpdatePose();
+            m_statusPub.publish(m_status.GetMessage());
+            ros::spinOnce();
+
+            // Setup dump finished service client
+            bool success = ros::service::waitForService(Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()), ros::Duration(5));
+            if (success)
+            {
+                m_dumpFinishedPub = m_nh->serviceClient<global_planner::DumpFinished>(Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()), true);
+                if (m_dumpFinishedPub.isValid())
+                {
+                    ROS_INFO_STREAM("dump finished service successfully setup for robot: "<<m_status.GetID());
+                    dumpFin = true;
+                }
+                else
+                {
+                    ROS_ERROR_STREAM("dump finished service FAILED to set up for robot: "<<m_status.GetID());
+                }
+            }
+            else
+            {
+                ROS_ERROR_STREAM("dump waitForService timeout occured for robot: "<<m_status.GetID());
+            }
+        }
+    }
 
     // Publishers to send human interface output
     m_soundPub = m_nh->advertise<std_msgs::String>("/interface_sound", 100);
     m_textPub = m_nh->advertise<std_msgs::String>("/interface_text", 100);
 
-    ROS_INFO_STREAM("Finished setting up topics");
+    ROS_INFO_STREAM("Finished setting up topics and services");
 }
 
 
@@ -610,8 +650,8 @@ void RobotController::OnEntry(void *args)
     switch(m_status.GetState())
     {
         case RobotState::WAITING:
-            action_client_ptr->cancelAllGoals();
             m_status.SetTaskID(-1);
+            action_client_ptr->cancelAllGoals();
             break;
         case RobotState::NAVIGATING:
             action_client_ptr->cancelAllGoals();
