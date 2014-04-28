@@ -47,6 +47,8 @@ bool AprilTagProcessor::Init(ros::NodeHandle *nh, int robotID)
     m_robotID = robotID;
     m_tfListener.reset( new tf::TransformListener(*m_nh) );
 
+    m_goalSeenSub = m_nh->subscribe("/goal_seen", 10, &AprilTagProcessor::cb_goalSeen, this);
+
     //Setup tag types
     for (int i=0; i<=20; i++)
     {
@@ -517,6 +519,7 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
     for (int i = 0; i < numTags; ++i)
     {
         int tagID = msg->tag_ids[i];
+
         m_pose[tagID] = msg->poses[i];
 
         AprilTagProcessor::TAG_TYPE type = GetType(tagID);
@@ -527,6 +530,12 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
 
         if (type != AprilTagProcessor::UNKNOWN)
         {
+            if (GoalRegistered(tagID) == false)
+            {
+                ROS_DEBUG_STREAM("Goal already registered with the global planner: "<<tagID);
+                continue;
+            }
+
             if (GetDistance(m_pose[tagID]) < UPDATE_RANGE_THRESHOLD)
             {
                 UpdateLastSeenTime(tagID, m_pose[tagID].header.stamp);
@@ -592,6 +601,18 @@ void AprilTagProcessor::cb_odom(const nav_msgs::Odometry::ConstPtr &msg)
 {
     // ROS_INFO_STREAM("Received Odom message");
     m_odom = *msg;
+}
+
+
+/***********************************************************************
+ *  Method: AprilTagProcessor::cb_odom
+ *  Params: const nav_msgs::Odometry::ConstPtr &msg
+ * Returns: void
+ * Effects:
+ ***********************************************************************/
+void AprilTagProcessor::cb_goalSeen(const global_planner::GoalSeen::ConstPtr &msg)
+{
+    m_goalsRegistered[msg->id] = msg->time;
 }
 
 
@@ -855,4 +876,13 @@ void AprilTagProcessor::SendText(std::string text)
     s.data = text;
     m_textPub.publish(s);
     ROS_WARN_STREAM("Sent text: "<<text);
+}
+
+bool AprilTagProcessor::GoalRegistered(int id)
+{
+    if (m_goalsRegistered.find(id) != m_goalsRegistered.end())
+    {
+        return false;
+    }
+    return true;
 }
