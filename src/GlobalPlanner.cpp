@@ -18,7 +18,6 @@ bool GlobalPlanner::Init(ros::NodeHandle* nh)
     m_nh = nh;
     SetupCallbacks();
 
-    ROS_INFO_STREAM("Initializing TaskMaster");
     std::string waypointFile("testList1.points");
     if (m_nh->getParam("/global_planner/waypoints_file", waypointFile))
     {
@@ -66,6 +65,7 @@ bool GlobalPlanner::Init(ros::NodeHandle* nh)
     //     sleep(1);
     // }
     // ROS_INFO("Done waiting, initializing task master.");
+    ROS_INFO_STREAM("Initializing TaskMaster");
     m_tm.Init(nh, waypointFile);
 
     ros::spinOnce();

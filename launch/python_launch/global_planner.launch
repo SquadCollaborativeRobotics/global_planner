@@ -1,4 +1,7 @@
 <launch>
+  <env name="ROSCONSOLE_CONFIG_FILE"
+       value="$(find global_planner)/logger.config"/>
+
   <include file="$(find global_planner)/launch/computers.machine" />
 
   <!-- launch global planner -->

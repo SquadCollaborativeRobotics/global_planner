@@ -113,25 +113,25 @@ bool AprilTagProcessor::Execute()
         ros::Time time = ros::Time::now();
         while(ros::Time::now()-time < ros::Duration(1.5))
         {
-            ROS_INFO_STREAM_THROTTLE(1.0, "Waiting after being stopped to get the most up to date info from the tag reader");
+            ROS_DEBUG_STREAM_THROTTLE(1.0, "Waiting after being stopped to get the most up to date info from the tag reader");
             usleep(100*1000);
             ros::spinOnce();
         }
 
         if (true)
         {
-            ROS_INFO_STREAM_THROTTLE(0.5, "Searching for goals");
+            ROS_DEBUG_STREAM_THROTTLE(0.5, "Searching for goals");
             foundGoal = FindGoals();
             if (foundLandmark)
-                ROS_INFO_STREAM_THROTTLE(0.5, "Found a goal");
+                ROS_DEBUG_STREAM_THROTTLE(0.5, "Found a goal");
         }
 
         if (true)
         {
-            ROS_INFO_STREAM_THROTTLE(0.5, "Searching for landmarks");
+            ROS_DEBUG_STREAM_THROTTLE(0.5, "Searching for landmarks");
             foundLandmark = UpdatePose();
             if (foundLandmark)
-                ROS_INFO_STREAM_THROTTLE(0.5, "Found a landmark");
+                ROS_DEBUG_STREAM_THROTTLE(0.5, "Found a landmark");
         }
     }
     else
@@ -187,7 +187,7 @@ bool AprilTagProcessor::UpdatePose()
 {
     if (IsStopped() == false)
     {
-        ROS_ERROR_STREAM_THROTTLE(0.5, "ERROR in UpdatePose: Robot is not yet stopped");
+        ROS_ERROR_STREAM_THROTTLE(0.75, "ERROR in UpdatePose: Robot is not yet stopped");
         return false;
     }
 
@@ -211,7 +211,7 @@ bool AprilTagProcessor::UpdatePose()
 
     if (bestLandmarkId < 0)
     {
-        ROS_INFO_STREAM_THROTTLE(3.0, "No landmarks are in camera frame");
+        ROS_DEBUG_STREAM_THROTTLE(3.0, "No landmarks are in camera frame");
         return false;
     }
 
@@ -289,7 +289,7 @@ bool AprilTagProcessor::UpdatePose()
                     m_shouldPause = false;
 
                     //wait for amcl to reinitialize
-                    ROS_INFO_STREAM_THROTTLE(0.5, "Wait for AMCL to reinitialize");
+                    ROS_DEBUG_STREAM_THROTTLE(0.5, "Wait for AMCL to reinitialize");
                 }
                 else
                 {
@@ -345,8 +345,6 @@ bool AprilTagProcessor::FindGoals()
         int tagID = goals[i];
         ros::Time tagSeenTime = LastSeenTime(tagID);
 
-        // ROS_INFO_STREAM("GOAL["<<tagID<<"] = time = "<<tagSeenTime);
-
         if (tagSeenTime == m_lastImageTime)
         {
             // ROS_INFO_STREAM("Tag ["<<tagID<< "] is being viewed now");
@@ -356,7 +354,7 @@ bool AprilTagProcessor::FindGoals()
             tf::StampedTransform transform;
             if (GetTransform("/map", goal_frame, transform))
             {
-                ROS_INFO_STREAM("We can transform the goal into the map frame");
+                // ROS_DEBUG_STREAM("We can transform the goal into the map frame");
                 global_planner::GoalSeen goal;
                 geometry_msgs::PoseStamped ps;
                 tf::Quaternion quat;
@@ -507,13 +505,13 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
 
     if (numTags == 0)
     {
-        ROS_INFO_THROTTLE(20, "No tags seen in the robot's camera this time");
+        ROS_DEBUG_THROTTLE(20, "No tags seen in the robot's camera this time");
         return ;
     }
     else
     {
         m_lastImageTime = msg->poses[0].header.stamp;
-        ROS_INFO_STREAM_THROTTLE(2, msg->poses.size()<<" tags seen in the robot's camera this time");
+        ROS_DEBUG_STREAM_THROTTLE(2, msg->poses.size()<<" tags seen in the robot's camera this time");
     }
 
     for (int i = 0; i < numTags; ++i)
@@ -560,7 +558,7 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
                         }
                         else
                         {
-                            ROS_INFO_STREAM_THROTTLE(1.0, "Landmark ("<<tagID<<") not close enough");
+                            ROS_DEBUG_STREAM_THROTTLE(1.0, "Landmark ("<<tagID<<") not close enough");
                         }
                     }
                 }
@@ -581,7 +579,7 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
                         }
                         else
                         {
-                            ROS_INFO_STREAM_THROTTLE(1.0, "Goal ["<<tagID<<"] not close enough");
+                            ROS_DEBUG_STREAM_THROTTLE(1.0, "Goal ["<<tagID<<"] not close enough");
                         }
                     }
                 }

@@ -1,4 +1,6 @@
 <launch>
+  <env name="ROSCONSOLE_CONFIG_FILE"
+       value="$(find global_planner)/logger.config"/>
 
   <arg name="planner" default="closest_waypoint" />
   <arg name="waypoint_file" default="falldemo.points" />

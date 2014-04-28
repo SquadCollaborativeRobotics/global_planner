@@ -1,4 +1,7 @@
 <launch>
+  <env name="ROSCONSOLE_CONFIG_FILE"
+       value="$(find global_planner)/logger.config"/>
+
   <arg name="mode" default="false"/>
   <arg name="kinect" default="false" />
   <arg name="robot" default="robot1" />

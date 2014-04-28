@@ -1,4 +1,6 @@
 <launch>
+  <env name="ROSCONSOLE_CONFIG_FILE"
+       value="$(find global_planner)/logger.config"/>
 
   <arg name="robot" default="robot1" />
   <arg name="base_frame" default="robot_center" />
@@ -6,7 +8,7 @@
   <arg name="robot_id" default="1" />
   <arg name="type" default="collector" />
   <arg name="storage_used" default="0" />
-  <arg name="storage_capacity" default="3" />  
+  <arg name="storage_capacity" default="3" />
 
   <group ns="$(arg robot)">
     <node pkg="global_planner" type="robot_controller_node" name="controller" output="screen" >
