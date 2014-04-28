@@ -48,6 +48,7 @@ public:
 
 private:
     void cb_aprilTags(const april_tags::AprilTagList::ConstPtr &msg);
+    void cb_goalSeen(const global_planner::GoalSeen::ConstPtr &msg);
     void cb_odom(const nav_msgs::Odometry::ConstPtr& msg);
     void cb_amclPose(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg);
 
@@ -103,6 +104,11 @@ private:
 
     bool m_seesGoal;
     bool m_seesLandmark;
+
+    //goals already seen in the environment
+    std::map<int, ros::Time> m_goalsRegistered;
+    ros::Subscriber m_goalSeenSub;
+    bool GoalRegistered(int id);
 
     /***************************************************************
      * AMCL pose
