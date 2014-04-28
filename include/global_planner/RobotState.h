@@ -61,6 +61,8 @@ public:
     {
         switch(s)
         {
+            case RobotState::NONE:
+                return "NONE";
             case RobotState::WAITING:
                 return "WAITING";
             case RobotState::WAITING_TAG_SPOTTED:
