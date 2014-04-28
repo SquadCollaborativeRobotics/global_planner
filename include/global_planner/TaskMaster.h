@@ -47,7 +47,7 @@ public:
     ~TaskMaster(){};
 
     // Pass in the NodeHandle, as well as the list of robots on the network (for setting up callbacks/publishers)
-    bool Init(ros::NodeHandle* nh, std::map<int, Robot_Ptr > robots, std::string waypoint_filename);
+    bool Init(ros::NodeHandle* nh, std::string waypoint_filename);
 
     // Add waypoint to the waypoint list
     bool AddWaypoint(Waypoint_Ptr waypoint);
@@ -86,15 +86,12 @@ public:
     void cb_goalSeen(const global_planner::GoalSeen::ConstPtr& msg);
 
     void LoadWaypoints(std::string filename);
-    void UpdateRobotMap(std::map< int, Robot_Ptr > new_robots);
-    void AddRobot(int robotID);
-    void AdvertiseServices(int robotID);
-    void RegisterClients(int robotID);
+    bool AdvertiseServices(int robotID);
+    bool RegisterClients(int robotID);
 
 private:
     // Initialize lists, setup callbacks, regiser services
     bool SetupTopics();
-    bool RegisterServices();
 
     // ros NodeHandle used for publishing and tf stuff
     ros::NodeHandle* m_nh;
@@ -122,10 +119,6 @@ private:
     std::map<int, ros::ServiceClient > m_dumpClients;
     std::map<int, ros::ServiceServer > m_wpFinishedService;
     std::map<int, ros::ServiceServer > m_dumpFinishedService;
-
-    // List of robots in the system
-    std::map< int, Robot_Ptr > m_robots;
-
 
     void SendSound(std::string filename);
     void SendText(std::string text);

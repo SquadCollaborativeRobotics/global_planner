@@ -17,16 +17,13 @@ TaskMaster::TaskMaster()
  * Returns: bool
  * Effects: Initialize taskmaster with robots, nodehandles, and waypoints.
  ***********************************************************************/
-bool TaskMaster::Init(ros::NodeHandle* nh, std::map<int, Robot_Ptr> robots, std::string waypoint_filename)
+bool TaskMaster::Init(ros::NodeHandle* nh, std::string waypoint_filename)
 {
     m_nh = nh;
 
     Clear();
 
-    UpdateRobotMap(robots);
-
     SetupTopics();
-    RegisterServices();
 
     // Load waypoint file
     std::string path_to_waypoints = ros::package::getPath("global_planner");
@@ -38,114 +35,70 @@ bool TaskMaster::Init(ros::NodeHandle* nh, std::map<int, Robot_Ptr> robots, std:
 }
 
 
-/***********************************************************************
- *  Method: TaskMaster::updateRobotMap
- *  Params: std::map<int, Robot_Ptr> new_robots
- * Returns: void
- * Effects:
- ***********************************************************************/
-void TaskMaster::UpdateRobotMap(std::map<int, Robot_Ptr> new_robots)
-{
-    m_robots = new_robots;
-    RegisterServices();
-}
-
-
-void TaskMaster::AdvertiseServices(int robotID)
+bool TaskMaster::AdvertiseServices(int robotID)
 {
     m_wpFinishedService[robotID] = m_nh->advertiseService(Conversion::RobotIDToWaypointFinishedTopic(robotID), &TaskMaster::cb_waypointFinished, this);
     m_dumpFinishedService[robotID] = m_nh->advertiseService(Conversion::RobotIDToDumpFinishedTopic(robotID), &TaskMaster::cb_dumpFinished, this);
     ros::spinOnce();
     ROS_INFO_STREAM("Advertised Taskmaster services for robot: "<<robotID);
+    return true;
 }
 
-void TaskMaster::RegisterClients(int robotID)
+bool TaskMaster::RegisterClients(int robotID)
 {
-    ROS_INFO_STREAM("Waiting up to 10 seconds for waypoint service to come up");
-    bool success = ros::service::waitForService(Conversion::RobotIDToWaypointTopic(robotID), ros::Duration(10));
-    if (success)
+    bool waypointSetup = false;
+
+    while ( waypointSetup == false )
     {
-        m_waypointClients[robotID] = m_nh->serviceClient<global_planner::WaypointSrv>(Conversion::RobotIDToWaypointTopic(robotID), false);
-        if (m_waypointClients[robotID].isValid())
+        ros::spinOnce();
+        ROS_INFO_STREAM("Waiting 2 seconds for waypoint service to come up");
+        bool success = ros::service::waitForService(Conversion::RobotIDToWaypointTopic(robotID), ros::Duration(2));
+        if (success)
         {
-            ROS_INFO_STREAM("Waypoint finished listening service successfully setup for robot: "<<robotID);
+            m_waypointClients[robotID] = m_nh->serviceClient<global_planner::WaypointSrv>(Conversion::RobotIDToWaypointTopic(robotID), true);
+            if (m_waypointClients[robotID].isValid())
+            {
+                ROS_INFO_STREAM("Waypoint finished listening service successfully setup for robot: "<<robotID);
+                waypointSetup = true;
+            }
+            else
+            {
+                ROS_ERROR_STREAM("Waypoint finished listening service FAILED to set up for robot: "<<robotID);
+            }
         }
         else
         {
-            ROS_ERROR_STREAM("Waypoint finished listening service FAILED to set up for robot: "<<robotID);
+            ROS_ERROR_STREAM("waypoint waitForService timeout occured for robot: "<<robotID);
         }
-    }
-    else
-    {
-        ROS_ERROR_STREAM("waypoint waitForService timeout occured for robot: "<<robotID);
     }
 
-    ROS_INFO_STREAM("Waiting up to 10 seconds for Dump service to come up");
-    success = ros::service::waitForService(Conversion::RobotIDToDumpTopic(robotID), ros::Duration(10));
-    if (success)
+    bool dumpSetup = false;
+    while ( dumpSetup == false )
     {
-        m_dumpClients[robotID] = m_nh->serviceClient<global_planner::WaypointSrv>(Conversion::RobotIDToWaypointTopic(robotID), false);
-        if (m_dumpClients[robotID].isValid())
+        ros::spinOnce();
+        ROS_INFO_STREAM("Waiting 2 seconds for Dump service to come up");
+        bool success = ros::service::waitForService(Conversion::RobotIDToDumpTopic(robotID), ros::Duration(2));
+        if (success)
         {
-            ROS_INFO_STREAM("Dump Finished listening service successfully setup for robot: "<<robotID);
+            m_dumpClients[robotID] = m_nh->serviceClient<global_planner::WaypointSrv>(Conversion::RobotIDToWaypointTopic(robotID), true);
+            if (m_dumpClients[robotID].isValid())
+            {
+                ROS_INFO_STREAM("Dump Finished listening service successfully setup for robot: "<<robotID);
+                dumpSetup = true;
+            }
+            else
+            {
+                ROS_ERROR_STREAM("Dump Finished listening service FAILED to set up for robot: "<<robotID);
+            }
         }
         else
         {
-            ROS_ERROR_STREAM("Dump Finished listening service FAILED to set up for robot: "<<robotID);
+            ROS_ERROR_STREAM("dump waitForService timeout occured for robot: "<<robotID);
         }
-    }
-    else
-    {
-        ROS_ERROR_STREAM("dump waitForService timeout occured for robot: "<<robotID);
     }
     ROS_INFO_STREAM("Registered services for robot: "<<robotID);
+    return true;
 }
-
-
-void TaskMaster::AddRobot(int robotID)
-{
-    m_wpFinishedService[robotID] = m_nh->advertiseService(Conversion::RobotIDToWaypointFinishedTopic(robotID), &TaskMaster::cb_waypointFinished, this);
-    m_dumpFinishedService[robotID] = m_nh->advertiseService(Conversion::RobotIDToDumpFinishedTopic(robotID), &TaskMaster::cb_dumpFinished, this);
-
-    ROS_INFO_STREAM("Waiting up to 10 seconds for waypoint service to come up");
-    bool success = ros::service::waitForService(Conversion::RobotIDToWaypointTopic(robotID), ros::Duration(10));
-    if (success)
-    {
-        m_waypointClients[robotID] = m_nh->serviceClient<global_planner::WaypointSrv>(Conversion::RobotIDToWaypointTopic(robotID), false);
-        if (m_waypointClients[robotID].isValid())
-        {
-            ROS_INFO_STREAM("Waypoint finished listening service successfully setup for robot: "<<robotID);
-        }
-        else
-        {
-            ROS_ERROR_STREAM("Waypoint finished listening service FAILED to set up for robot: "<<robotID);
-        }
-    }
-    else
-    {
-        ROS_ERROR_STREAM("waypoint waitForService timeout occured for robot: "<<robotID);
-    }
-
-    ROS_INFO_STREAM("Waiting up to 10 seconds for Dump service to come up");
-    success = ros::service::waitForService(Conversion::RobotIDToDumpTopic(robotID), ros::Duration(10));
-    if (success)
-    {
-        m_dumpClients[robotID] = m_nh->serviceClient<global_planner::WaypointSrv>(Conversion::RobotIDToWaypointTopic(robotID), false);
-        if (m_dumpClients[robotID].isValid())
-        {
-            ROS_INFO_STREAM("Dump Finished listening service successfully setup for robot: "<<robotID);
-        }
-        else
-        {
-            ROS_ERROR_STREAM("Dump Finished listening service FAILED to set up for robot: "<<robotID);
-        }
-    }
-    else
-    {
-        ROS_ERROR_STREAM("dump waitForService timeout occured for robot: "<<robotID);
-    }
-}
-
 
 /***********************************************************************
  *  Method: TaskMaster::SetupCallbacks
@@ -165,39 +118,6 @@ bool TaskMaster::SetupTopics()
     m_textPub = m_nh->advertise<std_msgs::String>("/interface_text", 100);
 }
 
-
-/***********************************************************************
- *  Method: TaskMaster::RegisterServices
- *  Params:
- * Returns: bool
- * Effects: register any services (both setting up and for listening)
- ***********************************************************************/
-bool TaskMaster::RegisterServices()
-{
-    // m_waypointClients.clear();
-    // m_dumpClients.clear();
-
-    // m_wpFinishedService.clear();
-    // m_dumpFinishedService.clear();
-
-    // sleep(0.5);
-    // ros::spinOnce();
-
-    // for (std::map<int, Robot_Ptr>::iterator i = m_robots.begin(); i != m_robots.end(); ++i)
-    // {
-    //     std::string waypointServiceTopic = Conversion::RobotIDToWaypointTopic(i->first);
-    //     std::string dumpServiceTopic = Conversion::RobotIDToDumpTopic(i->first);
-
-    //     m_waypointClients[i->first] = m_nh->serviceClient<global_planner::WaypointSrv>(waypointServiceTopic, true);
-    //     m_dumpClients[i->first] = m_nh->serviceClient<global_planner::DumpSrv>(dumpServiceTopic, true);
-
-    //     std::string waypointFinServiceTopic = Conversion::RobotIDToWaypointFinishedTopic(i->first);
-    //     std::string dumpFinServiceTopic = Conversion::RobotIDToDumpFinishedTopic(i->first);
-
-    //     m_wpFinishedService[i->first] = m_nh->advertiseService(waypointFinServiceTopic, &TaskMaster::cb_waypointFinished, this);
-    //     m_dumpFinishedService[i->first] = m_nh->advertiseService(dumpFinServiceTopic, &TaskMaster::cb_dumpFinished, this);
-    // }
-}
 
 /***********************************************************************
  *  Method: TaskMaster::LoadWaypoints
@@ -279,7 +199,6 @@ bool TaskMaster::Clear()
 {
     m_dumpMap.clear();
     m_waypointMap.clear();
-    m_robots.clear();
 
     m_waypointClients.clear();
     m_dumpClients.clear();
