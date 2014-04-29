@@ -871,7 +871,7 @@ void GlobalPlanner::cb_robotStatus(const global_planner::RobotStatus::ConstPtr& 
     {
         Robot_Ptr ptr( new RobotStatusWrapper() );
         ptr->SetData(status);
-        ptr->SetState(RobotState::UNINITIALIZED);
+        // ptr->SetState(RobotState::UNINITIALIZED);
         m_robots[id] = ptr;
 
         bool tm_advertise = false;

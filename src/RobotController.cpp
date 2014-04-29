@@ -425,14 +425,14 @@ void RobotController::Execute()
     // m_statusPub.publish(m_status.GetMessage());
 
     //Don't need anymore since we're using services
-    // if (ros::Time::now() - m_lastStatusUpdate > ros::Duration(2))
-    // {
-    //     ROS_WARN_STREAM_THROTTLE(10, "Robot has not been in communication for "<<(ros::Time::now() - m_lastStatusUpdate) << " seconds");
-    //     m_lastStatusUpdate = ros::Time::now();
-    // }
+    if (ros::Time::now() - m_lastStatusUpdate > ros::Duration(2))
+    {
+        ROS_WARN_STREAM_THROTTLE(1, "Robot has not been in communication for "<<(ros::Time::now() - m_lastStatusUpdate) << " seconds");
+        m_lastStatusUpdate = ros::Time::now();
+    }
 
     // Constant update every 200ms ~ 5 Hz
-    if (ros::Time::now() - m_lastConstantStatusUpdate > ros::Duration(0.2))
+    if (ros::Time::now() - m_lastConstantStatusUpdate > ros::Duration(0.5))
     {
         UpdatePose();
         m_statusPub.publish(m_status.GetMessage());
