@@ -481,6 +481,7 @@ bool GlobalPlanner::AssignRobotsDump(int collector_robot_id, int bin_robot_id, i
     ROS_INFO_STREAM("Assigning Robots " <<
         m_robots[collector_robot_id]->GetName() << "(" << collector_robot_id << ") & " <<
         m_robots[bin_robot_id]->GetName() << "(" << bin_robot_id << ") to dump(" << dump_id << ")" );
+    SendSound("assign_dump.wav");
 
     // Assign dump to robot
     dump_ptr->SetRobot1(collector_robot_id);
