@@ -357,7 +357,7 @@ bool TaskMaster::cb_waypointFinished(global_planner::WaypointFinished::Request  
         if (IsWaypoint(req.id))
         {
             ROS_INFO_STREAM("Waypoint["<<req.id<<"] reached successfully");
-            SendSound("beep.wav");
+            SendSound("waypoint_reached.wav");
 
             std::stringstream ss;
             ss << "SUCCESS: Waypoint ("<<req.id<<") finished successfully";
@@ -365,7 +365,7 @@ bool TaskMaster::cb_waypointFinished(global_planner::WaypointFinished::Request  
         }
         else
         {
-            SendSound("mario_coin.wav");
+            SendSound("goal_reached.wav");
             std::stringstream ss;
             ss<<"SUCCESS: Goal ("<<req.id<<") finished successfully";
             SendText(ss.str());
@@ -378,7 +378,7 @@ bool TaskMaster::cb_waypointFinished(global_planner::WaypointFinished::Request  
                          << " : " << Conversion::TaskResultToString(Conversion::IntToTaskResult(req.status)));
         //FOR NOW, let's just say it's available after a failure
         m_waypointMap[req.id]->SetStatus(TaskResult::AVAILABLE);
-        SendSound("mario_die.wav");
+        SendSound("navigation_aborted.wav");
         std::stringstream ss;
         ss << "ERROR: Waypoint ("<<req.id<<") not reached successfully";
         SendText(ss.str());
@@ -411,7 +411,7 @@ bool TaskMaster::cb_dumpFinished(global_planner::DumpFinished::Request  &req,
         {
             m_dumpMap[req.id]->SetStatus(TaskResult::DUMP_FINISHED);
             ROS_INFO_STREAM("Dumping was successful");
-            SendSound("mario_i_got_it.wav");
+            SendSound("trash_transferred.wav");
             std::stringstream ss;
             ss << "ERROR: Dump ("<<req.id<<") reached by both robots successfully";
             SendText(ss.str());

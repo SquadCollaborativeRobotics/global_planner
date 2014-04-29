@@ -545,7 +545,7 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
                             m_shouldPause = true;
                             m_seesLandmark = true;
                             SendText("Pausing for landmark");
-                            SendSound("seen_goal.wav");
+                            SendSound("landmark_detected.wav");
                             ros::Duration timeSinceLastUpdate = m_pose[tagID].header.stamp - m_lastLocalizeTime;
                             ROS_INFO_STREAM_THROTTLE(0.5, "We got a winner landmark ("<<tagID<<") here. Should Update = true. Last update was : "<<timeSinceLastUpdate);
                         }
@@ -567,7 +567,7 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
                             m_shouldPause = true;
                             m_seesGoal = true;
                             SendText("Pausing for goal");
-                            SendSound("seen_goal.wav");
+                            SendSound("trash_detected.wav");
                             ROS_INFO_STREAM("Pausing for goal: "<<tagID);
                         }
                         else
