@@ -731,7 +731,7 @@ void RobotController::StateExecute()
             if (ros::Time::now() - m_timeEnteringState > ros::Duration(5))
             {
                 ROS_ERROR_STREAM("ERROR: could not find any tags while stopped.  we are going to just resume WAITING");
-                Transition(RobotState::NAVIGATING);
+                Transition(RobotState::WAITING);
             }
         break;
 
