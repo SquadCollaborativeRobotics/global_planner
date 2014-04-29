@@ -772,7 +772,7 @@ void RobotController::StateExecute()
         case RobotState::NAVIGATING_TAG_FINISHED:
             if (ros::Time::now() - m_timeEnteringState > ros::Duration(2))
             {
-                SendSound("mario_pause.wav");
+                // SendSound("mario_pause.wav");
                 SendText("resuming - NAVIGATING_TAG_FINISHED");
                 ROS_INFO_STREAM("Transitioning back to navigating");
                 Transition(RobotState::NAVIGATING);
