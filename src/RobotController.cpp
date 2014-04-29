@@ -838,7 +838,7 @@ void RobotController::StateExecute()
                 case actionlib::SimpleClientGoalState::PREEMPTED:
                     ROS_ERROR_STREAM("Navigation Failed: " << action_client_ptr->getState().toString() );
                     SendDumpFinished(TaskResult::FAILURE);
-                    Transition(RobotState::WAITING);
+                    Transition(RobotState::DUMPING_FINISHED);
                     break;
 
                 case actionlib::SimpleClientGoalState::ACTIVE:

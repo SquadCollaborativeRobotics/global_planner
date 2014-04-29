@@ -489,6 +489,10 @@ bool TaskMaster::cb_dumpFinished(global_planner::DumpFinished::Request  &req,
             std::stringstream ss;
             ss << "ERROR: Dump ("<<req.id<<") reached by both robots successfully";
             SendText(ss.str());
+        } 
+        else
+        {
+            ROS_INFO_STREAM("Ignoring received dumpFinished message due to being in state: " << m_dumpMap[req.id]->GetStatus() );
         }
     }
     else
@@ -497,6 +501,8 @@ bool TaskMaster::cb_dumpFinished(global_planner::DumpFinished::Request  &req,
             std::stringstream ss;
             ss << "Dump failed due to status: " << req.status<<" : "<<Conversion::TaskResultToString(Conversion::IntToTaskResult(req.status));
             SendText(ss.str());
+            SendSound("failed_trash_transfer.wav");
+            m_dumpMap[req.id]->SetStatus(TaskResult::FAILURE);
     }
 }
 

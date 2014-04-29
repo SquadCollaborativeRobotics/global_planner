@@ -233,13 +233,18 @@ void GlobalPlanner::Execute()
         int binBot = dump->GetRobot2();
         // if (dump->GetReadyToTransfer()) { // This requires services to work
         // Avoid services by querying robot states
-        if (dump->GetInProgress() && m_robots[collectorBot]->GetState() == RobotState::DUMPING_FINISHED && m_robots[binBot]->GetState() == RobotState::DUMPING_FINISHED)
+
+        // Get states of the robots for dump state checks without using service calls
+        // bool collectorIsDumping = m_robots[collectorBot]->GetState() == RobotState::DUMPING;
+        bool collectorIsFinished = m_robots[collectorBot]->GetState() == RobotState::DUMPING_FINISHED;
+        // bool binIsDumping = m_robots[binBot]->GetState() == RobotState::DUMPING;
+        bool binIsFinished = m_robots[binBot]->GetState() == RobotState::DUMPING_FINISHED;
+
+        if (dump->GetInProgress() && collectorIsFinished && binIsFinished)
         {
             ROS_INFO_STREAM("Dump (" << dump->GetID() << ") transferring trash.");
 
             // Move trash over
-            int collectorBot = dump->GetRobot1();
-            int binBot = dump->GetRobot2();
             int trash_to_transfer = m_robots[collectorBot]->GetStorageUsed();
 
             // Send trash updates to robot controllers
@@ -259,6 +264,19 @@ void GlobalPlanner::Execute()
             // Transition dump state to success
             dump->SetStatus(TaskResult::SUCCESS);
         }
+        // else if (dump->GetInProgress() && ( !(collectorIsDumping||collectorIsFinished) || !(binIsDumping||binIsFinished)  )
+        // {
+        //     // If dump is in progress but one of the robots transitioned out of dumping or dumping_finished, then we had a fail and need to reset the dump and their states
+        //     // TO CHECK: Ideally this is not needed since dump status gets set via a service call to task master by the robots
+        //     SendSound("failed_trash_transfer.wav");
+
+        //     // Set states to waiting
+        //     SetRobotState(collectorBot, RobotState::WAITING);
+        //     SetRobotState(binBot, RobotState::WAITING);
+
+        //     // Transition dump state to success
+        //     dump->SetStatus(TaskResult::FAILURE);
+        // }
     }
 
     switch (m_planner)
