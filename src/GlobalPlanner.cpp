@@ -761,7 +761,7 @@ int GlobalPlanner::GetClosestDumpSite(int collector_robot_id, int bin_robot_id)
 void GlobalPlanner::Start()
 {
     m_start_time = ros::Time::now();
-    SendSound("mario_lets_go.wav");
+    SendSound("global_planner_start.wav");
     std::stringstream ss;
     ss << "Starting global planner";
     SendText(ss.str());
@@ -771,7 +771,7 @@ void GlobalPlanner::Start()
 // System finished
 void GlobalPlanner::Finished()
 {
-    SendSound("mario_world_clear.wav");
+    SendSound("global_planner_end.wav");
     std::stringstream ss;
     ss << "Global Planner finished";
     SendText(ss.str());
