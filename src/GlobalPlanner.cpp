@@ -42,7 +42,7 @@ bool GlobalPlanner::Init(ros::NodeHandle* nh)
 	}
 
     // Load list of possible dumpsites
-    std::string dumpsiteFile("cubicle_dump_meets.points");
+    std::string dumpsiteFile("springdemo_dump_meets.points");
     m_nh->getParam("/global_planner/dumpsite_file", dumpsiteFile);
     ROS_INFO_STREAM("Loading dumpsite file: " << dumpsiteFile);
     loadDumpSites(dumpsiteFile);
@@ -231,8 +231,6 @@ void GlobalPlanner::Execute()
         Dump_Ptr dump = it->second;
         int collectorBot = dump->GetRobot1();
         int binBot = dump->GetRobot2();
-        // if (dump->GetReadyToTransfer()) { // This requires services to work
-        // Avoid services by querying robot states
 
         // Get states of the robots for dump state checks without using service calls
         // bool collectorIsDumping = m_robots[collectorBot]->GetState() == RobotState::DUMPING;
@@ -1051,45 +1049,49 @@ void GlobalPlanner::QueryRobots()
 
 void GlobalPlanner::QueryRobot(int id)
 {
-    return;
     global_planner::RobotStatusSrv s;
     s.request.id = id;
 
-    // Global planner is connected to robot
-    if (m_statusServices[id].isValid())
+    bool gotResponse = false;
+    while (!gotResponse)
     {
-        if (m_statusServices[id].call(s))
+        ros::spinOnce();
+        // Global planner is connected to robot
+        if (m_statusServices[id].isValid())
         {
-            m_robots[s.request.id]->SetData(s.response.status);
-            ROS_INFO_STREAM_THROTTLE(10.0, "Received response from robot: "<<s.response.status.id<<" : "<<m_robots[s.request.id]->ToString());
-        }
-        else
-        {
-            ROS_ERROR_STREAM("Did not receive good response from robot: "<<id);
-        }
-    }
-    else
-    {
-        // Global planner is not connected to robot, which it has previously communciated with
-        ROS_ERROR_STREAM_THROTTLE(3.0, "Not connected to robot: "<<id<<"... retrying");
-        bool success = ros::service::waitForService(Conversion::RobotIDToServiceName(id), ros::Duration(5));
-        if (success)
-        {
-            m_statusServices[id] = m_nh->serviceClient<global_planner::RobotStatusSrv>(Conversion::RobotIDToServiceName(id), false);
-            if (m_statusServices[id].isValid())
+            if (m_statusServices[id].call(s))
             {
-                ROS_INFO_STREAM("Successfully setup the robot service for robot: "<<id);
+                m_robots[s.request.id]->SetData(s.response.status);
+                ROS_INFO_STREAM_THROTTLE(10.0, "Received response from robot: "<<s.response.status.id<<" : "<<m_robots[s.request.id]->ToString());
+                gotResponse = true;
             }
             else
             {
-                ROS_ERROR_STREAM("Setup failed. robot status service for robot: "<<id<<" is not valid");
+                ROS_ERROR_STREAM("Did not receive good response from robot: "<<id);
             }
         }
         else
         {
-            ROS_ERROR_STREAM("Setup failed. wait for robot status service for robot: "<<id);
+            // Global planner is not connected to robot, which it has previously communciated with
+            ROS_ERROR_STREAM_THROTTLE(3.0, "Not connected to robot: "<<id<<"... retrying");
+            bool success = ros::service::waitForService(Conversion::RobotIDToServiceName(id), ros::Duration(1.0));
+            if (success)
+            {
+                m_statusServices[id] = m_nh->serviceClient<global_planner::RobotStatusSrv>(Conversion::RobotIDToServiceName(id), false);
+                if (m_statusServices[id].isValid())
+                {
+                    ROS_INFO_STREAM("Successfully setup the robot service for robot: "<<id);
+                }
+                else
+                {
+                    ROS_ERROR_STREAM("Setup failed. robot status service for robot: "<<id<<" is not valid");
+                }
+            }
+            else
+            {
+                ROS_ERROR_STREAM("Setup failed. wait for robot status service for robot: "<<id);
+            }
         }
-
     }
 }
 
@@ -1163,29 +1165,34 @@ bool GlobalPlanner::SetRobotState(int id, RobotState::State state)
     global_planner::SetRobotStatusSrv s;
     s.request.status.state = RobotState::ToInt(state);
 
-    if (!(m_setStatusServices[id].isValid()))
+    bool sentRequest = false;
+    while (!sentRequest)
     {
-        ROS_ERROR_STREAM_THROTTLE(3.0, "(set robot state) Not connected to robot: "<<id<<"... retrying");
-        m_setStatusServices[id] = m_nh->serviceClient<global_planner::SetRobotStatusSrv>(Conversion::RobotIDToSetStatusTopic(id), true);
-    }
-
-    if (m_setStatusServices[id].isValid())
-    {
-        if (m_setStatusServices[id].call(s))
+        ros::spinOnce();
+        if (!(m_setStatusServices[id].isValid()))
         {
-            ROS_INFO_STREAM("set robot["<<id<<"] to state: "<<state);
-            QueryRobot(id);
-            return true;
+            ROS_ERROR_STREAM_THROTTLE(3.0, "(set robot state) Not connected to robot: "<<id<<"... retrying");
+            m_setStatusServices[id] = m_nh->serviceClient<global_planner::SetRobotStatusSrv>(Conversion::RobotIDToSetStatusTopic(id), true);
+        }
+
+        if (m_setStatusServices[id].isValid())
+        {
+            if (m_setStatusServices[id].call(s))
+            {
+                ROS_INFO_STREAM("set robot["<<id<<"] to state: "<<state);
+                QueryRobot(id);
+                sentRequest = true;
+            }
+            else
+            {
+                ROS_ERROR_STREAM("(set robot state) Did not receive good response from robot: "<<id);
+            }
         }
         else
         {
-            ROS_ERROR_STREAM("(set robot state) Did not receive good response from robot: "<<id);
+            ROS_ERROR_STREAM("Still not connected to the set robot status service:"<<id);
         }
     }
-    else
-    {
-        ROS_ERROR_STREAM("Still not connected to the set robot status service:"<<id);
-    }
     QueryRobot(id);
-    return false;
+    return true;
 }
