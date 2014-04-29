@@ -544,7 +544,7 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
                 if (type == AprilTagProcessor::LANDMARK)
                 {
                     // Only need to update if it's been a while since the robot localized
-                    if (m_pose[tagID].header.stamp - m_lastLocalizeTime > ros::Duration(10.0) ) {
+                    if (m_pose[tagID].header.stamp - m_lastLocalizeTime > ros::Duration(12.0) ) {
                         //Check if the tag is closer than the threshold distance
                         if (GetDistance(m_pose[tagID]) < UPDATE_RANGE_THRESHOLD)
                         {
