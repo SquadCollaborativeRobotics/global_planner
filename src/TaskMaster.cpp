@@ -578,7 +578,7 @@ void TaskMaster::cb_goalSeen(const global_planner::GoalSeen::ConstPtr &msg)
     }
     else //Not yet in the map
     {
-        ros::Time time_ = msg->time_;
+        ros::Time time_ = msg->time;
         geometry_msgs::Pose pose = msg->pose;
 
         Waypoint_Ptr ptr(new WaypointWrapper());
