@@ -80,7 +80,7 @@ bool TaskMaster::RegisterClients(int robotID)
         bool success = ros::service::waitForService(Conversion::RobotIDToDumpTopic(robotID), ros::Duration(2));
         if (success)
         {
-            m_dumpClients[robotID] = m_nh->serviceClient<global_planner::WaypointSrv>(Conversion::RobotIDToDumpTopic(robotID), true);
+            m_dumpClients[robotID] = m_nh->serviceClient<global_planner::DumpSrv>(Conversion::RobotIDToDumpTopic(robotID), true);
             if (m_dumpClients[robotID].isValid())
             {
                 ROS_INFO_STREAM("Dump Finished listening service successfully setup for robot: "<<robotID);
