@@ -1180,7 +1180,6 @@ bool GlobalPlanner::SetRobotState(int id, RobotState::State state)
             if (m_setStatusServices[id].call(s))
             {
                 ROS_INFO_STREAM("set robot["<<id<<"] to state: "<<state);
-                QueryRobot(id);
                 sentRequest = true;
             }
             else

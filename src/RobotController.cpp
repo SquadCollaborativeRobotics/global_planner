@@ -345,31 +345,34 @@ bool RobotController::SendWaypointFinished(TaskResult::Status status)
     wpMsg.request.id = m_status.GetTaskID();
     wpMsg.request.status = Conversion::TaskResultToInt(status);
 
-    if (!m_waypointFinishedPub.isValid())
+    bool sentSuccessfully = false;
+    while(!sentSuccessfully)
     {
-        ROS_ERROR_STREAM("ERROR: the waypoint finished publisher went down");
-        m_waypointFinishedPub = m_nh->serviceClient<global_planner::WaypointFinished>(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), true);
-    }
-
-    if (m_waypointFinishedPub.isValid())
-    {
-        if (m_waypointFinishedPub.call(wpMsg))
+        ros::spinOnce();
+        if (!m_waypointFinishedPub.isValid())
         {
-            ROS_INFO_STREAM("Sending waypoint finished success");
-            return true;
+            ROS_ERROR_STREAM("ERROR: the waypoint finished publisher went down");
+            m_waypointFinishedPub = m_nh->serviceClient<global_planner::WaypointFinished>(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), true);
+        }
+
+        if (m_waypointFinishedPub.isValid())
+        {
+            if (m_waypointFinishedPub.call(wpMsg))
+            {
+                ROS_INFO_STREAM("Sending waypoint finished success");
+                sentSuccessfully = true;
+            }
+            else
+            {
+                ROS_ERROR_STREAM("Failed to call waypoint finished service");
+            }
         }
         else
         {
-            ROS_ERROR_STREAM("Failed to call waypoint finished service");
-            return false;
+            ROS_ERROR_STREAM("Still not connected to waypoint finished service");
         }
     }
-    else
-    {
-        ROS_ERROR_STREAM("Still not connected to waypoint finished service");
-        return false;
-    }
-    return false;
+    return true;
 }
 
 
