@@ -80,7 +80,7 @@ bool TaskMaster::RegisterClients(int robotID)
         bool success = ros::service::waitForService(Conversion::RobotIDToDumpTopic(robotID), ros::Duration(2));
         if (success)
         {
-            m_dumpClients[robotID] = m_nh->serviceClient<global_planner::WaypointSrv>(Conversion::RobotIDToWaypointTopic(robotID), true);
+            m_dumpClients[robotID] = m_nh->serviceClient<global_planner::WaypointSrv>(Conversion::RobotIDToDumpTopic(robotID), true);
             if (m_dumpClients[robotID].isValid())
             {
                 ROS_INFO_STREAM("Dump Finished listening service successfully setup for robot: "<<robotID);
@@ -215,26 +215,52 @@ bool TaskMaster::SendWaypoint(int wpID)
 {
     global_planner::WaypointMsg wpMsg = m_waypointMap[wpID]->GetMessage();
     int robotID = wpMsg.robotID;
+
     if (wpID != -1 && robotID >= 0)
     {
+
         global_planner::WaypointSrv s;
         s.request.msg = wpMsg;
-        if (m_waypointClients[robotID].call(s))
+        bool sentSuccessfully = false;
+        while(!sentSuccessfully)
         {
-            if (s.response.result == 0)
+            ros::spinOnce();
+
+            if (m_waypointClients[robotID].isValid())
             {
-                return true;
+                ROS_INFO_STREAM("sending waypoint to robot: "<<robotID);
+                if (m_waypointClients[robotID].call(s))
+                {
+                    if (s.response.result == 0)
+                    {
+                        sentSuccessfully = true;
+                        return true;
+                    }
+                    else
+                    {
+                        ROS_ERROR_STREAM("Sending waypoint. Bad response (resp = "<<s.response.result<<") from robot: "<<robotID);
+                        return false;
+                    }
+                }
+                else
+                {
+                    ROS_ERROR_STREAM("Failed to connect to robot["<<robotID);
+                }
             }
             else
             {
-                ROS_ERROR_STREAM("Sending waypoint. Bad response (resp = "<<s.response.result<<") from robot: "<<robotID);
-                return false;
+                ROS_ERROR_STREAM("waypoint send service not setup properly. robot = "<<robotID);
+
+                bool success = ros::service::waitForService(Conversion::RobotIDToWaypointTopic(robotID), ros::Duration(1.0));
+                if (success)
+                {
+                    m_waypointClients[robotID] = m_nh->serviceClient<global_planner::WaypointFinished>(Conversion::RobotIDToWaypointTopic(robotID), true);
+                }
+                else
+                {
+                    ROS_ERROR_STREAM_THROTTLE(1.0, "Waiting on the waypoint service to become available");
+                }
             }
-        }
-        else
-        {
-            ROS_ERROR_STREAM("Failed to connect to robot["<<robotID);
-            return false;
         }
     }
     else
@@ -457,6 +483,7 @@ bool TaskMaster::cb_waypointFinished(global_planner::WaypointFinished::Request  
         ss << "ERROR: Waypoint ("<<req.id<<") not reached successfully";
         SendText(ss.str());
     }
+    return true;
 }
 
 
@@ -489,7 +516,7 @@ bool TaskMaster::cb_dumpFinished(global_planner::DumpFinished::Request  &req,
             std::stringstream ss;
             ss << "ERROR: Dump ("<<req.id<<") reached by both robots successfully";
             SendText(ss.str());
-        } 
+        }
         else
         {
             ROS_INFO_STREAM("Ignoring received dumpFinished message due to being in state: " << m_dumpMap[req.id]->GetStatus() );
@@ -504,6 +531,7 @@ bool TaskMaster::cb_dumpFinished(global_planner::DumpFinished::Request  &req,
             SendSound("failed_trash_transfer.wav");
             m_dumpMap[req.id]->SetStatus(TaskResult::FAILURE);
     }
+    return true;
 }
 
 
