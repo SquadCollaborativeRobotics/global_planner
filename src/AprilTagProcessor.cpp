@@ -349,6 +349,10 @@ bool AprilTagProcessor::FindGoals()
         {
             // ROS_INFO_STREAM("Tag ["<<tagID<< "] is being viewed now");
             std::string goal_frame = GetTagFrameName(tagID);
+            if (goal_frame == std::string())
+            {
+                ROS_ERROR_STREAM("tag frame string is empty");
+            }
             // ROS_INFO_STREAM("Tag ["<<tagID<< "] has a frame name of: "<<goal_frame);
 
             tf::StampedTransform transform;
@@ -372,13 +376,14 @@ bool AprilTagProcessor::FindGoals()
                 ps.pose.position.x = finalTransform.getOrigin().x();
                 ps.pose.position.y = finalTransform.getOrigin().y();
                 ps.pose.position.z = finalTransform.getOrigin().z();
+                tf::Quaternion finalQuat = finalTransform.getRotation();
 
                 //Set garbage rotation from the transform
                 geometry_msgs::Quaternion quatMsg;
-                quatMsg.x=quat.x();
-                quatMsg.y=quat.y();
-                quatMsg.z=quat.z();
-                quatMsg.w=quat.w();
+                quatMsg.x=finalQuat.x();
+                quatMsg.y=finalQuat.y();
+                quatMsg.z=finalQuat.z();
+                quatMsg.w=finalQuat.w();
                 ps.pose.orientation = quatMsg;
 
                 //Finish creating message & publish
@@ -797,10 +802,7 @@ int AprilTagProcessor::GetIDFromFrameName(std::string frame_name)
  ***********************************************************************/
 bool AprilTagProcessor::GetMapTransform(std::string frame_name, tf::StampedTransform &tf, ros::Time time)
 {
-    if (GetTransform("/map", frame_name.c_str(), tf))
-        return true;
-    else
-        return false;
+    return GetTransform("/map", frame_name.c_str(), tf);
 }
 
 
@@ -814,12 +816,16 @@ bool AprilTagProcessor::GetTransform(std::string frame_name1, std::string frame_
 {
     if (m_tfListener->canTransform(frame_name1, frame_name2, time))
     {
-        m_tfListener->lookupTransform(frame_name1, frame_name2, time, tf);
+        try{
+            m_tfListener->lookupTransform(frame_name1, frame_name2, time, tf);
+            return true;
+        }
+        catch (tf::TransformException ex) {
+            ROS_ERROR("%s",ex.what());
+            return false;
+        }
     }
-    else
-    {
-        return false;
-    }
+    return false;
 }
 
 /***********************************************************************

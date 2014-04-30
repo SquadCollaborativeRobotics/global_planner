@@ -558,17 +558,17 @@ void TaskMaster::cb_goalSeen(const global_planner::GoalSeen::ConstPtr &msg)
             return;
         }
 
-        ros::Time time = msg->time;
+        ros::Time time_ = msg->time;
         geometry_msgs::Pose pose = msg->pose;
 
-        if ( time >= currentGoal->GetTime() )
+        if ( time_ >= currentGoal->GetTime() )
         {
             //Newer information... Update Pose if they are off by more than a small distance
             //For now, just assume we update it every time. If it is currently assigned to a bot, tell the bot of the new location
             if (true)
             {
                 //update the goal's values
-                currentGoal->SetTime(time);
+                currentGoal->SetTime(time_);
                 currentGoal->SetPose(pose);
 
                 //TODO: resend goal
@@ -578,13 +578,13 @@ void TaskMaster::cb_goalSeen(const global_planner::GoalSeen::ConstPtr &msg)
     }
     else //Not yet in the map
     {
-        ros::Time time = msg->time;
+        ros::Time time_ = msg->time_;
         geometry_msgs::Pose pose = msg->pose;
 
         Waypoint_Ptr ptr(new WaypointWrapper());
         ptr->SetPose(pose);
         ptr->SetID(goalID);
-        ptr->SetTime(time);
+        ptr->SetTime(time_);
         ptr->SetStatus(TaskResult::AVAILABLE);
         ptr->SetRobot(-1);
         ROS_INFO_STREAM("Creating new goal in map: "<<goalID<<" : "<<ptr->ToString());
