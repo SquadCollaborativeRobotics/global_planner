@@ -4,9 +4,12 @@
 
   <arg name="planner" default="closest_waypoint" />
   <arg name="waypoint_file" default="falldemo.points" />
+  <!-- <arg name="dumpsite_file" default="cubicle_dump_meets.points" /> -->
+  <arg name="dumpsite_file" default="springdemo_dump_meets.points" />
 
   <node pkg="global_planner" type="global_planner_node" name="global_planner" output="screen">
     <param name="waypoints_file" value="$(arg waypoint_file)" />
+    <param name="dumpsite_file" value="$(arg dumpsite_file)" />
     <param name="planner" value="$(arg planner)" />
   </node>
 </launch>
