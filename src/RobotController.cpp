@@ -422,7 +422,7 @@ bool RobotController::SendDumpFinished(TaskResult::Status status)
             }
             else
             {
-                ROS_ERROR_STREAM_THROTTLE(1.0, "Waiting on the waypoint service to become available");
+                ROS_ERROR_STREAM_THROTTLE(1.0, "Waiting on the dump finished service to become available");
             }
         }
     }
