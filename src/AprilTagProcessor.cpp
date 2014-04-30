@@ -380,10 +380,10 @@ bool AprilTagProcessor::FindGoals()
 
                 //Set garbage rotation from the transform
                 geometry_msgs::Quaternion quatMsg;
-                quatMsg.x=finalQuat.x();
-                quatMsg.y=finalQuat.y();
-                quatMsg.z=finalQuat.z();
-                quatMsg.w=finalQuat.w();
+                quatMsg.x=quat.x();
+                quatMsg.y=quat.y();
+                quatMsg.z=quat.z();
+                quatMsg.w=quat.w();
                 ps.pose.orientation = quatMsg;
 
                 //Finish creating message & publish
@@ -397,7 +397,7 @@ bool AprilTagProcessor::FindGoals()
                 ROS_INFO_STREAM("Sent goal pose ["<<goal.pose<<"] with ID: "<<tagID);
 
                 std::stringstream ss;
-                ss << "Sent goal: "<<tagID;
+                ss << "Sent goal: "<<tagID<<goal.pose;
                 SendText(ss.str());
                 retVal = true;
             }
