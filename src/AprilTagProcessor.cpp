@@ -528,9 +528,9 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
 
         if (type != AprilTagProcessor::UNKNOWN)
         {
-            if (GoalRegistered(tagID) == false)
+            if (GoalRegistered(tagID) == true)
             {
-                ROS_DEBUG_STREAM("Goal already registered with the global planner: "<<tagID);
+                ROS_INFO_STREAM("Goal already registered with the global planner: "<<tagID);
                 continue;
             }
 
@@ -551,7 +551,7 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
                             UpdateLastSeenTime(tagID, m_pose[tagID].header.stamp);
                             m_shouldPause = true;
                             m_seesLandmark = true;
-                            SendText("Pausing for landmark");
+                            SendText("Set pause = true for landmark");
                             SendSound("landmark_detected.wav");
                             ros::Duration timeSinceLastUpdate = m_pose[tagID].header.stamp - m_lastLocalizeTime;
                             ROS_INFO_STREAM_THROTTLE(0.5, "We got a winner landmark ("<<tagID<<") here. Should Update = true. Last update was : "<<timeSinceLastUpdate);
@@ -573,7 +573,7 @@ void AprilTagProcessor::cb_aprilTags(const april_tags::AprilTagList::ConstPtr &m
                         {
                             m_shouldPause = true;
                             m_seesGoal = true;
-                            SendText("Pausing for goal");
+                            SendText("set pause = true for goal");
                             SendSound("trash_detected.wav");
                             ROS_INFO_STREAM("Pausing for goal: "<<tagID);
                         }
@@ -880,7 +880,7 @@ bool AprilTagProcessor::GoalRegistered(int id)
 {
     if (m_goalsRegistered.find(id) != m_goalsRegistered.end())
     {
-        return false;
+        return true;
     }
-    return true;
+    return false;
 }

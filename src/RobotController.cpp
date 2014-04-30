@@ -349,12 +349,6 @@ bool RobotController::SendWaypointFinished(TaskResult::Status status)
     while(!sentSuccessfully)
     {
         ros::spinOnce();
-        if (!m_waypointFinishedPub.isValid())
-        {
-            ROS_ERROR_STREAM("ERROR: the waypoint finished publisher went down");
-            m_waypointFinishedPub = m_nh->serviceClient<global_planner::WaypointFinished>(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), true);
-        }
-
         if (m_waypointFinishedPub.isValid())
         {
             if (m_waypointFinishedPub.call(wpMsg))
@@ -369,7 +363,16 @@ bool RobotController::SendWaypointFinished(TaskResult::Status status)
         }
         else
         {
-            ROS_ERROR_STREAM("Still not connected to waypoint finished service");
+            ROS_ERROR_STREAM("ERROR: the waypoint finished publisher went down");
+            bool success = ros::service::waitForService(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), ros::Duration(1.0));
+            if (success)
+            {
+                m_waypointFinishedPub = m_nh->serviceClient<global_planner::WaypointFinished>(Conversion::RobotIDToWaypointFinishedTopic(m_status.GetID()), true);
+            }
+            else
+            {
+                ROS_ERROR_STREAM_THROTTLE(1.0, "Waiting on the waypoint service to become available");
+            }
         }
     }
     return true;
@@ -392,17 +395,36 @@ bool RobotController::SendDumpFinished(TaskResult::Status status)
     dumpMsg.request.robotID = m_status.GetID();
     dumpMsg.request.status = Conversion::TaskResultToInt(status);
 
-    if (m_dumpFinishedPub)
+    bool sentSuccessfully = false;
+    while(!sentSuccessfully)
     {
-        if (m_dumpFinishedPub.call(dumpMsg))
+        ros::spinOnce();
+        if (m_dumpFinishedPub.isValid())
         {
-            ROS_INFO_STREAM("Sending dump finished success");
+            if (m_dumpFinishedPub.call(dumpMsg))
+            {
+                ROS_INFO_STREAM("Sending dump finished success");
+                sentSuccessfully = true;
+            }
+            else
+            {
+                ROS_ERROR_STREAM_THROTTLE(0.5, "Failed to call dump finished service");
+            }
         }
         else
         {
-            ROS_ERROR_STREAM("Failed to call dump finished service");
+            ROS_ERROR_STREAM("dump finished service not setup properly");
+
+            bool success = ros::service::waitForService(Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()), ros::Duration(1.0));
+            if (success)
+            {
+                m_dumpFinishedPub = m_nh->serviceClient<global_planner::DumpFinished>(Conversion::RobotIDToDumpFinishedTopic(m_status.GetID()), true);
+            }
+            else
+            {
+                ROS_ERROR_STREAM_THROTTLE(1.0, "Waiting on the waypoint service to become available");
+            }
         }
-        ROS_ERROR_STREAM("dump finished service not setup properly");
     }
     return true;
 }
