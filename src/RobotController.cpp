@@ -586,12 +586,12 @@ void RobotController::SetupCallbacks()
                 }
                 else
                 {
-                    ROS_ERROR_STREAM("waypoint finished service FAILED to set up for robot: "<<m_status.GetID());
+                    ROS_WARN_STREAM("waypoint finished service FAILED to set up for robot: "<<m_status.GetID());
                 }
             }
             else
             {
-                ROS_ERROR_STREAM("waypoint waitForService timeout occured for robot: "<<m_status.GetID());
+                ROS_WARN_STREAM("waypoint waitForService timeout occured for robot: "<<m_status.GetID());
             }
         }
 
@@ -615,12 +615,12 @@ void RobotController::SetupCallbacks()
                 }
                 else
                 {
-                    ROS_ERROR_STREAM("dump finished service FAILED to set up for robot: "<<m_status.GetID());
+                    ROS_WARN_STREAM("dump finished service FAILED to set up for robot: "<<m_status.GetID());
                 }
             }
             else
             {
-                ROS_ERROR_STREAM("dump waitForService timeout occured for robot: "<<m_status.GetID());
+                ROS_WARN_STREAM("dump waitForService timeout occured for robot: "<<m_status.GetID());
             }
         }
     }
