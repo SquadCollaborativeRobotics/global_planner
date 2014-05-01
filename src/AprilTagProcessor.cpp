@@ -40,14 +40,6 @@ AprilTagProcessor::~AprilTagProcessor()
 bool AprilTagProcessor::Init(ros::NodeHandle *nh, int robotID)
 {
     m_nh = nh;
-    //Setup subscribers
-    m_tagSub = m_nh->subscribe("april_tags", 10, &AprilTagProcessor::cb_aprilTags, this);
-    m_amclPoseSub = m_nh->subscribe("amcl_pose", 1, &AprilTagProcessor::cb_amclPose, this);
-    m_odomSub = m_nh->subscribe("odom", 1, &AprilTagProcessor::cb_odom, this);
-    m_robotID = robotID;
-    m_tfListener.reset( new tf::TransformListener(*m_nh) );
-
-    m_goalSeenSub = m_nh->subscribe("/goal_seen", 10, &AprilTagProcessor::cb_goalSeen, this);
 
     //Setup tag types
     for (int i=0; i<=20; i++)
@@ -62,7 +54,16 @@ bool AprilTagProcessor::Init(ros::NodeHandle *nh, int robotID)
         }
     }
 
-    // m_goalTypeMap[3] = AprilTagProcessor::UNKNOWN;
+    m_goalTypeMap[18] = AprilTagProcessor::LANDMARK;
+
+    //Setup subscribers
+    m_tagSub = m_nh->subscribe("april_tags", 10, &AprilTagProcessor::cb_aprilTags, this);
+    m_amclPoseSub = m_nh->subscribe("amcl_pose", 1, &AprilTagProcessor::cb_amclPose, this);
+    m_odomSub = m_nh->subscribe("odom", 1, &AprilTagProcessor::cb_odom, this);
+    m_robotID = robotID;
+    m_tfListener.reset( new tf::TransformListener(*m_nh) );
+
+    m_goalSeenSub = m_nh->subscribe("/goal_seen", 10, &AprilTagProcessor::cb_goalSeen, this);
 
     //Setup publishers
     m_goalPub = m_nh->advertise<global_planner::GoalSeen>("/goal_seen", 100);
