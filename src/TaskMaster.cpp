@@ -275,7 +275,7 @@ bool TaskMaster::SendWaypoint(int wpID)
 /***********************************************************************
  *  Method: TaskMaster::SendDump
  *  Params: int dumpID
- * Returns: bool
+ * Returns: int 0 - success, 1 - service response 1 fail, 2 - service response 2 fail
  * Effects: Send the dump message specified by the parameter
  ***********************************************************************/
 int TaskMaster::SendDump(int dumpID)
@@ -352,8 +352,10 @@ int TaskMaster::SendDump(int dumpID)
             return 2;
         }
 
-        // All passed
-        return call1 && call2 && response1 && response2;
+        // All passed - will drop to outside
+        // if (call1 && call2 && response1 && response2) {
+        //     return 0;
+        // }
     }
     else {
         ROS_ERROR_STREAM("Invalid dump or robot ids: " << dm.id << ", Robot1(" << dm.robotID1 << "), Robot2(" << dm.robotID2 << ")");

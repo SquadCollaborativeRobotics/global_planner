@@ -692,7 +692,6 @@ void RobotController::OnEntry(void *args)
             break;
         case RobotState::DUMPING_FINISHED:
             ROS_INFO_STREAM("Reached Dump Site");
-            SendDumpFinished(TaskResult::SUCCESS);
             break;
         break;
     }

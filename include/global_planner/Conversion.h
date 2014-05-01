@@ -37,7 +37,9 @@ public:
             case TaskResult::NAVSTACK_FAILURE:
             return "Nav Stack failed to reach goal";
             default:
-            return "Unknown result code";
+            std::string msg = "Unknown result code: ";
+            msg += TaskResult::ToString(status);
+            return msg;
         }
     }
 

@@ -238,7 +238,8 @@ void GlobalPlanner::Execute()
         // bool binIsDumping = m_robots[binBot]->GetState() == RobotState::DUMPING;
         bool binIsFinished = m_robots[binBot]->GetState() == RobotState::DUMPING_FINISHED;
 
-        if (dump->GetInProgress() && collectorIsFinished && binIsFinished)
+        // if (dump->GetInProgress() && collectorIsFinished && binIsFinished)
+        if (dump->GetReadyToTransfer() && collectorIsFinished && binIsFinished)
         {
             ROS_INFO_STREAM("Dump (" << dump->GetID() << ") transferring trash.");
 
@@ -435,19 +436,36 @@ bool GlobalPlanner::AssignRobotsDump(int collector_robot_id, int bin_robot_id, i
     }
     else
     {
-        if (sendResult == 1)
-        {
-            //Collector failed
-        }
-        else if(sendResult == 2)
-        {
-            //Bin bot failed
-            if (!CancelRobot(collector_robot_id))
-                ROS_ERROR_STREAM("did not send the cancel correctly");
-            dump_ptr->SetRobot1(NO_ROBOT_FOUND);
-        }
+        // Set both robots to waiting
+        // SetRobotState(collector_robot_id, RobotState::WAITING);
+        // SetRobotState(bin_robot_id, RobotState::WAITING);
+        ROS_ERROR_STREAM("SendDump response of " << sendResult << "Resetting both robots.");
+        if (!CancelRobot(collector_robot_id))
+            ROS_ERROR_STREAM("did not send the cancel correctly for Collector bot");
+        dump_ptr->SetRobot1(NO_ROBOT_FOUND);
+        if (!CancelRobot(bin_robot_id))
+            ROS_ERROR_STREAM("Did not send the cancel correctly for Bin bot");
+        dump_ptr->SetRobot2(NO_ROBOT_FOUND);
+        // if (sendResult == 1)
+        // {
+        //     //Collector failed
+        //     if (!CancelRobot(bin_robot_id))
+        //         ROS_ERROR_STREAM("did not send the cancel correctly");
+        //     dump_ptr->SetRobot2(NO_ROBOT_FOUND);
+        // }
+        // else if(sendResult == 2)
+        // {
+        //     //Bin bot failed
+        //     if (!CancelRobot(collector_robot_id))
+        //         ROS_ERROR_STREAM("did not send the cancel correctly");
+        //     dump_ptr->SetRobot1(NO_ROBOT_FOUND);
+        // }
+
+        // Failed to sund the dump, fail the dump due to comm failure and reset robots to waiting.
         dump_ptr->SetStatus(TaskResult::COMM_FAILURE);
+        
         ROS_ERROR_STREAM("Could not assign dump[" << dump_id<<"] to robots [" << collector_robot_id << "] & [" << bin_robot_id << "]");
+        
         return false;
     }
 
@@ -1163,7 +1181,11 @@ bool GlobalPlanner::CancelRobot(int id)
 bool GlobalPlanner::SetRobotState(int id, RobotState::State state)
 {
     global_planner::SetRobotStatusSrv s;
+    // Todo fix this egregious waste of state-setting
+    s.request.status.storage_used = -1;
+    s.request.status.storage_capacity = -1;
     s.request.status.state = RobotState::ToInt(state);
+    s.request.status.taskID = -1;
 
     bool sentRequest = false;
     while (!sentRequest)
