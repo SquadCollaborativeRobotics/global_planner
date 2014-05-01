@@ -479,7 +479,7 @@ bool TaskMaster::cb_waypointFinished(global_planner::WaypointFinished::Request  
         ROS_ERROR_STREAM("ERROR, Waypoint finished with status: " << req.status
                          << " : " << Conversion::TaskResultToString(Conversion::IntToTaskResult(req.status)));
         //FOR NOW, let's just say it's available after a failure
-        m_waypointMap[req.id]->SetStatus(TaskResult::AVAILABLE);
+        // m_waypointMap[req.id]->SetStatus(TaskResult::AVAILABLE);
         SendSound("navigation_aborted.wav");
         std::stringstream ss;
         ss << "ERROR: Waypoint ("<<req.id<<") not reached successfully";
