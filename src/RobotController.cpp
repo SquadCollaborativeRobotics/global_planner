@@ -753,7 +753,7 @@ void RobotController::StateExecute()
                 ROS_INFO_STREAM_THROTTLE(1, "Waiting on the OK to resume from the tag processor");
             }
 
-            if (ros::Time::now() - m_timeEnteringState > ros::Duration(5))
+            if (ros::Time::now() - m_timeEnteringState > ros::Duration(3.5))
             {
                 ROS_ERROR_STREAM("ERROR: could not find any tags while stopped.  we are going to just resume WAITING");
                 Transition(RobotState::WAITING);
@@ -827,7 +827,7 @@ void RobotController::StateExecute()
                 ROS_INFO_STREAM_THROTTLE(1, "Waiting on the OK to resume from the tag processor");
             }
 
-            if (ros::Time::now() - m_timeEnteringState > ros::Duration(5))
+            if (ros::Time::now() - m_timeEnteringState > ros::Duration(3.5))
             {
                 ROS_ERROR_STREAM("Could not find any tags while stopped.  we are going to just resume NAVIGATING");
                 Transition(RobotState::NAVIGATING);
@@ -836,7 +836,7 @@ void RobotController::StateExecute()
         break;
 
         case RobotState::NAVIGATING_TAG_FINISHED:
-            if (ros::Time::now() - m_timeEnteringState > ros::Duration(2))
+            if (ros::Time::now() - m_timeEnteringState > ros::Duration(1.5))
             {
                 // SendSound("mario_pause.wav");
                 SendText("resuming - NAVIGATING_TAG_FINISHED");
