@@ -254,7 +254,7 @@ bool TaskMaster::SendWaypoint(int wpID)
                 bool success = ros::service::waitForService(Conversion::RobotIDToWaypointTopic(robotID), ros::Duration(1.0));
                 if (success)
                 {
-                    m_waypointClients[robotID] = m_nh->serviceClient<global_planner::WaypointFinished>(Conversion::RobotIDToWaypointTopic(robotID), true);
+                    m_waypointClients[robotID] = m_nh->serviceClient<global_planner::WaypointSrv>(Conversion::RobotIDToWaypointTopic(robotID), true);
                 }
                 else
                 {
