@@ -68,6 +68,8 @@ public:
     //Clear all lists of goals, waypoints, and dumps
     bool Clear();
 
+    bool ResetFailedWaypoints();
+
     // Send messages over ROS
     bool SendWaypoint(int wpID);
     int SendDump(int dumpID);
@@ -126,4 +128,6 @@ private:
     ros::Publisher m_soundPub;
     // Sound message publisher
     ros::Publisher m_textPub;
+
+    int m_timesResettingWaypoints;
 };
