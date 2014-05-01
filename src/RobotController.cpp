@@ -353,7 +353,7 @@ bool RobotController::SendWaypointFinished(TaskResult::Status status)
         {
             if (m_waypointFinishedPub.call(wpMsg))
             {
-                ROS_INFO_STREAM("Sending waypoint finished success");
+                ROS_INFO_STREAM("Sending waypoint finished , service call was successful");
                 sentSuccessfully = true;
             }
             else
