@@ -7,7 +7,8 @@
  ***********************************************************************/
 TaskMaster::TaskMaster()
 {
-    m_nh = (0);
+    m_nh = 0;
+    m_timesResettingWaypoints = 0;
 }
 
 
@@ -655,6 +656,13 @@ bool TaskMaster::isFinished()
         }
     }
 
+    //let's try resetting the failed waypoints once... It returns true if the
+    //     planner should continue, false otherwise
+    if (ResetFailedWaypoints())
+    {
+        return false;
+    }
+
     return true;
 }
 
@@ -742,4 +750,29 @@ bool TaskMaster::IsInProgress(int taskID)
     if (m_waypointMap[taskID]->GetStatus() == TaskResult::INPROGRESS)
         return true;
     return false;
+}
+
+
+//Return true if we should continue planning, false if we should stop
+bool TaskMaster::ResetFailedWaypoints()
+{
+    m_timesResettingWaypoints++;
+    if (m_timesResettingWaypoints > 1)
+    {
+        ROS_WARN_STREAM("Resetting Waypoints. Number of times reset so far: "<<m_timesResettingWaypoints);
+        SendText("Resetting Waypoints. Number of times reset so far: ");
+        return false;
+    }
+
+    bool retVal = false;
+    for (std::map<int, Waypoint_Ptr>::iterator it = m_waypointMap.begin(); it != m_waypointMap.end(); ++it)
+    {
+        // If it's avilable for task setting
+        if (m_waypointMap[it->first]->GetStatus() == TaskResult::FAILURE)
+        {
+            m_waypointMap[it->first]->SetStatus(TaskResult::AVAILABLE);
+            retVal = true;
+        }
+    }
+    return retVal;
 }
