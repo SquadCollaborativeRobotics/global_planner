@@ -769,9 +769,12 @@ bool TaskMaster::ResetFailedWaypoints()
     bool retVal = false;
     for (std::map<int, Waypoint_Ptr>::iterator it = m_waypointMap.begin(); it != m_waypointMap.end(); ++it)
     {
+        ROS_INFO_STREAM(it->second->ToString());
         // If it's avilable for task setting
-        if (m_waypointMap[it->first]->GetStatus() == TaskResult::FAILURE)
+        if (m_waypointMap[it->first]->GetStatus() != TaskResult::SUCCESS)
         {
+            ROS_WARN_STREAM("Set task: "<<it->first<<" from "<<TaskResult::ToString(Conversion::IntToTaskResult(m_waypointMap[it->first]->GetStatus()))<<
+                " to AVAILABLE");
             m_waypointMap[it->first]->SetStatus(TaskResult::AVAILABLE);
             retVal = true;
         }
